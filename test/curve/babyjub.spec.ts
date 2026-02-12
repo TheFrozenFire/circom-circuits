@@ -181,3 +181,35 @@ describe_circuit("BabySuborderCheck", {
         }
     });
 });
+
+describe_circuit("BabySuborderAdd", {
+    add: { path: "curve/babyjub.circom", template: "BabySuborderAdd" },
+}, (calculators) => {
+    it("adds two small values", async () => {
+        const w = await calculators.add.calculate({ a: 3, b: 5 });
+        assert.equal(w.value("main.out"), 8n);
+    });
+
+    it("adds with zero", async () => {
+        const w = await calculators.add.calculate({ a: 42, b: 0 });
+        assert.equal(w.value("main.out"), 42n);
+    });
+
+    it("wraps around suborder", async () => {
+        const a = SUBORDER - 3n;
+        const b = 10n;
+        const w = await calculators.add.calculate({ a, b });
+        assert.equal(w.value("main.out"), 7n);
+    });
+
+    it("adds (suborder - 1) + 1 = 0", async () => {
+        const w = await calculators.add.calculate({ a: SUBORDER - 1n, b: 1n });
+        assert.equal(w.value("main.out"), 0n);
+    });
+
+    it("adds (suborder - 1) + (suborder - 1) = suborder - 2", async () => {
+        const a = SUBORDER - 1n;
+        const w = await calculators.add.calculate({ a, b: a });
+        assert.equal(w.value("main.out"), SUBORDER - 2n);
+    });
+});

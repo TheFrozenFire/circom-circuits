@@ -2,63 +2,8 @@ pragma circom 2.2.2;
 
 include "curve/constants.circom";
 include "packing/bitify.circom";
-
-/// Verifies that a point (x, y) lies on the BabyJubjub curve.
-/// Curve equation: a·x² + y² = 1 + d·x²·y²
-/// 3 quadratic constraints + 1 linear constraint.
-template BabyCheck() {
-    signal input x, y;
-
-    var a = BABYJUB_A();
-    var d = BABYJUB_D();
-
-    signal x2 <== x * x;
-    signal y2 <== y * y;
-    signal x2y2 <== x2 * y2;
-
-    a * x2 + y2 === 1 + d * x2y2;
-}
-
-/// Twisted Edwards point addition on BabyJubjub.
-/// Computes (xout, yout) = (x1, y1) + (x2, y2).
-///   beta = x1·y2, gamma = y1·x2, tau = beta·gamma
-///   delta = (-a·x1 + y1)·(x2 + y2)
-///   xout = (beta + gamma) / (1 + d·tau)
-///   yout = (delta + a·beta - gamma) / (1 - d·tau)
-/// 6 constraints total.
-template BabyAdd() {
-    signal input x1, y1, x2, y2;
-    signal output xout, yout;
-
-    var a = BABYJUB_A();
-    var d = BABYJUB_D();
-
-    signal beta <== x1 * y2;
-    signal gamma <== y1 * x2;
-    signal delta <== (-a * x1 + y1) * (x2 + y2);
-    signal tau <== beta * gamma;
-
-    xout <-- (beta + gamma) / (1 + d * tau);
-    (1 + d * tau) * xout === (beta + gamma);
-
-    yout <-- (delta + a * beta - gamma) / (1 - d * tau);
-    (1 - d * tau) * yout === (delta + a * beta - gamma);
-}
-
-/// Point doubling on BabyJubjub. Computes 2·(x, y).
-/// Delegates to BabyAdd.
-template BabyDbl() {
-    signal input x, y;
-    signal output xout, yout;
-
-    component add = BabyAdd();
-    add.x1 <== x;
-    add.y1 <== y;
-    add.x2 <== x;
-    add.y2 <== y;
-    xout <== add.xout;
-    yout <== add.yout;
-}
+include "circomlib/circuits/babyjub.circom";
+include "circomlib/circuits/comparators.circom";
 
 /// Point addition with array interface.
 /// in[0] = [x, y], in[1] = [x, y] → out = [x, y].
@@ -90,4 +35,23 @@ template BabySuborderCheck() {
     var l = BABYJUB_SUBORDER();
     signal diff <== l - 1 - in;
     signal _bits[253] <== Num2BitsLE(253)(diff);
+}
+
+/// Adds two scalars modulo the BabyJubjub subgroup order.
+/// Assumes a, b < SUBORDER (callers should use BabySuborderCheck).
+template BabySuborderAdd() {
+    signal input a;
+    signal input b;
+    signal output out;
+
+    var q = BABYJUB_SUBORDER();
+
+    signal sum <== a + b;
+    signal k;
+    k <-- sum \ q;
+
+    out <== sum - k * q;
+
+    signal lt <== LessThan(252)([out, q]);
+    lt === 1;
 }
