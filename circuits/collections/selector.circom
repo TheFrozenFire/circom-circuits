@@ -1,6 +1,6 @@
 pragma circom 2.2.2;
 
-include "circomlib/circuits/comparators.circom";
+include "comparators.circom";
 
 /// Table lookup by index. Selects rows from in[rows][cells] where in[j][0] == index[i].
 /// Missing index yields a row of zeros. rows * count IsEqual + rows * count * cells quadratic.

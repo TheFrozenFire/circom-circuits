@@ -2,9 +2,8 @@ pragma circom 2.2.2;
 
 include "curve/constants.circom";
 include "curve/babyjub.circom";
-include "circomlib/circuits/escalarmulany.circom";
-include "circomlib/circuits/escalarmulfix.circom";
-include "circomlib/circuits/bitify.circom";
+include "curve/scalarmul.circom";
+include "packing/bitify.circom";
 
 /// Schnorr blinding: R' = signerR + a*G + b*signerX
 /// https://eprint.iacr.org/2022/1676.pdf

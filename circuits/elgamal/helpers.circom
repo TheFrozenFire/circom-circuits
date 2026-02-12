@@ -1,6 +1,6 @@
 pragma circom 2.2.2;
 
-include "circomlib/circuits/babyjub.circom";
+include "curve/babyjub.circom";
 
 /// Computes the blinding factor for ElGamal encryption.
 /// out = -(message - point[0]) = point[0] - message

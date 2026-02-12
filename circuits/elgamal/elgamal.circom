@@ -1,10 +1,9 @@
 pragma circom 2.2.2;
 
 include "curve/constants.circom";
-include "circomlib/circuits/escalarmulany.circom";
-include "circomlib/circuits/escalarmulfix.circom";
-include "circomlib/circuits/babyjub.circom";
-include "circomlib/circuits/bitify.circom";
+include "curve/scalarmul.circom";
+include "curve/babyjub.circom";
+include "packing/bitify.circom";
 
 /// Computes ElGamal shared secret and ephemeral public key.
 ///   out = pubKey^y  (shared secret)

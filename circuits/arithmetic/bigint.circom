@@ -1,7 +1,7 @@
 pragma circom 2.2.2;
 
-include "circomlib/circuits/comparators.circom";
-include "circomlib/circuits/bitify.circom";
+include "comparators.circom";
+include "packing/bitify.circom";
 include "arithmetic/bigint_func.circom";
 
 /// Checks that a k-limb "carry" representation equals zero.

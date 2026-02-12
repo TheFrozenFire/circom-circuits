@@ -29,6 +29,32 @@ template Bits2NumLE(n) {
     out <== sum;
 }
 
+/// Alias for Num2BitsLE — circomlib-compatible name.
+template Num2Bits(n) {
+    signal input in;
+    signal output out[n];
+
+    var sum = 0;
+    for (var i = 0; i < n; i++) {
+        out[i] <-- (in >> i) & 1;
+        out[i] * (out[i] - 1) === 0;
+        sum += out[i] * (1 << i);
+    }
+    in === sum;
+}
+
+/// Alias for Bits2NumLE — circomlib-compatible name.
+template Bits2Num(n) {
+    signal input in[n];
+    signal output out;
+
+    var sum = 0;
+    for (var i = 0; i < n; i++) {
+        sum += in[i] * (1 << i);
+    }
+    out <== sum;
+}
+
 /// Decomposes to nIn bits (range check), outputs the lower nOut bits as a number.
 /// Effectively computes in % 2^nOut with a proof that in < 2^nIn.
 /// nIn constraints (binary) + 1 (sum).

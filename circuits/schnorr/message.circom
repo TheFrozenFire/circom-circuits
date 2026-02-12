@@ -2,7 +2,7 @@ pragma circom 2.2.2;
 
 include "packing/bitify.circom";
 include "curve/compress.circom";
-include "circomlib/circuits/sha256/sha256.circom";
+include "hash/sha256/sha256.circom";
 
 function N_COMMITMENT_BITS(n) { return (256 * 2) + n; }
 

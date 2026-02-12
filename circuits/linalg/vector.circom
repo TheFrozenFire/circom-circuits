@@ -1,6 +1,6 @@
 pragma circom 2.2.2;
 
-include "circomlib/circuits/comparators.circom";
+include "comparators.circom";
 
 /// Element-wise vector addition. Zero constraints (addition is free in R1CS).
 template VectorAdd(n) {

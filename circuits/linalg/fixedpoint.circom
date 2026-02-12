@@ -1,6 +1,6 @@
 pragma circom 2.2.2;
 
-include "circomlib/circuits/bitify.circom";
+include "packing/bitify.circom";
 
 /// Range check: constrains that `in` fits in `bits` bits (0 <= in < 2^bits).
 /// bits constraints.
