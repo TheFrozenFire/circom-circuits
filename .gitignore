@@ -1,0 +1,6 @@
+node_modules/
+dist/
+*.r1cs
+*.wtns
+*.sym
+*.json.bak
