@@ -34,8 +34,9 @@ template MUXOR(n) {
     signal output out;
 
     signal intermediate[n - 1];
-    for (var i = 0; i < n - 1; i++) {
-        intermediate[i] <== XOR() ([in[i], in[i + 1]]);
+    intermediate[0] <== XOR() ([in[0], in[1]]);
+    for (var i = 1; i < n - 1; i++) {
+        intermediate[i] <== XOR() ([intermediate[i - 1], in[i + 1]]);
     }
     out <== intermediate[n - 2];
 }

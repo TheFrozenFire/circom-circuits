@@ -53,12 +53,12 @@ template Ascon_Sbox_y2() {
     y <== MUXOR (5) (y2_in);
 }
 
-// 𝑦3 = 𝑥4𝑥0 ⊕ 𝑥4 ⊕ 𝑥3𝑥0 ⊕ 𝑥3 ⊕ 𝑥2 ⊕ 𝑥1 ⊕ 𝑥0
+// 𝑦3 = 𝑥4𝑥0 ⊕ 𝑥4 ⊕ 𝑥3𝑥0 ⊕ 𝑥3 ⊕ 𝑥2𝑥1 ⊕ 𝑥2 ⊕ 𝑥1 ⊕ 𝑥0
 template Ascon_Sbox_y3() {
     signal input {binary} x[5];
     signal output {binary} y;
 
-    signal {binary} y3_in[7];
+    signal {binary} y3_in[8];
 
     y3_in[0] <== AND () ([x[4], x[0]]);
     y3_in[1] <== x[4];
@@ -67,6 +67,9 @@ template Ascon_Sbox_y3() {
     y3_in[4] <== AND () ([x[2], x[1]]);
     y3_in[5] <== x[2];
     y3_in[6] <== x[1];
+    y3_in[7] <== x[0];
+
+    y <== MUXOR (8) (y3_in);
 }
 
 // 𝑦4 = 𝑥4𝑥1 ⊕ 𝑥4 ⊕ 𝑥3 ⊕ 𝑥1𝑥0 ⊕ 𝑥1

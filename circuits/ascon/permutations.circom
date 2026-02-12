@@ -10,15 +10,20 @@ template Ascon_Permutation(rnd) {
     input Ascon_State() in;
     output Ascon_State() out;
 
-    Ascon_State intermediate[rnd - 1];
-    for (var i = 0; i < rnd - 1; i++) {
+    Ascon_State() intermediate[rnd];
+    intermediate[0] <== Ascon_LinearDiffusion() (
+        Ascon_Sbox() (
+            Ascon_ConstantAddition(rnd, 0) (in)
+        )
+    );
+    for (var i = 1; i < rnd; i++) {
         intermediate[i] <== Ascon_LinearDiffusion() (
             Ascon_Sbox() (
-                Ascon_ConstantAddition(rnd, i) (in)
+                Ascon_ConstantAddition(rnd, i) (intermediate[i - 1])
             )
         );
     }
-    out <== intermediate[rnd - 2];
+    out <== intermediate[rnd - 1];
 }
 
 template Ascon_ConstantAddition(rnd, i) {
