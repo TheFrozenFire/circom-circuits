@@ -61,6 +61,36 @@ describe_circuit("Bits2NumLE", {
     });
 });
 
+// Circomlib-compatible aliases (functionally identical to LE variants)
+describe_circuit("Num2Bits (alias)", {
+    n2b: { path: "packing/bitify.circom", template: "Num2Bits", params: [8] },
+}, (calculators) => {
+    it("decomposes like Num2BitsLE", async () => {
+        const w = await calculators.n2b.calculate({ in: 42 });
+        // 42 = 0b00101010 → [0,1,0,1,0,1,0,0] LE
+        assert.deepEqual(w.array("main.out"), [0n, 1n, 0n, 1n, 0n, 1n, 0n, 0n]);
+    });
+
+    it("rejects overflow", async () => {
+        try {
+            await calculators.n2b.calculate({ in: 256 });
+            assert.fail("should have thrown");
+        } catch (e: any) {
+            assert.notEqual(e.message, "should have thrown");
+        }
+    });
+});
+
+describe_circuit("Bits2Num (alias)", {
+    b2n: { path: "packing/bitify.circom", template: "Bits2Num", params: [8] },
+}, (calculators) => {
+    it("reconstructs like Bits2NumLE", async () => {
+        // [0,1,0,1,0,1,0,0] LE → 42
+        const w = await calculators.b2n.calculate({ in: [0, 1, 0, 1, 0, 1, 0, 0] });
+        assert.equal(w.value("main.out"), 42n);
+    });
+});
+
 describe_circuit("TruncNumLE", {
     trunc: { path: "packing/bitify.circom", template: "TruncNumLE", params: [8, 4] },
 }, (calculators) => {
