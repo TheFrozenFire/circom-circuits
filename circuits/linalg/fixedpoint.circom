@@ -1,6 +1,7 @@
 pragma circom 2.2.2;
 
 include "packing/bitify.circom";
+include "comparators.circom";
 
 /// Range check: constrains that `in` fits in `bits` bits (0 <= in < 2^bits).
 /// bits constraints.
@@ -100,4 +101,34 @@ template FixedPointMatrixVectorMul(m, n, scale_bits) {
         }
         out[i] <== dot[i].out;
     }
+}
+
+/// Fixed-point division: computes floor(a * 2^scale_bits / b).
+/// Precondition: b != 0.
+template FixedPointDiv(scale_bits, max_bits) {
+    signal input a;
+    signal input b;
+    signal output out;
+
+    signal q;
+    signal r;
+    q <-- (a * (1 << scale_bits)) \ b;
+    r <-- (a * (1 << scale_bits)) % b;
+
+    signal qb;
+    qb <== q * b;
+    qb + r === a * (1 << scale_bits);
+
+    component rcQ = Num2Bits(max_bits + scale_bits);
+    rcQ.in <== q;
+
+    component rcR = Num2Bits(max_bits);
+    rcR.in <== r;
+
+    component lt = LessThan(max_bits);
+    lt.in[0] <== r;
+    lt.in[1] <== b;
+    lt.out === 1;
+
+    out <== q;
 }

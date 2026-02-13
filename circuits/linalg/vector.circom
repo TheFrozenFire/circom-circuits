@@ -1,6 +1,7 @@
 pragma circom 2.2.2;
 
 include "comparators.circom";
+include "packing/bitify.circom";
 
 /// Element-wise vector addition. Zero constraints (addition is free in R1CS).
 template VectorAdd(n) {
@@ -87,4 +88,93 @@ template VectorIsEqual(n) {
         acc[i] <== acc[i - 1] * eq[i].out;
     }
     out <== acc[n - 1];
+}
+
+/// Element-wise vector multiplication (Hadamard product). n constraints.
+template HadamardProduct(n) {
+    signal input a[n];
+    signal input b[n];
+    signal output out[n];
+
+    for (var i = 0; i < n; i++) {
+        out[i] <== a[i] * b[i];
+    }
+}
+
+/// Squared Euclidean distance between two vectors: sum((a_i - b_i)^2). n constraints.
+template EuclideanDistanceSquared(n) {
+    signal input a[n];
+    signal input b[n];
+    signal output out;
+
+    signal diff[n];
+    signal squares[n];
+    var sum = 0;
+    for (var i = 0; i < n; i++) {
+        diff[i] <== a[i] - b[i];
+        squares[i] <== diff[i] * diff[i];
+        sum += squares[i];
+    }
+    out <== sum;
+}
+
+/// Linear combination of k n-dimensional vectors. k*n constraints.
+template WeightedSum(n, k) {
+    signal input w[k];
+    signal input v[k][n];
+    signal output out[n];
+
+    signal products[k][n];
+    for (var j = 0; j < n; j++) {
+        var sum = 0;
+        for (var i = 0; i < k; i++) {
+            products[i][j] <== w[i] * v[i][j];
+            sum += products[i][j];
+        }
+        out[j] <== sum;
+    }
+}
+
+/// Average of k n-dimensional vectors via integer division by constant k.
+/// Uses range check and LessThan to verify the remainder.
+template VectorMean(n, k) {
+    signal input v[k][n];
+    signal output out[n];
+
+    var kBits = 1;
+    var temp = k;
+    while (temp > 1) {
+        kBits++;
+        temp = (temp + 1) >> 1;
+    }
+    kBits += 1;
+
+    signal s[n];
+    signal q[n];
+    signal r[n];
+    component rc[n];
+    component lt[n];
+
+    for (var j = 0; j < n; j++) {
+        var sum = 0;
+        for (var i = 0; i < k; i++) {
+            sum += v[i][j];
+        }
+        s[j] <== sum;
+
+        q[j] <-- s[j] \ k;
+        r[j] <-- s[j] % k;
+
+        s[j] === q[j] * k + r[j];
+
+        rc[j] = Num2Bits(kBits);
+        rc[j].in <== r[j];
+
+        lt[j] = LessThan(kBits);
+        lt[j].in[0] <== r[j];
+        lt[j].in[1] <== k;
+        lt[j].out === 1;
+
+        out[j] <== q[j];
+    }
 }

@@ -127,3 +127,27 @@ describe_circuit("FixedPointMatrixVectorMul", {
         assert.equal(w.value("main.out[1]"), 400n);
     });
 });
+
+describe_circuit("FixedPointDiv", {
+    fpd: { path: "linalg/fixedpoint.circom", template: "FixedPointDiv", params: [8, 16] },
+}, (calculators) => {
+    // scale_bits=8, S=256, max_bits=16
+
+    it("divides 6.0 / 2.0 = 3.0", async () => {
+        // 6.0→1536, 2.0→512. floor(1536 * 256 / 512) = floor(393216/512) = 768 (3.0)
+        const w = await calculators.fpd.calculate({ a: 1536, b: 512 });
+        assert.equal(w.value("main.out"), 768n);
+    });
+
+    it("divides 1.0 / 1.0 = 1.0", async () => {
+        // 256 * 256 / 256 = 256
+        const w = await calculators.fpd.calculate({ a: 256, b: 256 });
+        assert.equal(w.value("main.out"), 256n);
+    });
+
+    it("divides 1.0 / 4.0 = 0.25", async () => {
+        // 256 * 256 / 1024 = 65536 / 1024 = 64 (0.25)
+        const w = await calculators.fpd.calculate({ a: 256, b: 1024 });
+        assert.equal(w.value("main.out"), 64n);
+    });
+});
