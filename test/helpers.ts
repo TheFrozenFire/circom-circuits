@@ -1,4 +1,4 @@
-import { Build } from "@frozenfire/circom-build";
+import { Build, SnarkJSSetup } from "@frozenfire/circom-build";
 import { Witness, SymbolReader } from "@frozenfire/circom-witness";
 import { readFile } from "fs/promises";
 
@@ -23,6 +23,38 @@ export type CircuitDef = {
  *       });
  *   });
  */
+/** Per-build timeout in milliseconds. Default: 60 seconds. */
+export let COMPILE_TIMEOUT_MS = 60_000;
+
+/**
+ * Compile a circuit and return its R1CS constraint count.
+ * Rejects if compilation exceeds COMPILE_TIMEOUT_MS.
+ */
+export async function compile_and_count(def: CircuitDef): Promise<number> {
+    const build = new Build(
+        def.path,
+        def.template,
+        def.params ?? [],
+        "2.2.2",
+        def.publicInputs ?? []
+    );
+
+    const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(
+            `compile_and_count timed out after ${COMPILE_TIMEOUT_MS}ms: ${def.template}(${(def.params ?? []).join(",")})`
+        )), COMPILE_TIMEOUT_MS)
+    );
+
+    const compile = (async () => {
+        const { command } = await build.compile();
+        const setup = new SnarkJSSetup(command.paths.r1cs);
+        const details = await setup.r1cs_details;
+        return details.nConstraints;
+    })();
+
+    return Promise.race([compile, timeout]);
+}
+
 export function describe_circuit(
     name: string,
     circuits: Record<string, CircuitDef>,

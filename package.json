@@ -9,12 +9,16 @@
         "dist"
     ],
     "scripts": {
-        "test": "mocha --import=tsx"
+        "test": "mocha --import=tsx --grep @slow --invert",
+        "test:slow": "mocha --import=tsx --grep @slow --timeout 0",
+        "test:all": "mocha --import=tsx --timeout 0",
+        "generate:embeddings": "tsx scripts/generate-embeddings.ts"
     },
     "devDependencies": {
         "@eslint/js": "^9.5.0",
         "@ethersproject/wallet": "^5.7",
         "@frozenfire/circom-build": "^0.10.0",
+        "@huggingface/transformers": "^3.8.1",
         "@rollup/plugin-commonjs": "^24.0.0",
         "@rollup/plugin-json": "^6.0.0",
         "@rollup/plugin-node-resolve": "^15.0.1",
