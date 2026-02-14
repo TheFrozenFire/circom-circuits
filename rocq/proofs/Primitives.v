@@ -275,6 +275,133 @@ Proof.
       lia.
 Qed.
 
+(** * Big Integer Limb Representation *)
+
+(** Convert a list of n-bit limbs to a number (little-endian).
+    limbs_to_num n [l0; l1; ...; lk] = l0 + l1*2^n + l2*2^(2n) + ... *)
+Fixpoint limbs_to_num (n : nat) (limbs : list Z) : Z :=
+  match limbs with
+  | [] => 0
+  | l :: rest => l + 2 ^ Z.of_nat n * limbs_to_num n rest
+  end.
+
+Lemma limbs_to_num_cons : forall n l rest,
+  limbs_to_num n (l :: rest) = l + 2 ^ Z.of_nat n * limbs_to_num n rest.
+Proof. intros. reflexivity. Qed.
+
+Lemma limbs_to_num_nil : forall n, limbs_to_num n [] = 0.
+Proof. intros. reflexivity. Qed.
+
+(** Pointwise addition of limbs adds their numeric values. *)
+Lemma limbs_to_num_add : forall n a b,
+  length a = length b ->
+  limbs_to_num n a + limbs_to_num n b =
+    limbs_to_num n (map (fun p => fst p + snd p) (combine a b)).
+Proof.
+  induction a as [| a0 arest IH]; intros b Hlen.
+  - destruct b; [simpl; lia | simpl in Hlen; lia].
+  - destruct b as [| b0 brest]; [simpl in Hlen; lia |].
+    simpl combine. simpl map. rewrite !limbs_to_num_cons.
+    simpl fst. simpl snd.
+    assert (IHapp := IH brest ltac:(simpl in Hlen; lia)).
+    lia.
+Qed.
+
+(** Carry propagation with incoming carry: generalized version.
+    Proves: carry_in + limbs_to_num n inp = limbs_to_num n out + last_carry * 2^(n*k)
+    where each limb satisfies in[i] + carry[i-1] = out[i] + carry[i] * 2^n. *)
+Lemma carry_propagation_gen :
+  forall (n : nat) (inp out carries : list Z) (carry_in : Z),
+  length inp = length out ->
+  length carries = length inp ->
+  (length inp > 0)%nat ->
+  (forall i, (i < length inp)%nat ->
+    nth i inp 0 + (if (i =? 0)%nat then carry_in else nth (i - 1) carries 0) =
+      nth i out 0 + nth i carries 0 * 2 ^ Z.of_nat n) ->
+  carry_in + limbs_to_num n inp =
+    limbs_to_num n out +
+    nth (length inp - 1) carries 0 * 2 ^ (Z.of_nat n * Z.of_nat (length inp)).
+Proof.
+  induction inp as [| a rest IH]; intros out carries carry_in Hlen Hclen Hgt Hprop.
+  - simpl in Hgt. lia.
+  - destruct out as [| b outs]; [simpl in Hlen; lia |].
+    destruct carries as [| c cs]; [simpl in Hclen; lia |].
+    rewrite !limbs_to_num_cons.
+    assert (H0 := Hprop 0%nat ltac:(simpl; lia)).
+    simpl Nat.eqb in H0. simpl nth in H0.
+    assert (Hlen' : length rest = length outs) by (simpl in Hlen; lia).
+    assert (Hclen' : length cs = length rest) by (simpl in Hclen; lia).
+    destruct rest as [| a2 rest'].
+    + (* Single limb: rest is empty *)
+      rewrite !limbs_to_num_nil. rewrite !Z.mul_0_r.
+      simpl in Hlen'. destruct outs; [| simpl in Hlen'; lia].
+      rewrite limbs_to_num_nil. rewrite Z.mul_0_r.
+      simpl length. simpl nth. rewrite Z.mul_1_r. lia.
+    + (* Multi-limb *)
+      simpl in H0.
+      assert (Hgt' : (length (a2 :: rest') > 0)%nat) by (simpl; lia).
+      assert (Hprop' : forall i, (i < length (a2 :: rest'))%nat ->
+        nth i (a2 :: rest') 0 +
+          (if (i =? 0)%nat then c else nth (i - 1) cs 0) =
+        nth i outs 0 + nth i cs 0 * 2 ^ Z.of_nat n).
+      { intros i Hi. destruct i.
+        - specialize (Hprop 1%nat ltac:(simpl in *; lia)).
+          simpl Nat.eqb in Hprop |- *.
+          change (nth 1 (a :: a2 :: rest') 0) with (nth 0 (a2 :: rest') 0) in Hprop.
+          change (nth 0 (c :: cs) 0) with c in Hprop.
+          change (nth 1 (b :: outs) 0) with (nth 0 outs 0) in Hprop.
+          change (nth 1 (c :: cs) 0) with (nth 0 cs 0) in Hprop.
+          exact Hprop.
+        - specialize (Hprop (S (S i)) ltac:(simpl in *; lia)).
+          simpl Nat.eqb in Hprop |- *.
+          change (nth (S (S i)) (a :: a2 :: rest') 0)
+            with (nth (S i) (a2 :: rest') 0) in Hprop.
+          change (nth (S (S i)) (b :: outs) 0)
+            with (nth (S i) outs 0) in Hprop.
+          change (nth (S (S i)) (c :: cs) 0)
+            with (nth (S i) cs 0) in Hprop.
+          replace (S (S i) - 1)%nat with (S i) in Hprop by lia.
+          change (nth (S i) (c :: cs) 0) with (nth i cs 0) in Hprop.
+          replace (S i - 1)%nat with i by lia.
+          exact Hprop. }
+      assert (IHapp := IH outs cs c Hlen' Hclen' Hgt' Hprop').
+      simpl length. simpl length in IHapp.
+      replace (S (S (length rest')) - 1)%nat with (S (length rest'))%nat by lia.
+      replace (S (length rest') - 1)%nat with (length rest')%nat in IHapp by lia.
+      change (nth (S (length rest')) (c :: cs) 0) with (nth (length rest') cs 0).
+      rewrite !Nat2Z.inj_succ. rewrite Z.mul_succ_r.
+      rewrite Z.pow_add_r by lia. lia.
+Qed.
+
+(** Carry propagation: if each limb satisfies the carry equation
+    and the final carry is zero, then the limb values are equal.
+    This is the core lemma for BigAdd/BigSub/BigMult carry propagation. *)
+Lemma carry_propagation_preserves_value :
+  forall (n : nat) (inp out carries : list Z),
+  length inp = length out ->
+  length carries = length inp ->
+  (length inp > 0)%nat ->
+  (* First limb: in[0] = out[0] + carry[0] * 2^n *)
+  nth 0 inp 0 = nth 0 out 0 + nth 0 carries 0 * 2 ^ Z.of_nat n ->
+  (* Middle limbs: in[i] + carry[i-1] = out[i] + carry[i] * 2^n *)
+  (forall i, (0 < i < length inp)%nat ->
+    nth i inp 0 + nth (i - 1) carries 0 =
+      nth i out 0 + nth i carries 0 * 2 ^ Z.of_nat n) ->
+  (* Final carry is zero *)
+  nth (length inp - 1) carries 0 = 0 ->
+  limbs_to_num n inp = limbs_to_num n out.
+Proof.
+  intros n inp out carries Hlen Hclen Hgt H0 Hmid Hfinal.
+  assert (Hgen := carry_propagation_gen n inp out carries 0 Hlen Hclen Hgt).
+  assert (Hprop : forall i, (i < length inp)%nat ->
+    nth i inp 0 + (if (i =? 0)%nat then 0 else nth (i - 1) carries 0) =
+      nth i out 0 + nth i carries 0 * 2 ^ Z.of_nat n).
+  { intros i Hi. destruct (Nat.eqb_spec i 0) as [Heq | Hne].
+    - subst i. lia.
+    - apply Hmid. lia. }
+  specialize (Hgen Hprop). rewrite Hfinal in Hgen. lia.
+Qed.
+
 (** * Bitwise Operation Definitions *)
 
 (** Binary XOR: a + b - 2*a*b *)
