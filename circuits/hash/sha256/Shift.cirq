@@ -1,8 +1,19 @@
 circuit: shift.circom
 ast: shift.json
 proof: Shift.v
+imports: [Primitives]
 
 templates:
   ShR:
-    theorems:
-      - ShR_spec: output bits are input bits shifted right by r positions (zero-filled)
+    source: shift.circom:4-15
+    constraints: []
+    notes: pure rewiring — no R1CS constraints
+    properties:
+      ShR_spec:
+        type: Theorem
+        statement: "forall i, nth i out 0 = if (i + r < n) then nth (i + r) inp 0 else 0"
+        assumes:
+          - length inp = n, length out = n
+          - forall i < n, nth i out 0 = if (i+r <? n) then nth (i+r) inp 0 else 0
+        technique: direct from assumption (specification is the constraint)
+        depends_on: []

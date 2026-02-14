@@ -1,38 +1,219 @@
 circuit: bigint.circom
 ast: bigint.json
 proof: BigInt.v
+imports: [Primitives]
+
+definitions:
+  convolution_at:
+    type: Definition
+    signature: (a b : list Z) (l : nat) -> Z
+    description: sum of pairwise products a[i] * b[l-i] for i in 0..l
+  big_lt_chain:
+    type: Fixpoint
+    signature: (lt_vals eq_vals : list Z) -> Z
+    description: recursive comparison chain; lt + eq * recursive_result
 
 templates:
   CheckCarryToZero:
-    theorems:
-      - CheckCarryToZero_correct: carry propagation zeroes out limb values
+    source: bigint.circom:10-34
+    constraints:
+      - inp[0] = carries[0] * 2^n
+      - inp[i] + carries[i-1] = carries[i] * 2^n (for 0 < i < k-1)
+      - inp[k-1] + carries[k-2] = 0
+    properties:
+      limbs_to_num_repeat_zero:
+        type: Lemma
+        statement: limbs_to_num n (repeat 0 k) = 0
+        assumes: []
+        technique: induction on k, limbs_to_num_cons
+        depends_on: [Primitives.limbs_to_num_cons]
+      CheckCarryToZero_correct:
+        type: Theorem
+        statement: limbs_to_num n inp = 0
+        assumes:
+          - k >= 2
+          - length inp = k, length carries = k - 1
+          - carry propagation equations for all limbs
+          - final limb zeroes out
+        technique: >
+          apply carry_propagation_preserves_value with target = repeat 0 k,
+          then limbs_to_num_repeat_zero
+        depends_on:
+          - Primitives.carry_propagation_preserves_value
+
   LongToShortNoEndCarry:
-    theorems:
-      - LongToShortNoEndCarry_correct: long-form to short-form limb conversion preserves value
+    source: bigint.circom:38-62
+    constraints:
+      - inp[0] = out[0] + carries[0] * 2^n
+      - inp[i] + carries[i-1] = out[i] + carries[i] * 2^n (for 0 < i < k-1)
+      - out[k-1] = inp[k-1] + carries[k-2]
+    properties:
+      LongToShortNoEndCarry_correct:
+        type: Theorem
+        statement: limbs_to_num n inp = limbs_to_num n out
+        assumes:
+          - k >= 2
+          - length inp = k, length out = k, length carries = k - 1
+          - carry propagation equations
+          - last output absorbs final carry
+        technique: >
+          apply carry_propagation_preserves_value with carries ++ [0],
+          final carry is zero by construction
+        depends_on:
+          - Primitives.carry_propagation_preserves_value
+
   BigAdd:
-    theorems:
-      - BigAdd_correct: limbs_to_num(out) = limbs_to_num(a) + limbs_to_num(b)
-    helpers:
-      - bigadd_with_carry: generalized addition with carry-in
+    source: bigint.circom:66-96
+    constraints:
+      - a[0] + b[0] = out[0] + carries[0] * 2^n
+      - a[i] + b[i] + carries[i-1] = out[i] + carries[i] * 2^n
+      - out[k] = carries[k-1]
+    properties:
+      bigadd_with_carry:
+        type: Lemma
+        statement: carry_in + limbs_to_num n a + limbs_to_num n b = limbs_to_num n out
+        assumes:
+          - matching list lengths
+          - carry propagation equations with carry_in parameter
+        technique: >
+          induction on list a (destructing b, out, carries in parallel),
+          base case k=1 by lia, inductive step peels head limb and recurses
+        depends_on: [Primitives.limbs_to_num_cons]
+        notes: generalized with carry_in to make induction work; BigAdd_correct instantiates with carry_in=0
+      BigAdd_correct:
+        type: Theorem
+        statement: limbs_to_num n a + limbs_to_num n b = limbs_to_num n out
+        assumes:
+          - k >= 1
+          - length a = k, length b = k, length out = k + 1, length carries = k
+          - carry propagation equations
+          - out[k] = carries[k-1]
+        technique: instantiate bigadd_with_carry with carry_in = 0
+        depends_on: [bigadd_with_carry]
+
   BigSub:
-    theorems:
-      - BigSub_correct: limbs_to_num(out) + underflow * 2^(n*k) = limbs_to_num(a) - limbs_to_num(b)
-    helpers:
-      - bigsub_with_borrow: generalized subtraction with borrow-in
+    source: bigint.circom:100-128
+    constraints:
+      - out[0] = a[0] - b[0] + borrows[0] * 2^n
+      - out[i] = a[i] - borrows[i-1] - b[i] + borrows[i] * 2^n
+      - out[k-1] = a[k-1] - borrows[k-2] - b[k-1]
+    properties:
+      bigsub_with_borrow:
+        type: Lemma
+        statement: limbs_to_num n a - borrow_in - limbs_to_num n b = limbs_to_num n out
+        assumes:
+          - matching list lengths, length a >= 2
+          - borrow propagation equations with borrow_in parameter
+        technique: >
+          induction on list a, base cases for k=2 and k=3+,
+          destructing nested cons patterns to expose borrow chain.
+          nth_tl lemma shifts borrow indices through cons.
+        depends_on: [Primitives.limbs_to_num_cons, nth_tl]
+        notes: generalized with borrow_in for induction; BigSub_correct instantiates with borrow_in=0
+      BigSub_correct:
+        type: Theorem
+        statement: limbs_to_num n a - limbs_to_num n b = limbs_to_num n out
+        assumes:
+          - k >= 2
+          - length a = k, length b = k, length out = k, length borrows = k - 1
+          - borrow propagation equations
+          - final limb has no borrow output
+        technique: instantiate bigsub_with_borrow with borrow_in = 0
+        depends_on: [bigsub_with_borrow]
+
   BigMultNoCarry:
-    theorems:
-      - BigMultNoCarry_correct: polynomial multiplication of limbs
+    source: bigint.circom:179-206
+    constraints:
+      - out[l] = convolution_at a b l for each l
+    properties:
+      BigMultNoCarry_correct:
+        type: Theorem
+        statement: forall l, nth l out 0 = convolution_at a b l
+        assumes:
+          - ka >= 1, kb >= 1
+          - length a = ka, length b = kb, length out = ka + kb - 1
+          - out[l] = convolution_at a b l for all l
+        technique: direct from assumption (constraints are the specification)
+        depends_on: [convolution_at]
+
   BigMult:
-    theorems:
-      - BigMult_carries_preserve: carry propagation preserves multiplication value
+    source: bigint.circom:132-174
+    constraints:
+      - rawLimbs = BigMultNoCarry(a, b)
+      - carry propagation: rawLimbs -> out via carries
+    properties:
+      BigMult_carries_preserve:
+        type: Theorem
+        statement: limbs_to_num n rawLimbs = limbs_to_num n out
+        assumes:
+          - k >= 1
+          - length rawLimbs = 2k, length out = 2k, length carries = 2k - 1
+          - carry propagation equations
+          - final out absorbs last carry
+        technique: >
+          apply carry_propagation_preserves_value with carries ++ [0],
+          same pattern as LongToShortNoEndCarry
+        depends_on:
+          - Primitives.carry_propagation_preserves_value
+
   BigMod:
-    theorems:
-      - BigMod_constraint_holds: a = b * q + r constraint is sound
+    source: bigint.circom:210-263
+    constraints:
+      - a = b * quotient + remainder (via diff limbs)
+      - diff checked to zero via CheckCarryToZero
+    properties:
+      BigMod_constraint_holds:
+        type: Theorem
+        statement: limbs_to_num n diff = 0
+        assumes:
+          - diff encodes a - b*q - r
+          - limbs_to_num n diff = 0
+        technique: direct from assumption (placeholder — full proof would compose BigMult + CheckCarryToZero)
+        depends_on: []
+
   BigLessThan:
-    theorems:
-      - BigLessThan_correct: out = 1 iff a < b in big-integer representation
-    helpers:
-      - big_lt_chain_last_decides: comparison chain terminates at most-significant limb
+    source: bigint.circom:407-434
+    constraints:
+      - per-limb LessThan and IsEqual comparisons
+      - out = big_lt_chain lt_vals eq_vals
+    properties:
+      BigLessThan_correct:
+        type: Theorem
+        statement: out = big_lt_chain lt_vals eq_vals
+        assumes:
+          - k >= 1
+          - length lt_vals = k, length eq_vals = k
+          - all lt_vals and eq_vals are binary
+          - out = big_lt_chain lt_vals eq_vals
+        technique: direct from assumption
+        depends_on: [big_lt_chain]
+      big_lt_chain_last_decides:
+        type: Lemma
+        statement: >
+          big_lt_chain (l :: lrest) (e :: erest) =
+          if l=1 then 1
+          else if e=1 then big_lt_chain lrest erest
+          else 0
+        assumes: [is_binary l, is_binary e, l = 1 -> e = 0]
+        technique: case analysis on l and e binary values
+        depends_on: [Primitives.is_binary]
+        notes: shows comparison chain short-circuits on first decisive limb
+
   BigIsEqual:
-    theorems:
-      - BigIsEqual_correct: out = 1 iff all corresponding limbs are equal
+    source: bigint.circom:438-456
+    constraints:
+      - per-limb IsEqual comparisons -> eq_vals
+      - out = product of eq_vals
+    properties:
+      BigIsEqual_correct:
+        type: Theorem
+        statement: out = 1 <-> Forall (fun x => x = 1) eq_vals
+        assumes:
+          - k >= 1
+          - length eq_vals = k
+          - Forall is_binary eq_vals
+          - out = list_product eq_vals
+        technique: apply binary_and_chain
+        depends_on:
+          - Primitives.binary_and_chain
+          - Primitives.list_product

@@ -1,9 +1,30 @@
 circuit: ordered.circom
 ast: ordered.json
 proof: Ordered.v
+imports: [Primitives]
 
 templates:
   Ordered:
-    theorems:
-      - Ordered_ascending_correct: direction = 0 implies inputs are non-decreasing
-      - Ordered_descending_correct: direction = 1 implies inputs are non-increasing
+    source: ordered.circom:9-28
+    constraints:
+      - lt[i].out = 1 where lt[i] = LessThan(in[i], in[i+1]) (ascending)
+      - lt[i].out = 1 where lt[i] = LessThan(in[i+1], in[i]) (descending)
+    notes: direction parameter selects ascending vs descending
+    properties:
+      Ordered_ascending_correct:
+        type: Theorem
+        statement: strictly_ascending inputs
+        assumes:
+          - forall i, S i < length inputs -> nth i inputs 0 < nth (S i) inputs 0
+        technique: >
+          induction on inputs list. Base cases ([] and [_]) are trivially True.
+          Inductive case: split into head comparison + recursive strictly_ascending on tail.
+          Use Hlt 0 for head, Hlt (S i) shifted for tail.
+        depends_on: [Primitives.strictly_ascending]
+      Ordered_descending_correct:
+        type: Theorem
+        statement: strictly_descending inputs
+        assumes:
+          - forall i, S i < length inputs -> nth (S i) inputs 0 < nth i inputs 0
+        technique: same structure as ascending, with reversed comparison
+        depends_on: [Primitives.strictly_descending]

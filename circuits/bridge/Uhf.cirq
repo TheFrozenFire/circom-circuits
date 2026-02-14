@@ -1,15 +1,86 @@
 circuit: uhf.circom
 ast: uhf.json
 proof: Uhf.v
+imports: [Primitives]
+
+definitions:
+  poly_eval:
+    type: Fixpoint
+    signature: (coeffs : list Z) (r : Z) -> Z
+    description: >
+      polynomial evaluation: c0 + r * (c1 + r * (c2 + ...)).
+      Standard left-to-right evaluation matching the mathematical definition
+      x[0] + x[1]*r + x[2]*r^2 + ... + x[n-1]*r^(n-1).
+  horner_chain:
+    type: Fixpoint
+    signature: (seed : Z) (r : Z) (coeffs : list Z) -> Z
+    description: >
+      right-to-left Horner accumulation: starts from seed, at each step
+      computes acc * r + c. This matches the circuit's constraint structure.
 
 templates:
   PolyUHF:
-    theorems:
-      - PolyUHF_correct: out = polynomial evaluation of coefficients at point r (Horner's method)
-      - PolyUHF_base_correct: base case for 2-element polynomial
-    helpers:
-      - poly_eval_cons: recursive step of polynomial evaluation
-      - poly_eval_app_singleton: appending element to polynomial
-      - poly_eval_removelast_last: splitting polynomial at last element
-      - horner_chain_step: single step of Horner chain
-      - horner_chain_poly_eval: Horner chain equals polynomial evaluation
+    source: uhf.circom:15-34
+    constraints:
+      - acc[0] = x[n-1] * r + x[n-2]
+      - acc[k] = acc[k-1] * r + x[n-2-k]
+      - out = acc[n-3] * r + x[0]
+    notes: >
+      Universal Hash Function via polynomial evaluation at random point r.
+      Circuit uses Horner's method (right-to-left), proof shows this equals
+      standard polynomial evaluation (left-to-right). Exactly n-1 constraints.
+    properties:
+      poly_eval_cons:
+        type: Lemma
+        statement: poly_eval (c :: rest) r = c + r * poly_eval rest r
+        assumes: []
+        technique: reflexivity (definitional)
+        depends_on: [poly_eval]
+      poly_eval_app_singleton:
+        type: Lemma
+        statement: poly_eval (l ++ [x]) r = poly_eval l r + r^(length l) * x
+        assumes: []
+        technique: induction on l, poly_eval_cons, Nat2Z.inj_succ + Z.pow_succ_r, ring
+        depends_on: [poly_eval]
+      poly_eval_removelast_last:
+        type: Lemma
+        statement: >
+          poly_eval l r = poly_eval (removelast l) r + r^(length (removelast l)) * last l d
+        assumes: [l <> []]
+        technique: rewrite l = removelast l ++ [last l d] via app_removelast_last, apply poly_eval_app_singleton
+        depends_on: [poly_eval_app_singleton]
+      horner_chain_step:
+        type: Lemma
+        statement: horner_chain seed r (c :: rest) = horner_chain (seed * r + c) r rest
+        assumes: []
+        technique: reflexivity (definitional)
+        depends_on: [horner_chain]
+      horner_chain_poly_eval:
+        type: Lemma
+        statement: horner_chain seed r coeffs = seed * r^(length coeffs) + poly_eval (rev coeffs) r
+        assumes: []
+        technique: >
+          induction on coeffs. Base case by ring.
+          Inductive step: unfold one horner step, apply IH, use poly_eval_app_singleton
+          on rev + singleton, length_rev, Nat2Z.inj_succ + Z.pow_succ_r, ring.
+        depends_on: [horner_chain, poly_eval_app_singleton]
+        notes: the key bridge lemma connecting circuit structure (Horner) to specification (poly_eval)
+      PolyUHF_correct:
+        type: Theorem
+        statement: out = poly_eval x r
+        assumes:
+          - 2 <= length x
+          - out = horner_chain (last x 0) r (rev (removelast x))
+        technique: >
+          rewrite via horner_chain_poly_eval, rev_involutive restores original order,
+          poly_eval_removelast_last splits last element, ring combines terms
+        depends_on:
+          - horner_chain_poly_eval
+          - poly_eval_removelast_last
+      PolyUHF_base_correct:
+        type: Theorem
+        statement: out = poly_eval [x0; x1] r
+        assumes: [out = x1 * r + x0]
+        technique: simpl poly_eval, lia
+        depends_on: [poly_eval]
+        notes: direct base case for n=2 (single constraint)

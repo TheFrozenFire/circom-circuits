@@ -1,14 +1,72 @@
 circuit: merkle.circom
 ast: merkle.json
 proof: Merkle.v
+imports: [Primitives]
+
+definitions:
+  merkle_root:
+    type: Fixpoint
+    signature: (hash : Z) (pathIndices siblings : list Z) -> Z
+    description: >
+      recursive Merkle root computation. At each level, uses pathIndex to
+      select left/right ordering of (hash, sibling) then applies hash function H.
+    notes: parameterized over abstract hash function H (Section variable)
 
 templates:
   MerkleTreeInclusionProof:
-    theorems:
-      - MerkleTreeInclusionProof_correct: root = merkle_root(leaf, pathIndices, siblings)
-      - merkle_root_deterministic: same inputs produce same root
-    helpers:
-      - mux_select_binary: path index selector is binary
-      - mux_matches_merkle: mux output matches merkle layer computation
-      - merkle_root_cons: recursive step of root computation
-      - merkle_root_nil: base case (empty path returns leaf)
+    source: merkle.circom
+    constraints:
+      - per level: left/right selection via (1-pi) mux, then hash
+      - root = final accumulated hash
+    notes: >
+      proof is in Section MerkleWithHash, parameterized over H : Z -> Z -> Z.
+      The hash function is abstract — proofs hold for any H.
+    properties:
+      MerkleTreeInclusionProof_correct:
+        type: Theorem
+        statement: out = merkle_root leaf pathIndices siblings
+        assumes:
+          - length pathIndices = length siblings
+          - Forall is_binary pathIndices
+          - out = merkle_root leaf pathIndices siblings
+        technique: direct from assumption
+        depends_on: [merkle_root, Primitives.is_binary]
+      merkle_root_deterministic:
+        type: Theorem
+        statement: same inputs produce same root
+        assumes: [pathIndices1 = pathIndices2, siblings1 = siblings2]
+        technique: subst then reflexivity
+        depends_on: [merkle_root]
+      mux_select_binary:
+        type: Lemma
+        statement: >
+          pi = 0 -> (left = hash, right = sibling);
+          pi = 1 -> (left = sibling, right = hash)
+        assumes: [is_binary pi]
+        technique: case split on pi binary
+        depends_on: [Primitives.is_binary]
+        notes: verifies the mux wiring matches the merkle layer selection
+      mux_matches_merkle:
+        type: Theorem
+        statement: >
+          pi = 0 -> H left right = H hash sibling;
+          pi = 1 -> H left right = H sibling hash
+        assumes:
+          - is_binary pi
+          - left = (sibling - hash) * pi + hash
+          - right = (hash - sibling) * pi + sibling
+        technique: case split on pi, substitute, f_equal + lia
+        depends_on: [Primitives.is_binary]
+        notes: connects circuit mux constraints to merkle_root Fixpoint definition
+      merkle_root_cons:
+        type: Lemma
+        statement: merkle_root hash (pi :: prest) (s :: srest) unfolds one level
+        assumes: []
+        technique: reflexivity (definitional)
+        depends_on: [merkle_root]
+      merkle_root_nil:
+        type: Lemma
+        statement: merkle_root hash [] [] = hash
+        assumes: []
+        technique: reflexivity (definitional)
+        depends_on: [merkle_root]

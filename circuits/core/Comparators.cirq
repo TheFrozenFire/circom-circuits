@@ -1,18 +1,86 @@
 circuit: comparators.circom
 ast: comparators.json
 proof: Comparators.v
+imports: [Primitives]
 
 templates:
   IsZero:
-    theorems:
-      - IsZero_sound: out = 1 iff inp = 0
-      - IsZero_binary: out is binary
+    source: comparators.circom:6-15
+    constraints:
+      - out = 1 - inp * inv
+      - inp * out = 0
+    properties:
+      IsZero_sound:
+        type: Theorem
+        statement: inp = 0 <-> out = 1
+        assumes: [out = 1 - inp * inv, inp * out = 0]
+        technique: case split on inp = 0, algebraic manipulation
+        depends_on: []
+      IsZero_binary:
+        type: Theorem
+        statement: is_binary out
+        assumes: [out = 1 - inp * inv, inp * out = 0]
+        technique: Z.mul_eq_0 to split product, case analysis on inp = 0
+        depends_on: [Primitives.is_binary]
+
   IsEqual:
-    theorems:
-      - IsEqual_sound: out = 1 iff a = b
+    source: comparators.circom:18-23
+    constraints:
+      - out = 1 - (b - a) * inv
+      - (b - a) * out = 0
+    notes: delegates to IsZero on (b - a)
+    properties:
+      IsEqual_sound:
+        type: Theorem
+        statement: a = b <-> out = 1
+        assumes: [out = 1 - (b - a) * inv, "(b - a) * out = 0"]
+        technique: rewrite to IsZero_sound on (b - a), lia
+        depends_on: [IsZero_sound]
+
   LessThan:
-    theorems:
-      - LessThan_sound: out = 1 iff a < b for n-bit inputs
+    source: comparators.circom:27-34
+    constraints:
+      - bits = Num2Bits(n+1)(a + 2^n - b)
+      - out = 1 - bits[n]
+    notes: >
+      key idea: a + 2^n - b is computed as (n+1)-bit value.
+      If a < b the value is in [0, 2^n) so bit n is 0 giving out = 1.
+      If a >= b the value is in [2^n, 2^(n+1)) so bit n is 1 giving out = 0.
+    properties:
+      LessThan_sound:
+        type: Theorem
+        statement: a < b <-> out = 1
+        assumes:
+          - 0 < n
+          - 0 <= a < 2^n
+          - 0 <= b < 2^n
+          - length bits = S n
+          - all_binary bits
+          - bits_to_num bits = a + 2^n - b
+          - out = 1 - nth n bits 0
+        technique: >
+          split bits into firstn n and top bit via firstn_skipn_middle,
+          use bits_to_num_app to decompose, case split on top bit value
+        depends_on:
+          - Primitives.all_binary
+          - Primitives.bits_to_num
+          - Primitives.bits_to_num_bound
+          - Primitives.bits_to_num_app
+
   ForceEqualIfEnabled:
-    theorems:
-      - ForceEqualIfEnabled_sound: enabled = 1 implies a = b
+    source: comparators.circom:37-43
+    constraints:
+      - isEq = 1 - (b - a) * inv
+      - (b - a) * isEq = 0
+      - (1 - isEq) * enabled = 0
+    properties:
+      ForceEqualIfEnabled_sound:
+        type: Theorem
+        statement: enabled = 1 -> a = b
+        assumes:
+          - isEq = 1 - (b - a) * inv
+          - (b - a) * isEq = 0
+          - (1 - isEq) * enabled = 0
+          - enabled = 1
+        technique: derive isEq = 1 from force constraint, apply IsZero_sound
+        depends_on: [IsZero_sound]

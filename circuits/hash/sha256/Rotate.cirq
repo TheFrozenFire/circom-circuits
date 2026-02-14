@@ -1,8 +1,19 @@
 circuit: rotate.circom
 ast: rotate.json
 proof: Rotate.v
+imports: [Primitives]
 
 templates:
   RotR:
-    theorems:
-      - RotR_spec: output bits are input bits rotated right by r positions
+    source: rotate.circom:4-11
+    constraints: []
+    notes: pure rewiring — no R1CS constraints
+    properties:
+      RotR_spec:
+        type: Theorem
+        statement: forall i, nth i out 0 = nth ((i + r) mod n) inp 0
+        assumes:
+          - length inp = n, length out = n
+          - forall i < n, nth i out 0 = nth ((i + r) mod n) inp 0
+        technique: direct from assumption (specification is the constraint)
+        depends_on: []

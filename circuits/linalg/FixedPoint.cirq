@@ -1,20 +1,87 @@
 circuit: fixedpoint.circom
 ast: fixedpoint.json
 proof: FixedPoint.v
+imports: [Primitives]
 
 templates:
   InRange:
-    theorems:
-      - InRange_correct: inp is representable in n bits
+    source: fixedpoint.circom:8-12
+    constraints:
+      - bits[i] * (bits[i] - 1) = 0 for each i
+      - inp = bits_to_num bits
+    properties:
+      InRange_correct:
+        type: Theorem
+        statement: 0 <= inp < 2^(length bits)
+        assumes:
+          - binary constraints on bits elements
+          - inp = bits_to_num bits
+        technique: binary_constraints_imply_all_binary, then bits_to_num_bound
+        depends_on:
+          - Primitives.binary_constraints_imply_all_binary
+          - Primitives.bits_to_num_bound
+
   ApproxEqual:
-    theorems:
-      - ApproxEqual_correct: out = 1 iff |a - b| < error_threshold
+    source: fixedpoint.circom:17-28
+    constraints:
+      - diff = a - b + 2^t
+      - bits = Num2Bits(t+1)(diff)
+    notes: >
+      adding 2^t bias ensures diff is non-negative.
+      Decomposing into t+1 bits proves |a - b| < 2^t.
+    properties:
+      ApproxEqual_correct:
+        type: Theorem
+        statement: -2^t <= a - b < 2^t
+        assumes:
+          - diff = a - b + 2^t
+          - length bits = S t
+          - binary constraints on bits
+          - diff = bits_to_num bits
+        technique: >
+          binary_constraints_imply_all_binary, bits_to_num_bound gives
+          0 <= diff < 2^(t+1), rewrite 2^(t+1) = 2 * 2^t,
+          substitute diff = a - b + 2^t, lia for bounds
+        depends_on:
+          - Primitives.binary_constraints_imply_all_binary
+          - Primitives.bits_to_num_bound
+
   FixedPointMul:
-    theorems:
-      - FixedPointMul_correct: out = (a * b) / 2^scale (fixed-point multiplication)
+    source: fixedpoint.circom:34-53
+    constraints:
+      - a * b = q * S + r where S = 2^scale
+      - 0 <= r < S (range checked)
+    properties:
+      FixedPointMul_correct:
+        type: Theorem
+        statement: q = (a * b) / S /\ r = (a * b) mod S
+        assumes: [a * b = q * S + r, 0 <= r < S]
+        technique: Zdiv_unique and Zmod_unique
+        depends_on: []
+
   FixedPointDiv:
-    theorems:
-      - FixedPointDiv_correct: out * b = a * 2^scale (fixed-point division)
+    source: fixedpoint.circom:108-134
+    constraints:
+      - q * b + r = a * S where S = 2^scale
+      - 0 <= r < b (range checked)
+    properties:
+      FixedPointDiv_correct:
+        type: Theorem
+        statement: q = (a * S) / b /\ r = (a * S) mod b
+        assumes: [b > 0, q * b + r = a * S, 0 <= r < b]
+        technique: Zdiv_unique and Zmod_unique
+        depends_on: []
+
   FixedPointDotProduct:
-    theorems:
-      - FixedPointDotProduct_correct: out = sum(a[i] * b[i]) / 2^scale
+    source: fixedpoint.circom:58-85
+    constraints:
+      - rawDot = sum(a[i] * b[i])
+      - rawDot = q * S + r where S = 2^scale
+      - 0 <= r < S
+    properties:
+      FixedPointDotProduct_correct:
+        type: Theorem
+        statement: q = rawDot / S /\ r = rawDot mod S
+        assumes: [rawDot = q * S + r, 0 <= r < S]
+        technique: Zdiv_unique and Zmod_unique
+        depends_on: []

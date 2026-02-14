@@ -1,8 +1,22 @@
 circuit: xor3.circom
 ast: xor3.json
 proof: Xor3.v
+imports: [Primitives]
 
 templates:
   Xor3:
-    theorems:
-      - Xor3_correct: out = a xor b xor c for binary inputs
+    source: xor3.circom:5-16
+    constraints:
+      - mid[k] = b[k] * c[k]
+      - out[k] = a[k] * (1 - 2*b[k] - 2*c[k] + 4*mid[k]) + b[k] + c[k] - 2*mid[k]
+    notes: substituting mid = b*c gives three-input XOR
+    properties:
+      Xor3_correct:
+        type: Theorem
+        statement: out = xor3_bit a b c /\ is_binary out
+        assumes:
+          - is_binary a, is_binary b, is_binary c
+          - mid = b * c
+          - out = a * (1 - 2*b - 2*c + 4*mid) + b + c - 2*mid
+        technique: case analysis on all 8 combinations of a, b, c binary values
+        depends_on: [Primitives.xor3_bit, Primitives.xor_bit, Primitives.is_binary]

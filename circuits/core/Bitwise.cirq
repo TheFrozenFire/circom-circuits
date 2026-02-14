@@ -1,23 +1,83 @@
 circuit: bitwise.circom
 ast: bitwise.json
 proof: Bitwise.v
+imports: [Primitives]
 
 templates:
   AND:
-    theorems:
-      - AND_correct: out = a * b for binary inputs
+    source: bitwise.circom:6-14
+    constraints:
+      - equality = 2*a*b - a - b + 1
+      - out = equality * b
+    properties:
+      AND_correct:
+        type: Theorem
+        statement: out = a * b /\ is_binary out
+        assumes: [is_binary a, is_binary b, out = (2*a*b - a - b + 1) * b]
+        technique: case analysis on a, b binary values
+        depends_on: [Primitives.is_binary]
+
   OR:
-    theorems:
-      - OR_correct: out = a + b - a * b for binary inputs
+    source: bitwise.circom:16-22
+    constraints:
+      - out = a + b - a * b
+    properties:
+      OR_correct:
+        type: Theorem
+        statement: (out = 1 <-> a = 1 \/ b = 1) /\ is_binary out
+        assumes: [is_binary a, is_binary b, out = a + b - a * b]
+        technique: case analysis on a, b binary values
+        depends_on: [Primitives.is_binary]
+
   XOR:
-    theorems:
-      - XOR_correct: out = a + b - 2 * a * b for binary inputs
+    source: bitwise.circom:24-30
+    constraints:
+      - out = a + b - 2 * a * b
+    properties:
+      XOR_correct:
+        type: Theorem
+        statement: (out = 1 <-> a <> b) /\ is_binary out
+        assumes: [is_binary a, is_binary b, out = a + b - 2*a*b]
+        technique: case analysis on a, b binary values
+        depends_on: [Primitives.is_binary]
+
   MUXOR:
-    theorems:
-      - MUXOR_correct: sel = 0 implies AND, sel = 1 implies OR
+    source: bitwise.circom:32-42
+    constraints:
+      - intermediate[0] = XOR(in[0], in[1])
+      - intermediate[i] = XOR(intermediate[i-1], in[i+1])
+      - out = intermediate[n-2]
+    notes: result is fold_xor of all inputs
+    properties:
+      MUXOR_correct:
+        type: Theorem
+        statement: is_binary (fold_xor inputs)
+        assumes: [2 <= length inputs, all_binary inputs]
+        technique: induction on inputs list, apply xor_bit_binary at each step
+        depends_on: [Primitives.xor_bit_binary, Primitives.fold_xor]
+
   MultiXOR:
-    theorems:
-      - MultiXOR_correct: out = a xor b for binary inputs
+    source: bitwise.circom:44-51
+    constraints:
+      - out[i] = in[0][i] + in[1][i] - 2 * in[0][i] * in[1][i]
+    notes: each element is an independent pairwise XOR
+    properties:
+      MultiXOR_correct:
+        type: Theorem
+        statement: out = xor_bit a b /\ is_binary out
+        assumes: [is_binary a, is_binary b, out = a + b - 2*a*b]
+        technique: case analysis on a, b binary values
+        depends_on: [Primitives.xor_bit, Primitives.is_binary]
+
   BitwiseNOT:
-    theorems:
-      - BitwiseNOT_spec: out = (2^n - 1) - a for n-bit input
+    source: bitwise.circom:95-101
+    constraints:
+      - out = 2^n - a - 1
+    notes: linear constraint only, flips all bits of n-bit value
+    properties:
+      BitwiseNOT_spec:
+        type: Theorem
+        statement: out = 2^n - a - 1
+        assumes: [out = 2^n - a - 1]
+        technique: direct assumption
+        depends_on: []

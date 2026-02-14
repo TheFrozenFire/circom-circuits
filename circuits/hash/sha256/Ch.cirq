@@ -1,8 +1,20 @@
 circuit: ch.circom
 ast: ch.json
 proof: Ch.v
+imports: [Primitives]
 
 templates:
   Ch:
-    theorems:
-      - Ch_correct: out = a * (b - c) + c for binary inputs (SHA-256 choose function)
+    source: ch.circom:4-13
+    constraints:
+      - out[k] = a[k] * (b[k] - c[k]) + c[k]
+    notes: SHA-256 choose function — ch(a,b,c) = (a AND b) XOR (NOT a AND c)
+    properties:
+      Ch_correct:
+        type: Theorem
+        statement: out = ch_bit a b c /\ is_binary out
+        assumes:
+          - is_binary a, is_binary b, is_binary c
+          - out = a * (b - c) + c
+        technique: case analysis on all 8 combinations of a, b, c binary values
+        depends_on: [Primitives.ch_bit, Primitives.is_binary]

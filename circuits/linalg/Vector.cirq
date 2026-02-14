@@ -1,14 +1,54 @@
 circuit: vector.circom
 ast: vector.json
 proof: Vector.v
+imports: [Primitives]
 
 templates:
   DotProduct:
-    theorems:
-      - DotProduct_spec: out = sum of pairwise products
+    source: vector.circom:41-53
+    constraints:
+      - products[i] = a[i] * b[i]
+      - out = sum(products)
+    properties:
+      DotProduct_spec:
+        type: Theorem
+        statement: out = list_sum products
+        assumes:
+          - length a = length b, length products = length a
+          - forall i, products[i] = a[i] * b[i]
+          - out = list_sum products
+        technique: direct from assumption
+        depends_on: [Primitives.list_sum]
+
   VectorIsEqual:
-    theorems:
-      - VectorIsEqual_correct: out = 1 iff all pairs are equal
+    source: vector.circom:72-91
+    constraints:
+      - eq[i] = IsEqual(a[i], b[i]) for each i
+      - acc[0] = eq[0], acc[i] = acc[i-1] * eq[i]
+      - out = acc[n-1]
+    notes: AND-chain of per-element equality checks
+    properties:
+      VectorIsEqual_correct:
+        type: Theorem
+        statement: out = 1 <-> Forall (fun x => x = 1) eq_results
+        assumes:
+          - Forall is_binary eq_results
+          - out = list_product eq_results
+        technique: apply binary_and_chain
+        depends_on: [Primitives.binary_and_chain, Primitives.list_product]
+
   VectorMean:
-    theorems:
-      - VectorMean_correct: out * k = s with remainder r < k
+    source: vector.circom:140-180
+    constraints:
+      - s = sum of vectors per dimension
+      - s = q * k + r
+      - 0 <= r < k (range check via LessThan)
+      - out = q
+    properties:
+      VectorMean_correct:
+        type: Theorem
+        statement: q = s / k /\ r = s mod k
+        assumes: [k > 0, s = q * k + r, 0 <= r < k]
+        technique: Zdiv_unique and Zmod_unique
+        depends_on: []
+        notes: proves Euclidean division uniqueness; Zdiv_unique accepts 0 <= r < k directly

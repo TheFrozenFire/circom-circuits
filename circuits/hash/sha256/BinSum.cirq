@@ -1,8 +1,24 @@
 circuit: binsum.circom
 ast: binsum.json
 proof: BinSum.v
+imports: [Primitives]
 
 templates:
   BinSum:
-    theorems:
-      - BinSum_correct: output bits represent sum of input values mod 2^n
+    source: binsum.circom:16-41
+    constraints:
+      - out[k] * (out[k] - 1) = 0 for k in 0..nout-1
+      - sum_j sum_k in[j][k] * 2^k = sum_k out[k] * 2^k
+    notes: structurally a Num2Bits decomposition of the sum of inputs
+    properties:
+      BinSum_correct:
+        type: Theorem
+        statement: all_binary out /\ 0 <= input_sum < 2^(length out) /\ input_sum = bits_to_num out
+        assumes:
+          - binary constraints on out elements
+          - input_sum = bits_to_num out
+        technique: binary_constraints_imply_all_binary, then bits_to_num_bound
+        depends_on:
+          - Primitives.binary_constraints_imply_all_binary
+          - Primitives.bits_to_num_bound
+          - Primitives.bits_to_num

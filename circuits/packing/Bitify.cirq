@@ -1,16 +1,81 @@
 circuit: bitify.circom
 ast: bitify.json
 proof: Bitify.v
+imports: [Primitives]
 
 templates:
   Num2Bits:
-    theorems:
-      - Num2Bits_correct: out bits are binary and sum to inp
-      - Num2Bits_deterministic: output is uniquely determined by input
+    source: bitify.circom:33-44
+    constraints:
+      - out[i] * (out[i] - 1) = 0 for each i
+      - inp = sum(out[i] * 2^i)
+    properties:
+      Num2Bits_correct:
+        type: Theorem
+        statement: all_binary out /\ 0 <= inp < 2^(length out)
+        assumes:
+          - forall i < length out, nth i out 0 * (nth i out 0 - 1) = 0
+          - inp = bits_to_num out
+        technique: >
+          derive all_binary via binary_constraint on each element,
+          apply bits_to_num_bound for range
+        depends_on:
+          - Primitives.binary_constraint
+          - Primitives.bits_to_num_bound
+          - Primitives.all_binary
+      Num2Bits_deterministic:
+        type: Theorem
+        statement: out1 = out2 (unique decomposition)
+        assumes:
+          - length out1 = length out2
+          - binary constraints on both out1 and out2
+          - inp = bits_to_num out1
+          - inp = bits_to_num out2
+        technique: derive all_binary for both, apply bits_to_num_unique
+        depends_on:
+          - Primitives.binary_constraint
+          - Primitives.bits_to_num_unique
+
   Bits2Num:
-    theorems:
-      - Bits2Num_spec: out = weighted sum of binary inputs
-      - Bits2Num_correct: roundtrip with Num2Bits
+    source: bitify.circom:46-56
+    constraints:
+      - out = sum(inp[i] * 2^i)
+    notes: linear only (zero R1CS constraints), caller must ensure inputs are binary
+    properties:
+      Bits2Num_spec:
+        type: Theorem
+        statement: out = bits_to_num inp
+        assumes: [out = bits_to_num inp]
+        technique: direct assumption
+        depends_on: [Primitives.bits_to_num]
+      Bits2Num_correct:
+        type: Theorem
+        statement: 0 <= out < 2^(length inp)
+        assumes: [all_binary inp, out = bits_to_num inp]
+        technique: substitute out, apply bits_to_num_bound
+        depends_on: [Primitives.bits_to_num_bound]
+
   TruncNumLE:
-    theorems:
-      - TruncNumLE_correct: output is first m bits of n-bit decomposition
+    source: bitify.circom:61-81
+    constraints:
+      - bits[i] * (bits[i] - 1) = 0 for each i (full nIn-bit decomposition)
+      - inp = sum(bits[i] * 2^i) for i in 0..nIn-1
+      - out = sum(bits[i] * 2^i) for i in 0..nOut-1
+    notes: nOut <= nIn; output is lower nOut bits of nIn-bit decomposition
+    properties:
+      TruncNumLE_correct:
+        type: Theorem
+        statement: >
+          all_binary bits
+          /\ 0 <= inp < 2^nIn
+          /\ 0 <= out < 2^nOut
+          /\ out = bits_to_num (firstn nOut bits)
+        assumes:
+          - nOut <= length bits
+          - binary constraints on all bits
+          - inp = bits_to_num bits
+          - out = bits_to_num (firstn nOut bits)
+        technique: reuse Num2Bits_correct for binary + range, apply bits_to_num_firstn_bound for truncation
+        depends_on:
+          - Num2Bits_correct
+          - Primitives.bits_to_num_firstn_bound

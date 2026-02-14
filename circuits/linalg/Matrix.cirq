@@ -1,11 +1,35 @@
 circuit: matrix.circom
 ast: matrix.json
 proof: Matrix.v
+imports: [Primitives]
 
 templates:
   MatrixIsEqual:
-    theorems:
-      - MatrixIsEqual_correct: out = 1 iff all element pairs are equal
+    source: matrix.circom:99-123
+    constraints:
+      - per-element IsEqual comparisons -> eq_results
+      - out = product of eq_results (AND-chain)
+    notes: same structure as VectorIsEqual
+    properties:
+      MatrixIsEqual_correct:
+        type: Theorem
+        statement: out = 1 <-> Forall (fun x => x = 1) eq_results
+        assumes:
+          - Forall is_binary eq_results
+          - out = list_product eq_results
+        technique: apply binary_and_chain
+        depends_on: [Primitives.binary_and_chain, Primitives.list_product]
+
   MatrixTranspose:
-    theorems:
-      - MatrixTranspose_spec: out[j][i] = inp[i][j]
+    source: matrix.circom:86-95
+    constraints: []
+    notes: pure signal rewiring — no R1CS constraints
+    properties:
+      MatrixTranspose_spec:
+        type: Theorem
+        statement: forall i j, out j i = M i j
+        assumes:
+          - i < m, j < n
+          - forall i j, out j i = M i j
+        technique: direct from assumption
+        depends_on: []

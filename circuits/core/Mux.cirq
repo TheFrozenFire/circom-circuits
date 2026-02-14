@@ -1,8 +1,18 @@
 circuit: mux.circom
 ast: mux.json
 proof: Mux.v
+imports: [Primitives]
 
 templates:
   MultiMux1:
-    theorems:
-      - MultiMux1_correct: out = c0 + s * (c1 - c0) for binary selector
+    source: mux.circom:5-13
+    constraints:
+      - out[i] = (c[i][1] - c[i][0]) * s + c[i][0]
+    notes: when s is binary, selects c[i][0] or c[i][1]
+    properties:
+      MultiMux1_correct:
+        type: Theorem
+        statement: (s = 0 -> out = c0) /\ (s = 1 -> out = c1)
+        assumes: [is_binary s, out = (c1 - c0) * s + c0]
+        technique: case split on s binary, lia
+        depends_on: [Primitives.is_binary]

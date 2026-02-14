@@ -1,8 +1,33 @@
 circuit: selector.circom
 ast: selector.json
 proof: Selector.v
+imports: [Primitives]
 
 templates:
   Selector:
-    theorems:
-      - indicator_mux_correct: out = values[index] via indicator vector
+    source: selector.circom:7-34
+    constraints:
+      - indicators[i] = IsEqual(i, index) for each i
+      - out = sum(indicators[i] * values[i])
+    notes: >
+      exactly one indicator is 1 (the one matching index), rest are 0.
+      The weighted sum selects the matching element.
+    properties:
+      indicator_mux_correct:
+        type: Theorem
+        statement: >
+          exists j, j < length values /\ nth j indicators 0 = 1 /\ out = nth j values 0
+        assumes:
+          - length values = length indicators
+          - Forall is_binary indicators
+          - list_sum indicators = 1
+          - out = list_sum (map (fun p => fst p * snd p) (combine indicators values))
+        technique: >
+          induction on indicators. If head = 0, the 1 is in tail (recurse, shift index with S j).
+          If head = 1, rest must sum to 0 (from list_sum = 1). Apply binary_zero_weighted_sum
+          to show tail contribution is 0, so out = head value.
+        depends_on:
+          - Primitives.is_binary
+          - Primitives.list_sum
+          - Primitives.list_sum_cons
+          - Primitives.binary_zero_weighted_sum

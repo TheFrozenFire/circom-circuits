@@ -1,29 +1,193 @@
 circuit: mod.circom
 ast: mod.json
 proof: Mod.v
+imports: [Primitives]
+
+notes: >
+  all Mod* templates delegate to TruncNumLE (Num2Bits decomposition + lower bit extraction).
+  The shared proof pattern: binary_constraints_imply_all_binary, then bits_to_num_firstn_mod
+  to show lower n bits equal value mod 2^n. Subtraction templates add a bias to avoid
+  negative values before decomposition.
 
 templates:
   ModSum:
-    theorems:
-      - ModSum_correct: out = (a + b) mod 2^n
+    source: mod.circom:7-11
+    constraints:
+      - bits = Num2Bits(n+1)(a + b)
+      - out = lower n bits of bits
+    properties:
+      ModSum_correct:
+        type: Theorem
+        statement: 0 <= out < 2^n /\ out = (a + b) mod 2^n
+        assumes:
+          - n <= length bits
+          - binary constraints on bits
+          - a + b = bits_to_num bits
+          - out = bits_to_num (firstn n bits)
+        technique: binary_constraints_imply_all_binary, bits_to_num_firstn_mod
+        depends_on:
+          - Primitives.binary_constraints_imply_all_binary
+          - Primitives.bits_to_num_firstn_bound
+          - Primitives.bits_to_num_firstn_mod
+
   ModSub:
-    theorems:
-      - ModSub_correct: out = (a - b) mod 2^n
+    source: mod.circom:15-19
+    constraints:
+      - bits = Num2Bits(n+1)(a - b + 2^n)
+      - out = lower n bits of bits
+    notes: adds 2^n bias to ensure non-negative before decomposition
+    properties:
+      ModSub_correct:
+        type: Theorem
+        statement: 0 <= out < 2^n /\ out = (a - b) mod 2^n
+        assumes:
+          - n <= length bits
+          - binary constraints on bits
+          - a - b + 2^n = bits_to_num bits
+          - out = bits_to_num (firstn n bits)
+        technique: same as ModSum, then Z.mod_add to remove 2^n bias
+        depends_on:
+          - Primitives.binary_constraints_imply_all_binary
+          - Primitives.bits_to_num_firstn_bound
+          - Primitives.bits_to_num_firstn_mod
+
   ModSumThree:
-    theorems:
-      - ModSumThree_correct: out = (a + b + c) mod 2^n
+    source: mod.circom:22-27
+    constraints:
+      - bits = Num2Bits(n+2)(a + b + c)
+      - out = lower n bits of bits
+    properties:
+      ModSumThree_correct:
+        type: Theorem
+        statement: 0 <= out < 2^n /\ out = (a + b + c) mod 2^n
+        assumes:
+          - n <= length bits
+          - binary constraints on bits
+          - a + b + c = bits_to_num bits
+          - out = bits_to_num (firstn n bits)
+        technique: binary_constraints_imply_all_binary, bits_to_num_firstn_mod
+        depends_on:
+          - Primitives.binary_constraints_imply_all_binary
+          - Primitives.bits_to_num_firstn_bound
+          - Primitives.bits_to_num_firstn_mod
+
   ModSubThree:
-    theorems:
-      - ModSubThree_correct: out = (a - b - c) mod 2^n
+    source: mod.circom:31-36
+    constraints:
+      - bits = Num2Bits(n+2)(a - b - c + 2^(n+1))
+      - out = lower n bits of bits
+    notes: adds 2^(n+1) bias (= 2 * 2^n) to ensure non-negative
+    properties:
+      ModSubThree_correct:
+        type: Theorem
+        statement: 0 <= out < 2^n /\ out = (a - b - c) mod 2^n
+        assumes:
+          - n <= length bits
+          - binary constraints on bits
+          - a - b - c + 2^(n+1) = bits_to_num bits
+          - out = bits_to_num (firstn n bits)
+        technique: same as ModSub, rewrite 2^(n+1) = 2 * 2^n, Z.mod_add
+        depends_on:
+          - Primitives.binary_constraints_imply_all_binary
+          - Primitives.bits_to_num_firstn_bound
+          - Primitives.bits_to_num_firstn_mod
+
   ModSumFour:
-    theorems:
-      - ModSumFour_correct: out = (a + b + c + d) mod 2^n
+    source: mod.circom:39-45
+    constraints:
+      - bits = Num2Bits(n+2)(a + b + c + d)
+      - out = lower n bits of bits
+    properties:
+      ModSumFour_correct:
+        type: Theorem
+        statement: 0 <= out < 2^n /\ out = (a + b + c + d) mod 2^n
+        assumes:
+          - n <= length bits
+          - binary constraints on bits
+          - a + b + c + d = bits_to_num bits
+          - out = bits_to_num (firstn n bits)
+        technique: binary_constraints_imply_all_binary, bits_to_num_firstn_mod
+        depends_on:
+          - Primitives.binary_constraints_imply_all_binary
+          - Primitives.bits_to_num_firstn_bound
+          - Primitives.bits_to_num_firstn_mod
+
   ModProd:
-    theorems:
-      - ModProd_correct: out = (a * b) mod 2^n
+    source: mod.circom:49-56
+    constraints:
+      - bits = Num2Bits(2n)(a * b)
+      - out = lower n bits of bits
+    properties:
+      ModProd_correct:
+        type: Theorem
+        statement: 0 <= out < 2^n /\ out = (a * b) mod 2^n
+        assumes:
+          - n <= length bits
+          - binary constraints on bits
+          - a * b = bits_to_num bits
+          - out = bits_to_num (firstn n bits)
+        technique: binary_constraints_imply_all_binary, bits_to_num_firstn_mod
+        depends_on:
+          - Primitives.binary_constraints_imply_all_binary
+          - Primitives.bits_to_num_firstn_bound
+          - Primitives.bits_to_num_firstn_mod
+
   Split:
-    theorems:
-      - Split_correct: small + big * 2^n = in, with range constraints
+    source: mod.circom:60-78
+    constraints:
+      - bits = Num2Bits(n+m)(inp)
+      - small = lower n bits
+      - big = upper m bits (skipn n)
+    properties:
+      Split_correct:
+        type: Theorem
+        statement: >
+          inp = small + big * 2^n
+          /\ 0 <= small < 2^n
+          /\ 0 <= big < 2^m
+        assumes:
+          - length bits = n + m
+          - binary constraints on bits
+          - inp = bits_to_num bits
+          - small = bits_to_num (firstn n bits)
+          - big = bits_to_num (skipn n bits)
+        technique: >
+          bits_to_num_split decomposes into low/high parts,
+          bits_to_num_firstn_bound for small,
+          all_binary_skipn + bits_to_num_bound for big
+        depends_on:
+          - Primitives.binary_constraints_imply_all_binary
+          - Primitives.bits_to_num_split
+          - Primitives.bits_to_num_firstn_bound
+          - Primitives.all_binary_skipn
+          - Primitives.bits_to_num_bound
+
   SplitThree:
-    theorems:
-      - SplitThree_correct: small + medium * 2^n + big * 2^(n+m) = in
+    source: mod.circom:82-107
+    constraints:
+      - bits = Num2Bits(n+m+k)(inp)
+      - small = firstn n bits
+      - medium = firstn m (skipn n bits)
+      - big = skipn (n+m) bits
+    properties:
+      SplitThree_correct:
+        type: Theorem
+        statement: >
+          inp = small + medium * 2^n + big * 2^(n+m)
+          /\ 0 <= small < 2^n
+          /\ 0 <= medium < 2^m
+          /\ 0 <= big < 2^k
+        assumes:
+          - length bits = n + m + k
+          - binary constraints on bits
+          - inp = bits_to_num bits
+          - small/medium/big from firstn/skipn of bits
+        technique: >
+          two nested bits_to_num_split (at n, then at m within skipn n),
+          skipn_skipn to combine skip offsets
+        depends_on:
+          - Primitives.binary_constraints_imply_all_binary
+          - Primitives.bits_to_num_split
+          - Primitives.bits_to_num_firstn_bound
+          - Primitives.all_binary_skipn
+          - Primitives.bits_to_num_bound

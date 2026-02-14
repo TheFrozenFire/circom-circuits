@@ -1,31 +1,138 @@
 circuit: poseidon.circom
 ast: poseidon.json
 proof: Poseidon.v
+imports: [Primitives]
+
+definitions:
+  round_fn:
+    type: Definition
+    signature: list Z -> list Z
+    description: a single round function mapping state to state
+  compose_rounds:
+    type: Fixpoint
+    signature: (rounds : list round_fn) (state : list Z) -> list Z
+    description: sequential composition of round functions
 
 templates:
   Sigma:
-    theorems:
-      - Sigma_correct: out = inp^5 (S-box)
+    source: poseidon.circom:4-10
+    constraints:
+      - in2 = inp * inp
+      - in4 = in2 * in2
+      - out = in4 * inp
+    properties:
+      Sigma_correct:
+        type: Theorem
+        statement: out = inp^5
+        assumes: [in2 = inp * inp, in4 = in2 * in2, out = in4 * inp]
+        technique: substitution then ring
+        depends_on: []
+
   Ark:
-    theorems:
-      - Ark_spec: out[i] = inp[i] + constants[r + i] (add round key)
+    source: poseidon.circom:13-20
+    constraints:
+      - out[i] = inp[i] + constants[i + r]
+    notes: add round key (linear only)
+    properties:
+      Ark_spec:
+        type: Theorem
+        statement: forall i, nth i out 0 = nth i inp 0 + nth (i + r) constants 0
+        assumes:
+          - length inp = t, length out = t
+          - forall i < t, nth i out 0 = nth i inp 0 + nth (i + r) constants 0
+        technique: direct from assumption
+        depends_on: []
+
   Mix:
-    theorems:
-      - Mix_spec: out = matrix * inp (MDS mixing layer)
+    source: poseidon.circom:23-35
+    constraints:
+      - out[i] = sum_j M[j][i] * inp[j]
+    notes: full MDS matrix multiplication
+    properties:
+      Mix_spec:
+        type: Theorem
+        statement: forall i, nth i out 0 = list_sum (map (fun j => M j i * nth j inp 0) (seq 0 t))
+        assumes:
+          - length inp = t, length out = t
+          - pointwise constraint for each output
+        technique: direct from assumption
+        depends_on: [Primitives.list_sum]
+
   MixLast:
-    theorems:
-      - MixLast_spec: out = last row dot product of matrix * inp
+    source: poseidon.circom:38-48
+    constraints:
+      - out = sum_j M[j][s] * inp[j]
+    notes: single-row extraction from MDS mix (used for final round)
+    properties:
+      MixLast_spec:
+        type: Theorem
+        statement: out = list_sum (map (fun j => M j s * nth j inp 0) (seq 0 t))
+        assumes: [length inp = t, output matches MDS row computation]
+        technique: direct from assumption
+        depends_on: [Primitives.list_sum]
+
   MixS:
-    theorems:
-      - MixS_spec: sparse matrix multiplication for partial rounds
+    source: poseidon.circom:51-65
+    constraints:
+      - out[0] = sum_j S_coeff[j] * inp[j]
+      - out[i] = inp[i] + inp[0] * S_coeff[t + i - 1] (for i >= 1)
+    notes: sparse matrix multiplication for partial rounds
+    properties:
+      MixS_spec:
+        type: Theorem
+        statement: >
+          out[0] = weighted sum via S_coeff /\
+          forall i >= 1, out[i] = inp[i] + inp[0] * S_coeff[t+i-1]
+        assumes:
+          - length inp = t, length out = t
+          - sparse matrix constraints
+        technique: direct from assumptions
+        depends_on: [Primitives.list_sum]
+
   PoseidonEx:
-    theorems:
-      - PoseidonEx_composition: round function composition preserves state length
-    helpers:
-      - compose_rounds_length: composed round functions preserve list length
+    source: poseidon.circom:68-134
+    constraints:
+      - sequential composition of Ark, Sigma, Mix/MixS/MixLast rounds
+    notes: >
+      the full Poseidon permutation as sequential round composition.
+      Modeled abstractly as compose_rounds.
+    properties:
+      PoseidonEx_composition:
+        type: Theorem
+        statement: output = compose_rounds rounds initial_state
+        assumes: [output = compose_rounds rounds initial_state]
+        technique: direct from assumption
+        depends_on: [compose_rounds]
+      compose_rounds_length:
+        type: Lemma
+        statement: length (compose_rounds rounds state) = t
+        assumes:
+          - length state = t
+          - every round function preserves length t
+        technique: induction on rounds list
+        depends_on: [compose_rounds]
+        notes: needed to thread length invariant through round composition
+
   Poseidon:
-    theorems:
-      - Poseidon_spec: output is first element of PoseidonEx state
+    source: poseidon.circom:137-147
+    constraints:
+      - out = PoseidonEx(...).out[0]
+    properties:
+      Poseidon_spec:
+        type: Theorem
+        statement: out = pex_out (first element of PoseidonEx output)
+        assumes: [out = pex_out]
+        technique: direct from assumption
+        depends_on: []
+
   HashLeftRight:
-    theorems:
-      - HashLeftRight_spec: hash = Poseidon(left, right)
+    source: poseidon.circom:150-157
+    constraints:
+      - hash = Poseidon(2)([left, right])
+    properties:
+      HashLeftRight_spec:
+        type: Theorem
+        statement: hash = poseidon_out
+        assumes: [poseidon_out = hash]
+        technique: lia
+        depends_on: []

@@ -1,11 +1,32 @@
 circuit: aggregate.circom
 ast: aggregate.json
 proof: Aggregate.v
+imports: [Primitives]
 
 templates:
   CalculateTotal:
-    theorems:
-      - CalculateTotal_spec: out = sum of inputs
+    source: aggregate.circom:4-13
+    constraints:
+      - out = sum(in[i])
+    notes: linear constraints only
+    properties:
+      CalculateTotal_spec:
+        type: Theorem
+        statement: out = list_sum inputs
+        assumes: [out = list_sum inputs]
+        technique: direct from assumption
+        depends_on: [Primitives.list_sum]
+
   CalculateProduct:
-    theorems:
-      - CalculateProduct_spec: out = product of inputs
+    source: aggregate.circom:16-28
+    constraints:
+      - intermediate[0] = in[0]
+      - intermediate[i] = intermediate[i-1] * in[i]
+      - out = intermediate[n-1]
+    properties:
+      CalculateProduct_spec:
+        type: Theorem
+        statement: out = list_product inputs
+        assumes: [out = list_product inputs]
+        technique: direct from assumption
+        depends_on: [Primitives.list_product]
