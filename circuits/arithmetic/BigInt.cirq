@@ -1,0 +1,38 @@
+circuit: bigint.circom
+ast: bigint.json
+proof: BigInt.v
+
+templates:
+  CheckCarryToZero:
+    theorems:
+      - CheckCarryToZero_correct: carry propagation zeroes out limb values
+  LongToShortNoEndCarry:
+    theorems:
+      - LongToShortNoEndCarry_correct: long-form to short-form limb conversion preserves value
+  BigAdd:
+    theorems:
+      - BigAdd_correct: limbs_to_num(out) = limbs_to_num(a) + limbs_to_num(b)
+    helpers:
+      - bigadd_with_carry: generalized addition with carry-in
+  BigSub:
+    theorems:
+      - BigSub_correct: limbs_to_num(out) + underflow * 2^(n*k) = limbs_to_num(a) - limbs_to_num(b)
+    helpers:
+      - bigsub_with_borrow: generalized subtraction with borrow-in
+  BigMultNoCarry:
+    theorems:
+      - BigMultNoCarry_correct: polynomial multiplication of limbs
+  BigMult:
+    theorems:
+      - BigMult_carries_preserve: carry propagation preserves multiplication value
+  BigMod:
+    theorems:
+      - BigMod_constraint_holds: a = b * q + r constraint is sound
+  BigLessThan:
+    theorems:
+      - BigLessThan_correct: out = 1 iff a < b in big-integer representation
+    helpers:
+      - big_lt_chain_last_decides: comparison chain terminates at most-significant limb
+  BigIsEqual:
+    theorems:
+      - BigIsEqual_correct: out = 1 iff all corresponding limbs are equal

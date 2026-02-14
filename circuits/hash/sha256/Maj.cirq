@@ -1,0 +1,8 @@
+circuit: maj.circom
+ast: maj.json
+proof: Maj.v
+
+templates:
+  Maj:
+    theorems:
+      - Maj_correct: out = a*b + a*c + b*c - 2*a*b*c for binary inputs (SHA-256 majority function)

@@ -1,0 +1,8 @@
+circuit: shift.circom
+ast: shift.json
+proof: Shift.v
+
+templates:
+  ShR:
+    theorems:
+      - ShR_spec: output bits are input bits shifted right by r positions (zero-filled)

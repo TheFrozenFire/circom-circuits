@@ -1,0 +1,8 @@
+circuit: rotate.circom
+ast: rotate.json
+proof: Rotate.v
+
+templates:
+  RotR:
+    theorems:
+      - RotR_spec: output bits are input bits rotated right by r positions

@@ -1,0 +1,16 @@
+circuit: bitify.circom
+ast: bitify.json
+proof: Bitify.v
+
+templates:
+  Num2Bits:
+    theorems:
+      - Num2Bits_correct: out bits are binary and sum to inp
+      - Num2Bits_deterministic: output is uniquely determined by input
+  Bits2Num:
+    theorems:
+      - Bits2Num_spec: out = weighted sum of binary inputs
+      - Bits2Num_correct: roundtrip with Num2Bits
+  TruncNumLE:
+    theorems:
+      - TruncNumLE_correct: output is first m bits of n-bit decomposition

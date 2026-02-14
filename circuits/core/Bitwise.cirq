@@ -1,0 +1,23 @@
+circuit: bitwise.circom
+ast: bitwise.json
+proof: Bitwise.v
+
+templates:
+  AND:
+    theorems:
+      - AND_correct: out = a * b for binary inputs
+  OR:
+    theorems:
+      - OR_correct: out = a + b - a * b for binary inputs
+  XOR:
+    theorems:
+      - XOR_correct: out = a + b - 2 * a * b for binary inputs
+  MUXOR:
+    theorems:
+      - MUXOR_correct: sel = 0 implies AND, sel = 1 implies OR
+  MultiXOR:
+    theorems:
+      - MultiXOR_correct: out = a xor b for binary inputs
+  BitwiseNOT:
+    theorems:
+      - BitwiseNOT_spec: out = (2^n - 1) - a for n-bit input

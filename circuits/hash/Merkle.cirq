@@ -1,0 +1,14 @@
+circuit: merkle.circom
+ast: merkle.json
+proof: Merkle.v
+
+templates:
+  MerkleTreeInclusionProof:
+    theorems:
+      - MerkleTreeInclusionProof_correct: root = merkle_root(leaf, pathIndices, siblings)
+      - merkle_root_deterministic: same inputs produce same root
+    helpers:
+      - mux_select_binary: path index selector is binary
+      - mux_matches_merkle: mux output matches merkle layer computation
+      - merkle_root_cons: recursive step of root computation
+      - merkle_root_nil: base case (empty path returns leaf)

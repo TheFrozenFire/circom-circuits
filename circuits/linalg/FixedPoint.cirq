@@ -1,0 +1,20 @@
+circuit: fixedpoint.circom
+ast: fixedpoint.json
+proof: FixedPoint.v
+
+templates:
+  InRange:
+    theorems:
+      - InRange_correct: inp is representable in n bits
+  ApproxEqual:
+    theorems:
+      - ApproxEqual_correct: out = 1 iff |a - b| < error_threshold
+  FixedPointMul:
+    theorems:
+      - FixedPointMul_correct: out = (a * b) / 2^scale (fixed-point multiplication)
+  FixedPointDiv:
+    theorems:
+      - FixedPointDiv_correct: out * b = a * 2^scale (fixed-point division)
+  FixedPointDotProduct:
+    theorems:
+      - FixedPointDotProduct_correct: out = sum(a[i] * b[i]) / 2^scale

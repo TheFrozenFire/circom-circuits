@@ -1,0 +1,11 @@
+circuit: matrix.circom
+ast: matrix.json
+proof: Matrix.v
+
+templates:
+  MatrixIsEqual:
+    theorems:
+      - MatrixIsEqual_correct: out = 1 iff all element pairs are equal
+  MatrixTranspose:
+    theorems:
+      - MatrixTranspose_spec: out[j][i] = inp[i][j]

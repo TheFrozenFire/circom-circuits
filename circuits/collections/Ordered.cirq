@@ -1,0 +1,9 @@
+circuit: ordered.circom
+ast: ordered.json
+proof: Ordered.v
+
+templates:
+  Ordered:
+    theorems:
+      - Ordered_ascending_correct: direction = 0 implies inputs are non-decreasing
+      - Ordered_descending_correct: direction = 1 implies inputs are non-increasing

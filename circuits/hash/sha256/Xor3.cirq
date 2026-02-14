@@ -1,0 +1,8 @@
+circuit: xor3.circom
+ast: xor3.json
+proof: Xor3.v
+
+templates:
+  Xor3:
+    theorems:
+      - Xor3_correct: out = a xor b xor c for binary inputs

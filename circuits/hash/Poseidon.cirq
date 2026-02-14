@@ -1,0 +1,31 @@
+circuit: poseidon.circom
+ast: poseidon.json
+proof: Poseidon.v
+
+templates:
+  Sigma:
+    theorems:
+      - Sigma_correct: out = inp^5 (S-box)
+  Ark:
+    theorems:
+      - Ark_spec: out[i] = inp[i] + constants[r + i] (add round key)
+  Mix:
+    theorems:
+      - Mix_spec: out = matrix * inp (MDS mixing layer)
+  MixLast:
+    theorems:
+      - MixLast_spec: out = last row dot product of matrix * inp
+  MixS:
+    theorems:
+      - MixS_spec: sparse matrix multiplication for partial rounds
+  PoseidonEx:
+    theorems:
+      - PoseidonEx_composition: round function composition preserves state length
+    helpers:
+      - compose_rounds_length: composed round functions preserve list length
+  Poseidon:
+    theorems:
+      - Poseidon_spec: output is first element of PoseidonEx state
+  HashLeftRight:
+    theorems:
+      - HashLeftRight_spec: hash = Poseidon(left, right)

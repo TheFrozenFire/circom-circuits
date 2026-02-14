@@ -1,0 +1,11 @@
+circuit: aggregate.circom
+ast: aggregate.json
+proof: Aggregate.v
+
+templates:
+  CalculateTotal:
+    theorems:
+      - CalculateTotal_spec: out = sum of inputs
+  CalculateProduct:
+    theorems:
+      - CalculateProduct_spec: out = product of inputs

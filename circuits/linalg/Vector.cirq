@@ -1,0 +1,14 @@
+circuit: vector.circom
+ast: vector.json
+proof: Vector.v
+
+templates:
+  DotProduct:
+    theorems:
+      - DotProduct_spec: out = sum of pairwise products
+  VectorIsEqual:
+    theorems:
+      - VectorIsEqual_correct: out = 1 iff all pairs are equal
+  VectorMean:
+    theorems:
+      - VectorMean_correct: out * k = s with remainder r < k

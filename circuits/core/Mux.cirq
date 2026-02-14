@@ -1,0 +1,8 @@
+circuit: mux.circom
+ast: mux.json
+proof: Mux.v
+
+templates:
+  MultiMux1:
+    theorems:
+      - MultiMux1_correct: out = c0 + s * (c1 - c0) for binary selector

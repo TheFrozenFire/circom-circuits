@@ -1,0 +1,8 @@
+circuit: binsum.circom
+ast: binsum.json
+proof: BinSum.v
+
+templates:
+  BinSum:
+    theorems:
+      - BinSum_correct: output bits represent sum of input values mod 2^n

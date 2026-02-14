@@ -1,0 +1,8 @@
+circuit: selector.circom
+ast: selector.json
+proof: Selector.v
+
+templates:
+  Selector:
+    theorems:
+      - indicator_mux_correct: out = values[index] via indicator vector

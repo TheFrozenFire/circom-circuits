@@ -1,0 +1,29 @@
+circuit: mod.circom
+ast: mod.json
+proof: Mod.v
+
+templates:
+  ModSum:
+    theorems:
+      - ModSum_correct: out = (a + b) mod 2^n
+  ModSub:
+    theorems:
+      - ModSub_correct: out = (a - b) mod 2^n
+  ModSumThree:
+    theorems:
+      - ModSumThree_correct: out = (a + b + c) mod 2^n
+  ModSubThree:
+    theorems:
+      - ModSubThree_correct: out = (a - b - c) mod 2^n
+  ModSumFour:
+    theorems:
+      - ModSumFour_correct: out = (a + b + c + d) mod 2^n
+  ModProd:
+    theorems:
+      - ModProd_correct: out = (a * b) mod 2^n
+  Split:
+    theorems:
+      - Split_correct: small + big * 2^n = in, with range constraints
+  SplitThree:
+    theorems:
+      - SplitThree_correct: small + medium * 2^n + big * 2^(n+m) = in

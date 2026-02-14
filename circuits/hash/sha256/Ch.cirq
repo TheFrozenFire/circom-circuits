@@ -1,0 +1,8 @@
+circuit: ch.circom
+ast: ch.json
+proof: Ch.v
+
+templates:
+  Ch:
+    theorems:
+      - Ch_correct: out = a * (b - c) + c for binary inputs (SHA-256 choose function)

@@ -1,0 +1,18 @@
+circuit: comparators.circom
+ast: comparators.json
+proof: Comparators.v
+
+templates:
+  IsZero:
+    theorems:
+      - IsZero_sound: out = 1 iff inp = 0
+      - IsZero_binary: out is binary
+  IsEqual:
+    theorems:
+      - IsEqual_sound: out = 1 iff a = b
+  LessThan:
+    theorems:
+      - LessThan_sound: out = 1 iff a < b for n-bit inputs
+  ForceEqualIfEnabled:
+    theorems:
+      - ForceEqualIfEnabled_sound: enabled = 1 implies a = b

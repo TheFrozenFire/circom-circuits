@@ -1,0 +1,15 @@
+circuit: uhf.circom
+ast: uhf.json
+proof: Uhf.v
+
+templates:
+  PolyUHF:
+    theorems:
+      - PolyUHF_correct: out = polynomial evaluation of coefficients at point r (Horner's method)
+      - PolyUHF_base_correct: base case for 2-element polynomial
+    helpers:
+      - poly_eval_cons: recursive step of polynomial evaluation
+      - poly_eval_app_singleton: appending element to polynomial
+      - poly_eval_removelast_last: splitting polynomial at last element
+      - horner_chain_step: single step of Horner chain
+      - horner_chain_poly_eval: Horner chain equals polynomial evaluation

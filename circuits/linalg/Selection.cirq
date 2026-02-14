@@ -1,0 +1,9 @@
+circuit: selection.circom
+ast: selection.json
+proof: Selection.v
+
+templates:
+  Max:
+    theorems:
+      - Max_correct: out is an element of inputs
+      - Max_ge_all: out >= every element of inputs
