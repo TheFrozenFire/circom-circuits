@@ -1,0 +1,920 @@
+{
+  "meta": {},
+  "compiler_version": [
+    2,
+    2,
+    2
+  ],
+  "custom_gates": false,
+  "custom_gates_declared": false,
+  "includes": [
+    "ascon/functions.circom"
+  ],
+  "definitions": [
+    {
+      "Function": {
+        "meta": {},
+        "name": "ASCON_INITIAL_STATE_HASH_256",
+        "args": [],
+        "arg_location": {
+          "start": 95,
+          "end": 95
+        },
+        "body": {
+          "Block": {
+            "meta": {},
+            "stmts": [
+              {
+                "Return": {
+                  "meta": {},
+                  "value": {
+                    "ArrayInLine": {
+                      "meta": {},
+                      "values": [
+                        {
+                          "Call": {
+                            "meta": {},
+                            "id": "word_2_bits",
+                            "args": [
+                              {
+                                "Number": [
+                                  {},
+                                  [
+                                    1,
+                                    [
+                                      3912554113,
+                                      2602456212
+                                    ]
+                                  ]
+                                ]
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "Call": {
+                            "meta": {},
+                            "id": "word_2_bits",
+                            "args": [
+                              {
+                                "Number": [
+                                  {},
+                                  [
+                                    1,
+                                    [
+                                      859263442,
+                                      1271111710
+                                    ]
+                                  ]
+                                ]
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "Call": {
+                            "meta": {},
+                            "id": "word_2_bits",
+                            "args": [
+                              {
+                                "Number": [
+                                  {},
+                                  [
+                                    1,
+                                    [
+                                      1798617114,
+                                      2925869420
+                                    ]
+                                  ]
+                                ]
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "Call": {
+                            "meta": {},
+                            "id": "word_2_bits",
+                            "args": [
+                              {
+                                "Number": [
+                                  {},
+                                  [
+                                    1,
+                                    [
+                                      3580513715,
+                                      1015010468
+                                    ]
+                                  ]
+                                ]
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "Call": {
+                            "meta": {},
+                            "id": "word_2_bits",
+                            "args": [
+                              {
+                                "Number": [
+                                  {},
+                                  [
+                                    1,
+                                    [
+                                      113612653,
+                                      442254921
+                                    ]
+                                  ]
+                                ]
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "Function": {
+        "meta": {},
+        "name": "ASCON_ROUND_CONSTANT",
+        "args": [
+          "rnd",
+          "i"
+        ],
+        "arg_location": {
+          "start": 356,
+          "end": 362
+        },
+        "body": {
+          "Block": {
+            "meta": {},
+            "stmts": [
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": "Var",
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": "Var",
+                        "name": "round_constants",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  16
+                                ]
+                              ]
+                            ]
+                          },
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  8
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    },
+                    {
+                      "Substitution": {
+                        "meta": {},
+                        "var": "round_constants",
+                        "access": [],
+                        "op": "AssignVar",
+                        "rhe": {
+                          "UniformArray": {
+                            "meta": {},
+                            "value": {
+                              "UniformArray": {
+                                "meta": {},
+                                "value": {
+                                  "Number": [
+                                    {},
+                                    [
+                                      0,
+                                      []
+                                    ]
+                                  ]
+                                },
+                                "dimension": {
+                                  "Number": [
+                                    {},
+                                    [
+                                      1,
+                                      [
+                                        8
+                                      ]
+                                    ]
+                                  ]
+                                }
+                              }
+                            },
+                            "dimension": {
+                              "Number": [
+                                {},
+                                [
+                                  1,
+                                  [
+                                    16
+                                  ]
+                                ]
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "Substitution": {
+                        "meta": {},
+                        "var": "round_constants",
+                        "access": [],
+                        "op": "AssignVar",
+                        "rhe": {
+                          "ArrayInLine": {
+                            "meta": {},
+                            "values": [
+                              {
+                                "Call": {
+                                  "meta": {},
+                                  "id": "byte_2_bits",
+                                  "args": [
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            60
+                                          ]
+                                        ]
+                                      ]
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "Call": {
+                                  "meta": {},
+                                  "id": "byte_2_bits",
+                                  "args": [
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            45
+                                          ]
+                                        ]
+                                      ]
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "Call": {
+                                  "meta": {},
+                                  "id": "byte_2_bits",
+                                  "args": [
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            30
+                                          ]
+                                        ]
+                                      ]
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "Call": {
+                                  "meta": {},
+                                  "id": "byte_2_bits",
+                                  "args": [
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            15
+                                          ]
+                                        ]
+                                      ]
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "Call": {
+                                  "meta": {},
+                                  "id": "byte_2_bits",
+                                  "args": [
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            240
+                                          ]
+                                        ]
+                                      ]
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "Call": {
+                                  "meta": {},
+                                  "id": "byte_2_bits",
+                                  "args": [
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            225
+                                          ]
+                                        ]
+                                      ]
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "Call": {
+                                  "meta": {},
+                                  "id": "byte_2_bits",
+                                  "args": [
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            210
+                                          ]
+                                        ]
+                                      ]
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "Call": {
+                                  "meta": {},
+                                  "id": "byte_2_bits",
+                                  "args": [
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            195
+                                          ]
+                                        ]
+                                      ]
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "Call": {
+                                  "meta": {},
+                                  "id": "byte_2_bits",
+                                  "args": [
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            180
+                                          ]
+                                        ]
+                                      ]
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "Call": {
+                                  "meta": {},
+                                  "id": "byte_2_bits",
+                                  "args": [
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            165
+                                          ]
+                                        ]
+                                      ]
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "Call": {
+                                  "meta": {},
+                                  "id": "byte_2_bits",
+                                  "args": [
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            150
+                                          ]
+                                        ]
+                                      ]
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "Call": {
+                                  "meta": {},
+                                  "id": "byte_2_bits",
+                                  "args": [
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            135
+                                          ]
+                                        ]
+                                      ]
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "Call": {
+                                  "meta": {},
+                                  "id": "byte_2_bits",
+                                  "args": [
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            120
+                                          ]
+                                        ]
+                                      ]
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "Call": {
+                                  "meta": {},
+                                  "id": "byte_2_bits",
+                                  "args": [
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            105
+                                          ]
+                                        ]
+                                      ]
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "Call": {
+                                  "meta": {},
+                                  "id": "byte_2_bits",
+                                  "args": [
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            90
+                                          ]
+                                        ]
+                                      ]
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "Call": {
+                                  "meta": {},
+                                  "id": "byte_2_bits",
+                                  "args": [
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            75
+                                          ]
+                                        ]
+                                      ]
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "Return": {
+                  "meta": {},
+                  "value": {
+                    "Variable": {
+                      "meta": {},
+                      "name": "round_constants",
+                      "access": [
+                        {
+                          "ArrayAccess": {
+                            "InfixOp": {
+                              "meta": {},
+                              "lhe": {
+                                "InfixOp": {
+                                  "meta": {},
+                                  "lhe": {
+                                    "Number": [
+                                      {},
+                                      [
+                                        1,
+                                        [
+                                          16
+                                        ]
+                                      ]
+                                    ]
+                                  },
+                                  "infix_op": "Sub",
+                                  "rhe": {
+                                    "Variable": {
+                                      "meta": {},
+                                      "name": "rnd",
+                                      "access": []
+                                    }
+                                  }
+                                }
+                              },
+                              "infix_op": "Add",
+                              "rhe": {
+                                "Variable": {
+                                  "meta": {},
+                                  "name": "i",
+                                  "access": []
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "Function": {
+        "meta": {},
+        "name": "ASCON_LINEAR_DIFFUSION_DISTANCE",
+        "args": [
+          "i"
+        ],
+        "arg_location": {
+          "start": 925,
+          "end": 926
+        },
+        "body": {
+          "Block": {
+            "meta": {},
+            "stmts": [
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": "Var",
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": "Var",
+                        "name": "diffusion_distances",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  5
+                                ]
+                              ]
+                            ]
+                          },
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  2
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    },
+                    {
+                      "Substitution": {
+                        "meta": {},
+                        "var": "diffusion_distances",
+                        "access": [],
+                        "op": "AssignVar",
+                        "rhe": {
+                          "UniformArray": {
+                            "meta": {},
+                            "value": {
+                              "UniformArray": {
+                                "meta": {},
+                                "value": {
+                                  "Number": [
+                                    {},
+                                    [
+                                      0,
+                                      []
+                                    ]
+                                  ]
+                                },
+                                "dimension": {
+                                  "Number": [
+                                    {},
+                                    [
+                                      1,
+                                      [
+                                        2
+                                      ]
+                                    ]
+                                  ]
+                                }
+                              }
+                            },
+                            "dimension": {
+                              "Number": [
+                                {},
+                                [
+                                  1,
+                                  [
+                                    5
+                                  ]
+                                ]
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "Substitution": {
+                        "meta": {},
+                        "var": "diffusion_distances",
+                        "access": [],
+                        "op": "AssignVar",
+                        "rhe": {
+                          "ArrayInLine": {
+                            "meta": {},
+                            "values": [
+                              {
+                                "ArrayInLine": {
+                                  "meta": {},
+                                  "values": [
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            19
+                                          ]
+                                        ]
+                                      ]
+                                    },
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            28
+                                          ]
+                                        ]
+                                      ]
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "ArrayInLine": {
+                                  "meta": {},
+                                  "values": [
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            61
+                                          ]
+                                        ]
+                                      ]
+                                    },
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            39
+                                          ]
+                                        ]
+                                      ]
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "ArrayInLine": {
+                                  "meta": {},
+                                  "values": [
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            1
+                                          ]
+                                        ]
+                                      ]
+                                    },
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            6
+                                          ]
+                                        ]
+                                      ]
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "ArrayInLine": {
+                                  "meta": {},
+                                  "values": [
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            10
+                                          ]
+                                        ]
+                                      ]
+                                    },
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            17
+                                          ]
+                                        ]
+                                      ]
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "ArrayInLine": {
+                                  "meta": {},
+                                  "values": [
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            7
+                                          ]
+                                        ]
+                                      ]
+                                    },
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            41
+                                          ]
+                                        ]
+                                      ]
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "Return": {
+                  "meta": {},
+                  "value": {
+                    "Variable": {
+                      "meta": {},
+                      "name": "diffusion_distances",
+                      "access": [
+                        {
+                          "ArrayAccess": {
+                            "Variable": {
+                              "meta": {},
+                              "name": "i",
+                              "access": []
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "main_component": null
+}

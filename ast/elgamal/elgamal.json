@@ -1,0 +1,1489 @@
+{
+  "meta": {},
+  "compiler_version": [
+    2,
+    2,
+    2
+  ],
+  "custom_gates": false,
+  "custom_gates_declared": false,
+  "includes": [
+    "curve/constants.circom",
+    "curve/scalarmul.circom",
+    "curve/babyjub.circom",
+    "packing/bitify.circom"
+  ],
+  "definitions": [
+    {
+      "Template": {
+        "meta": {},
+        "name": "ElGamalShare",
+        "args": [],
+        "arg_location": {
+          "start": 321,
+          "end": 323
+        },
+        "body": {
+          "Block": {
+            "meta": {},
+            "stmts": [
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Input",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Input",
+                            []
+                          ]
+                        },
+                        "name": "pubKey",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  2
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Input",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Input",
+                            []
+                          ]
+                        },
+                        "name": "y",
+                        "dimensions": [],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": "Component",
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": "Component",
+                        "name": "yBits",
+                        "dimensions": [],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    },
+                    {
+                      "Substitution": {
+                        "meta": {},
+                        "var": "yBits",
+                        "access": [],
+                        "op": "AssignVar",
+                        "rhe": {
+                          "Call": {
+                            "meta": {},
+                            "id": "Num2Bits",
+                            "args": [
+                              {
+                                "Number": [
+                                  {},
+                                  [
+                                    1,
+                                    [
+                                      254
+                                    ]
+                                  ]
+                                ]
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "Substitution": {
+                  "meta": {},
+                  "var": "yBits",
+                  "access": [
+                    {
+                      "ComponentAccess": "in"
+                    }
+                  ],
+                  "op": "AssignConstraintSignal",
+                  "rhe": {
+                    "Variable": {
+                      "meta": {},
+                      "name": "y",
+                      "access": []
+                    }
+                  }
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Output",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Output",
+                            []
+                          ]
+                        },
+                        "name": "out",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  2
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    },
+                    {
+                      "Substitution": {
+                        "meta": {},
+                        "var": "out",
+                        "access": [],
+                        "op": "AssignConstraintSignal",
+                        "rhe": {
+                          "AnonymousComp": {
+                            "meta": {},
+                            "id": "EscalarMulAny",
+                            "is_parallel": false,
+                            "params": [
+                              {
+                                "Number": [
+                                  {},
+                                  [
+                                    1,
+                                    [
+                                      254
+                                    ]
+                                  ]
+                                ]
+                              }
+                            ],
+                            "signals": [
+                              {
+                                "Variable": {
+                                  "meta": {},
+                                  "name": "yBits",
+                                  "access": [
+                                    {
+                                      "ComponentAccess": "out"
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "Variable": {
+                                  "meta": {},
+                                  "name": "pubKey",
+                                  "access": []
+                                }
+                              }
+                            ],
+                            "names": null
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Output",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Output",
+                            []
+                          ]
+                        },
+                        "name": "c1",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  2
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    },
+                    {
+                      "Substitution": {
+                        "meta": {},
+                        "var": "c1",
+                        "access": [],
+                        "op": "AssignConstraintSignal",
+                        "rhe": {
+                          "AnonymousComp": {
+                            "meta": {},
+                            "id": "EscalarMulFix",
+                            "is_parallel": false,
+                            "params": [
+                              {
+                                "Number": [
+                                  {},
+                                  [
+                                    1,
+                                    [
+                                      254
+                                    ]
+                                  ]
+                                ]
+                              },
+                              {
+                                "Call": {
+                                  "meta": {},
+                                  "id": "BABYJUB_BASE8",
+                                  "args": []
+                                }
+                              }
+                            ],
+                            "signals": [
+                              {
+                                "Variable": {
+                                  "meta": {},
+                                  "name": "yBits",
+                                  "access": [
+                                    {
+                                      "ComponentAccess": "out"
+                                    }
+                                  ]
+                                }
+                              }
+                            ],
+                            "names": null
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        "parallel": false,
+        "is_custom_gate": false,
+        "is_extern_c": false
+      }
+    },
+    {
+      "Template": {
+        "meta": {},
+        "name": "ElGamalEncrypt",
+        "args": [],
+        "arg_location": {
+          "start": 686,
+          "end": 688
+        },
+        "body": {
+          "Block": {
+            "meta": {},
+            "stmts": [
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Input",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Input",
+                            []
+                          ]
+                        },
+                        "name": "pubKey",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  2
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Input",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Input",
+                            []
+                          ]
+                        },
+                        "name": "message",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  2
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Input",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Input",
+                            []
+                          ]
+                        },
+                        "name": "y",
+                        "dimensions": [],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Output",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Output",
+                            []
+                          ]
+                        },
+                        "name": "c1",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  2
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Output",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Output",
+                            []
+                          ]
+                        },
+                        "name": "c2",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  2
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": "Component",
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": "Component",
+                        "name": "shared",
+                        "dimensions": [],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    },
+                    {
+                      "Substitution": {
+                        "meta": {},
+                        "var": "shared",
+                        "access": [],
+                        "op": "AssignVar",
+                        "rhe": {
+                          "Call": {
+                            "meta": {},
+                            "id": "ElGamalShare",
+                            "args": []
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "Substitution": {
+                  "meta": {},
+                  "var": "shared",
+                  "access": [
+                    {
+                      "ComponentAccess": "pubKey"
+                    }
+                  ],
+                  "op": "AssignConstraintSignal",
+                  "rhe": {
+                    "Variable": {
+                      "meta": {},
+                      "name": "pubKey",
+                      "access": []
+                    }
+                  }
+                }
+              },
+              {
+                "Substitution": {
+                  "meta": {},
+                  "var": "shared",
+                  "access": [
+                    {
+                      "ComponentAccess": "y"
+                    }
+                  ],
+                  "op": "AssignConstraintSignal",
+                  "rhe": {
+                    "Variable": {
+                      "meta": {},
+                      "name": "y",
+                      "access": []
+                    }
+                  }
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": "Component",
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": "Component",
+                        "name": "m",
+                        "dimensions": [],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    },
+                    {
+                      "Substitution": {
+                        "meta": {},
+                        "var": "m",
+                        "access": [],
+                        "op": "AssignVar",
+                        "rhe": {
+                          "Call": {
+                            "meta": {},
+                            "id": "BabyAdd",
+                            "args": []
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "MultSubstitution": {
+                  "meta": {},
+                  "lhe": {
+                    "Tuple": {
+                      "meta": {},
+                      "values": [
+                        {
+                          "Variable": {
+                            "meta": {},
+                            "name": "m",
+                            "access": [
+                              {
+                                "ComponentAccess": "x1"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "Variable": {
+                            "meta": {},
+                            "name": "m",
+                            "access": [
+                              {
+                                "ComponentAccess": "y1"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "op": "AssignConstraintSignal",
+                  "rhe": {
+                    "Tuple": {
+                      "meta": {},
+                      "values": [
+                        {
+                          "Variable": {
+                            "meta": {},
+                            "name": "message",
+                            "access": [
+                              {
+                                "ArrayAccess": {
+                                  "Number": [
+                                    {},
+                                    [
+                                      0,
+                                      []
+                                    ]
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "Variable": {
+                            "meta": {},
+                            "name": "message",
+                            "access": [
+                              {
+                                "ArrayAccess": {
+                                  "Number": [
+                                    {},
+                                    [
+                                      1,
+                                      [
+                                        1
+                                      ]
+                                    ]
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "MultSubstitution": {
+                  "meta": {},
+                  "lhe": {
+                    "Tuple": {
+                      "meta": {},
+                      "values": [
+                        {
+                          "Variable": {
+                            "meta": {},
+                            "name": "m",
+                            "access": [
+                              {
+                                "ComponentAccess": "x2"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "Variable": {
+                            "meta": {},
+                            "name": "m",
+                            "access": [
+                              {
+                                "ComponentAccess": "y2"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "op": "AssignConstraintSignal",
+                  "rhe": {
+                    "Tuple": {
+                      "meta": {},
+                      "values": [
+                        {
+                          "Variable": {
+                            "meta": {},
+                            "name": "shared",
+                            "access": [
+                              {
+                                "ComponentAccess": "out"
+                              },
+                              {
+                                "ArrayAccess": {
+                                  "Number": [
+                                    {},
+                                    [
+                                      0,
+                                      []
+                                    ]
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "Variable": {
+                            "meta": {},
+                            "name": "shared",
+                            "access": [
+                              {
+                                "ComponentAccess": "out"
+                              },
+                              {
+                                "ArrayAccess": {
+                                  "Number": [
+                                    {},
+                                    [
+                                      1,
+                                      [
+                                        1
+                                      ]
+                                    ]
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "Substitution": {
+                  "meta": {},
+                  "var": "c1",
+                  "access": [],
+                  "op": "AssignConstraintSignal",
+                  "rhe": {
+                    "Variable": {
+                      "meta": {},
+                      "name": "shared",
+                      "access": [
+                        {
+                          "ComponentAccess": "c1"
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "Substitution": {
+                  "meta": {},
+                  "var": "c2",
+                  "access": [],
+                  "op": "AssignConstraintSignal",
+                  "rhe": {
+                    "ArrayInLine": {
+                      "meta": {},
+                      "values": [
+                        {
+                          "Variable": {
+                            "meta": {},
+                            "name": "m",
+                            "access": [
+                              {
+                                "ComponentAccess": "xout"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "Variable": {
+                            "meta": {},
+                            "name": "m",
+                            "access": [
+                              {
+                                "ComponentAccess": "yout"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "parallel": false,
+        "is_custom_gate": false,
+        "is_extern_c": false
+      }
+    },
+    {
+      "Template": {
+        "meta": {},
+        "name": "ElGamalDecrypt",
+        "args": [],
+        "arg_location": {
+          "start": 1223,
+          "end": 1225
+        },
+        "body": {
+          "Block": {
+            "meta": {},
+            "stmts": [
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Input",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Input",
+                            []
+                          ]
+                        },
+                        "name": "c1",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  2
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Input",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Input",
+                            []
+                          ]
+                        },
+                        "name": "c2",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  2
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Input",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Input",
+                            []
+                          ]
+                        },
+                        "name": "privKey",
+                        "dimensions": [],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Output",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Output",
+                            []
+                          ]
+                        },
+                        "name": "message",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  2
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": "Component",
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": "Component",
+                        "name": "privKeyBits",
+                        "dimensions": [],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    },
+                    {
+                      "Substitution": {
+                        "meta": {},
+                        "var": "privKeyBits",
+                        "access": [],
+                        "op": "AssignVar",
+                        "rhe": {
+                          "Call": {
+                            "meta": {},
+                            "id": "Num2Bits",
+                            "args": [
+                              {
+                                "Number": [
+                                  {},
+                                  [
+                                    1,
+                                    [
+                                      254
+                                    ]
+                                  ]
+                                ]
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "Substitution": {
+                  "meta": {},
+                  "var": "privKeyBits",
+                  "access": [
+                    {
+                      "ComponentAccess": "in"
+                    }
+                  ],
+                  "op": "AssignConstraintSignal",
+                  "rhe": {
+                    "Variable": {
+                      "meta": {},
+                      "name": "privKey",
+                      "access": []
+                    }
+                  }
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": "Component",
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": "Component",
+                        "name": "c1x",
+                        "dimensions": [],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    },
+                    {
+                      "Substitution": {
+                        "meta": {},
+                        "var": "c1x",
+                        "access": [],
+                        "op": "AssignVar",
+                        "rhe": {
+                          "Call": {
+                            "meta": {},
+                            "id": "EscalarMulAny",
+                            "args": [
+                              {
+                                "Number": [
+                                  {},
+                                  [
+                                    1,
+                                    [
+                                      254
+                                    ]
+                                  ]
+                                ]
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "Substitution": {
+                  "meta": {},
+                  "var": "c1x",
+                  "access": [
+                    {
+                      "ComponentAccess": "e"
+                    }
+                  ],
+                  "op": "AssignConstraintSignal",
+                  "rhe": {
+                    "Variable": {
+                      "meta": {},
+                      "name": "privKeyBits",
+                      "access": [
+                        {
+                          "ComponentAccess": "out"
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "Substitution": {
+                  "meta": {},
+                  "var": "c1x",
+                  "access": [
+                    {
+                      "ComponentAccess": "p"
+                    }
+                  ],
+                  "op": "AssignConstraintSignal",
+                  "rhe": {
+                    "Variable": {
+                      "meta": {},
+                      "name": "c1",
+                      "access": []
+                    }
+                  }
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Intermediate",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Intermediate",
+                            []
+                          ]
+                        },
+                        "name": "c1xInvX",
+                        "dimensions": [],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    },
+                    {
+                      "Substitution": {
+                        "meta": {},
+                        "var": "c1xInvX",
+                        "access": [],
+                        "op": "AssignConstraintSignal",
+                        "rhe": {
+                          "InfixOp": {
+                            "meta": {},
+                            "lhe": {
+                              "Number": [
+                                {},
+                                [
+                                  0,
+                                  []
+                                ]
+                              ]
+                            },
+                            "infix_op": "Sub",
+                            "rhe": {
+                              "Variable": {
+                                "meta": {},
+                                "name": "c1x",
+                                "access": [
+                                  {
+                                    "ComponentAccess": "out"
+                                  },
+                                  {
+                                    "ArrayAccess": {
+                                      "Number": [
+                                        {},
+                                        [
+                                          0,
+                                          []
+                                        ]
+                                      ]
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": "Component",
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": "Component",
+                        "name": "dec",
+                        "dimensions": [],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    },
+                    {
+                      "Substitution": {
+                        "meta": {},
+                        "var": "dec",
+                        "access": [],
+                        "op": "AssignVar",
+                        "rhe": {
+                          "Call": {
+                            "meta": {},
+                            "id": "BabyAdd",
+                            "args": []
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "Substitution": {
+                  "meta": {},
+                  "var": "dec",
+                  "access": [
+                    {
+                      "ComponentAccess": "x1"
+                    }
+                  ],
+                  "op": "AssignConstraintSignal",
+                  "rhe": {
+                    "Variable": {
+                      "meta": {},
+                      "name": "c1xInvX",
+                      "access": []
+                    }
+                  }
+                }
+              },
+              {
+                "Substitution": {
+                  "meta": {},
+                  "var": "dec",
+                  "access": [
+                    {
+                      "ComponentAccess": "y1"
+                    }
+                  ],
+                  "op": "AssignConstraintSignal",
+                  "rhe": {
+                    "Variable": {
+                      "meta": {},
+                      "name": "c1x",
+                      "access": [
+                        {
+                          "ComponentAccess": "out"
+                        },
+                        {
+                          "ArrayAccess": {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  1
+                                ]
+                              ]
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "MultSubstitution": {
+                  "meta": {},
+                  "lhe": {
+                    "Tuple": {
+                      "meta": {},
+                      "values": [
+                        {
+                          "Variable": {
+                            "meta": {},
+                            "name": "dec",
+                            "access": [
+                              {
+                                "ComponentAccess": "x2"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "Variable": {
+                            "meta": {},
+                            "name": "dec",
+                            "access": [
+                              {
+                                "ComponentAccess": "y2"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "op": "AssignConstraintSignal",
+                  "rhe": {
+                    "Tuple": {
+                      "meta": {},
+                      "values": [
+                        {
+                          "Variable": {
+                            "meta": {},
+                            "name": "c2",
+                            "access": [
+                              {
+                                "ArrayAccess": {
+                                  "Number": [
+                                    {},
+                                    [
+                                      0,
+                                      []
+                                    ]
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "Variable": {
+                            "meta": {},
+                            "name": "c2",
+                            "access": [
+                              {
+                                "ArrayAccess": {
+                                  "Number": [
+                                    {},
+                                    [
+                                      1,
+                                      [
+                                        1
+                                      ]
+                                    ]
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "Substitution": {
+                  "meta": {},
+                  "var": "message",
+                  "access": [],
+                  "op": "AssignConstraintSignal",
+                  "rhe": {
+                    "ArrayInLine": {
+                      "meta": {},
+                      "values": [
+                        {
+                          "Variable": {
+                            "meta": {},
+                            "name": "dec",
+                            "access": [
+                              {
+                                "ComponentAccess": "xout"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "Variable": {
+                            "meta": {},
+                            "name": "dec",
+                            "access": [
+                              {
+                                "ComponentAccess": "yout"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "parallel": false,
+        "is_custom_gate": false,
+        "is_extern_c": false
+      }
+    }
+  ],
+  "main_component": null
+}

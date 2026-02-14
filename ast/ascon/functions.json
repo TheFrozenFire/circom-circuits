@@ -1,0 +1,841 @@
+{
+  "meta": {},
+  "compiler_version": [
+    2,
+    2,
+    2
+  ],
+  "custom_gates": false,
+  "custom_gates_declared": false,
+  "includes": [],
+  "definitions": [
+    {
+      "Template": {
+        "meta": {},
+        "name": "ShiftRight",
+        "args": [
+          "i"
+        ],
+        "arg_location": {
+          "start": 41,
+          "end": 44
+        },
+        "body": {
+          "Block": {
+            "meta": {},
+            "stmts": [
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Input",
+                      [
+                        "binary"
+                      ]
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Input",
+                            [
+                              "binary"
+                            ]
+                          ]
+                        },
+                        "name": "in",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  64
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Output",
+                      [
+                        "binary"
+                      ]
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Output",
+                            [
+                              "binary"
+                            ]
+                          ]
+                        },
+                        "name": "out",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  64
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "Block": {
+                  "meta": {},
+                  "stmts": [
+                    {
+                      "InitializationBlock": {
+                        "meta": {},
+                        "xtype": "Var",
+                        "initializations": [
+                          {
+                            "Declaration": {
+                              "meta": {},
+                              "xtype": "Var",
+                              "name": "j",
+                              "dimensions": [],
+                              "is_constant": true,
+                              "is_anonymous": false
+                            }
+                          },
+                          {
+                            "Substitution": {
+                              "meta": {},
+                              "var": "j",
+                              "access": [],
+                              "op": "AssignVar",
+                              "rhe": {
+                                "Number": [
+                                  {},
+                                  [
+                                    0,
+                                    []
+                                  ]
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "While": {
+                        "meta": {},
+                        "cond": {
+                          "InfixOp": {
+                            "meta": {},
+                            "lhe": {
+                              "Variable": {
+                                "meta": {},
+                                "name": "j",
+                                "access": []
+                              }
+                            },
+                            "infix_op": "Lesser",
+                            "rhe": {
+                              "Number": [
+                                {},
+                                [
+                                  1,
+                                  [
+                                    64
+                                  ]
+                                ]
+                              ]
+                            }
+                          }
+                        },
+                        "stmt": {
+                          "Block": {
+                            "meta": {},
+                            "stmts": [
+                              {
+                                "Block": {
+                                  "meta": {},
+                                  "stmts": [
+                                    {
+                                      "Substitution": {
+                                        "meta": {},
+                                        "var": "out",
+                                        "access": [
+                                          {
+                                            "ArrayAccess": {
+                                              "Variable": {
+                                                "meta": {},
+                                                "name": "j",
+                                                "access": []
+                                              }
+                                            }
+                                          }
+                                        ],
+                                        "op": "AssignConstraintSignal",
+                                        "rhe": {
+                                          "Variable": {
+                                            "meta": {},
+                                            "name": "in",
+                                            "access": [
+                                              {
+                                                "ArrayAccess": {
+                                                  "InfixOp": {
+                                                    "meta": {},
+                                                    "lhe": {
+                                                      "InfixOp": {
+                                                        "meta": {},
+                                                        "lhe": {
+                                                          "Variable": {
+                                                            "meta": {},
+                                                            "name": "j",
+                                                            "access": []
+                                                          }
+                                                        },
+                                                        "infix_op": "Add",
+                                                        "rhe": {
+                                                          "Variable": {
+                                                            "meta": {},
+                                                            "name": "i",
+                                                            "access": []
+                                                          }
+                                                        }
+                                                      }
+                                                    },
+                                                    "infix_op": "Mod",
+                                                    "rhe": {
+                                                      "Number": [
+                                                        {},
+                                                        [
+                                                          1,
+                                                          [
+                                                            64
+                                                          ]
+                                                        ]
+                                                      ]
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "Substitution": {
+                                  "meta": {},
+                                  "var": "j",
+                                  "access": [],
+                                  "op": "AssignVar",
+                                  "rhe": {
+                                    "InfixOp": {
+                                      "meta": {},
+                                      "lhe": {
+                                        "Variable": {
+                                          "meta": {},
+                                          "name": "j",
+                                          "access": []
+                                        }
+                                      },
+                                      "infix_op": "Add",
+                                      "rhe": {
+                                        "Number": [
+                                          {},
+                                          [
+                                            1,
+                                            [
+                                              1
+                                            ]
+                                          ]
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        "parallel": false,
+        "is_custom_gate": false,
+        "is_extern_c": false
+      }
+    },
+    {
+      "Function": {
+        "meta": {},
+        "name": "word_2_bits",
+        "args": [
+          "in"
+        ],
+        "arg_location": {
+          "start": 220,
+          "end": 222
+        },
+        "body": {
+          "Block": {
+            "meta": {},
+            "stmts": [
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": "Var",
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": "Var",
+                        "name": "out",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  64
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    },
+                    {
+                      "Substitution": {
+                        "meta": {},
+                        "var": "out",
+                        "access": [],
+                        "op": "AssignVar",
+                        "rhe": {
+                          "UniformArray": {
+                            "meta": {},
+                            "value": {
+                              "Number": [
+                                {},
+                                [
+                                  0,
+                                  []
+                                ]
+                              ]
+                            },
+                            "dimension": {
+                              "Number": [
+                                {},
+                                [
+                                  1,
+                                  [
+                                    64
+                                  ]
+                                ]
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "Block": {
+                  "meta": {},
+                  "stmts": [
+                    {
+                      "InitializationBlock": {
+                        "meta": {},
+                        "xtype": "Var",
+                        "initializations": [
+                          {
+                            "Declaration": {
+                              "meta": {},
+                              "xtype": "Var",
+                              "name": "i",
+                              "dimensions": [],
+                              "is_constant": true,
+                              "is_anonymous": false
+                            }
+                          },
+                          {
+                            "Substitution": {
+                              "meta": {},
+                              "var": "i",
+                              "access": [],
+                              "op": "AssignVar",
+                              "rhe": {
+                                "Number": [
+                                  {},
+                                  [
+                                    0,
+                                    []
+                                  ]
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "While": {
+                        "meta": {},
+                        "cond": {
+                          "InfixOp": {
+                            "meta": {},
+                            "lhe": {
+                              "Variable": {
+                                "meta": {},
+                                "name": "i",
+                                "access": []
+                              }
+                            },
+                            "infix_op": "Lesser",
+                            "rhe": {
+                              "Number": [
+                                {},
+                                [
+                                  1,
+                                  [
+                                    64
+                                  ]
+                                ]
+                              ]
+                            }
+                          }
+                        },
+                        "stmt": {
+                          "Block": {
+                            "meta": {},
+                            "stmts": [
+                              {
+                                "Block": {
+                                  "meta": {},
+                                  "stmts": [
+                                    {
+                                      "Substitution": {
+                                        "meta": {},
+                                        "var": "out",
+                                        "access": [
+                                          {
+                                            "ArrayAccess": {
+                                              "Variable": {
+                                                "meta": {},
+                                                "name": "i",
+                                                "access": []
+                                              }
+                                            }
+                                          }
+                                        ],
+                                        "op": "AssignVar",
+                                        "rhe": {
+                                          "InfixOp": {
+                                            "meta": {},
+                                            "lhe": {
+                                              "InfixOp": {
+                                                "meta": {},
+                                                "lhe": {
+                                                  "Variable": {
+                                                    "meta": {},
+                                                    "name": "in",
+                                                    "access": []
+                                                  }
+                                                },
+                                                "infix_op": "ShiftR",
+                                                "rhe": {
+                                                  "Variable": {
+                                                    "meta": {},
+                                                    "name": "i",
+                                                    "access": []
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            "infix_op": "BitAnd",
+                                            "rhe": {
+                                              "Number": [
+                                                {},
+                                                [
+                                                  1,
+                                                  [
+                                                    1
+                                                  ]
+                                                ]
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "Substitution": {
+                                  "meta": {},
+                                  "var": "i",
+                                  "access": [],
+                                  "op": "AssignVar",
+                                  "rhe": {
+                                    "InfixOp": {
+                                      "meta": {},
+                                      "lhe": {
+                                        "Variable": {
+                                          "meta": {},
+                                          "name": "i",
+                                          "access": []
+                                        }
+                                      },
+                                      "infix_op": "Add",
+                                      "rhe": {
+                                        "Number": [
+                                          {},
+                                          [
+                                            1,
+                                            [
+                                              1
+                                            ]
+                                          ]
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "Return": {
+                  "meta": {},
+                  "value": {
+                    "Variable": {
+                      "meta": {},
+                      "name": "out",
+                      "access": []
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "Function": {
+        "meta": {},
+        "name": "byte_2_bits",
+        "args": [
+          "in"
+        ],
+        "arg_location": {
+          "start": 356,
+          "end": 358
+        },
+        "body": {
+          "Block": {
+            "meta": {},
+            "stmts": [
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": "Var",
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": "Var",
+                        "name": "out",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  8
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    },
+                    {
+                      "Substitution": {
+                        "meta": {},
+                        "var": "out",
+                        "access": [],
+                        "op": "AssignVar",
+                        "rhe": {
+                          "UniformArray": {
+                            "meta": {},
+                            "value": {
+                              "Number": [
+                                {},
+                                [
+                                  0,
+                                  []
+                                ]
+                              ]
+                            },
+                            "dimension": {
+                              "Number": [
+                                {},
+                                [
+                                  1,
+                                  [
+                                    8
+                                  ]
+                                ]
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "Block": {
+                  "meta": {},
+                  "stmts": [
+                    {
+                      "InitializationBlock": {
+                        "meta": {},
+                        "xtype": "Var",
+                        "initializations": [
+                          {
+                            "Declaration": {
+                              "meta": {},
+                              "xtype": "Var",
+                              "name": "i",
+                              "dimensions": [],
+                              "is_constant": true,
+                              "is_anonymous": false
+                            }
+                          },
+                          {
+                            "Substitution": {
+                              "meta": {},
+                              "var": "i",
+                              "access": [],
+                              "op": "AssignVar",
+                              "rhe": {
+                                "Number": [
+                                  {},
+                                  [
+                                    0,
+                                    []
+                                  ]
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "While": {
+                        "meta": {},
+                        "cond": {
+                          "InfixOp": {
+                            "meta": {},
+                            "lhe": {
+                              "Variable": {
+                                "meta": {},
+                                "name": "i",
+                                "access": []
+                              }
+                            },
+                            "infix_op": "Lesser",
+                            "rhe": {
+                              "Number": [
+                                {},
+                                [
+                                  1,
+                                  [
+                                    8
+                                  ]
+                                ]
+                              ]
+                            }
+                          }
+                        },
+                        "stmt": {
+                          "Block": {
+                            "meta": {},
+                            "stmts": [
+                              {
+                                "Block": {
+                                  "meta": {},
+                                  "stmts": [
+                                    {
+                                      "Substitution": {
+                                        "meta": {},
+                                        "var": "out",
+                                        "access": [
+                                          {
+                                            "ArrayAccess": {
+                                              "Variable": {
+                                                "meta": {},
+                                                "name": "i",
+                                                "access": []
+                                              }
+                                            }
+                                          }
+                                        ],
+                                        "op": "AssignVar",
+                                        "rhe": {
+                                          "InfixOp": {
+                                            "meta": {},
+                                            "lhe": {
+                                              "InfixOp": {
+                                                "meta": {},
+                                                "lhe": {
+                                                  "Variable": {
+                                                    "meta": {},
+                                                    "name": "in",
+                                                    "access": []
+                                                  }
+                                                },
+                                                "infix_op": "ShiftR",
+                                                "rhe": {
+                                                  "Variable": {
+                                                    "meta": {},
+                                                    "name": "i",
+                                                    "access": []
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            "infix_op": "BitAnd",
+                                            "rhe": {
+                                              "Number": [
+                                                {},
+                                                [
+                                                  1,
+                                                  [
+                                                    1
+                                                  ]
+                                                ]
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "Substitution": {
+                                  "meta": {},
+                                  "var": "i",
+                                  "access": [],
+                                  "op": "AssignVar",
+                                  "rhe": {
+                                    "InfixOp": {
+                                      "meta": {},
+                                      "lhe": {
+                                        "Variable": {
+                                          "meta": {},
+                                          "name": "i",
+                                          "access": []
+                                        }
+                                      },
+                                      "infix_op": "Add",
+                                      "rhe": {
+                                        "Number": [
+                                          {},
+                                          [
+                                            1,
+                                            [
+                                              1
+                                            ]
+                                          ]
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "Return": {
+                  "meta": {},
+                  "value": {
+                    "Variable": {
+                      "meta": {},
+                      "name": "out",
+                      "access": []
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "main_component": null
+}

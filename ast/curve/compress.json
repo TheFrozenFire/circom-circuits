@@ -1,0 +1,1128 @@
+{
+  "meta": {},
+  "compiler_version": [
+    2,
+    2,
+    2
+  ],
+  "custom_gates": false,
+  "custom_gates_declared": false,
+  "includes": [
+    "packing/bitify.circom"
+  ],
+  "definitions": [
+    {
+      "Template": {
+        "meta": {},
+        "name": "BabyCompress",
+        "args": [],
+        "arg_location": {
+          "start": 247,
+          "end": 249
+        },
+        "body": {
+          "Block": {
+            "meta": {},
+            "stmts": [
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Input",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Input",
+                            []
+                          ]
+                        },
+                        "name": "in",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  2
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Output",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Output",
+                            []
+                          ]
+                        },
+                        "name": "out",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  256
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Intermediate",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Intermediate",
+                            []
+                          ]
+                        },
+                        "name": "xBits",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  254
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    },
+                    {
+                      "Substitution": {
+                        "meta": {},
+                        "var": "xBits",
+                        "access": [],
+                        "op": "AssignConstraintSignal",
+                        "rhe": {
+                          "AnonymousComp": {
+                            "meta": {},
+                            "id": "Num2BitsLE",
+                            "is_parallel": false,
+                            "params": [
+                              {
+                                "Number": [
+                                  {},
+                                  [
+                                    1,
+                                    [
+                                      254
+                                    ]
+                                  ]
+                                ]
+                              }
+                            ],
+                            "signals": [
+                              {
+                                "Variable": {
+                                  "meta": {},
+                                  "name": "in",
+                                  "access": [
+                                    {
+                                      "ArrayAccess": {
+                                        "Number": [
+                                          {},
+                                          [
+                                            0,
+                                            []
+                                          ]
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            ],
+                            "names": null
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Intermediate",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Intermediate",
+                            []
+                          ]
+                        },
+                        "name": "yBits",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  254
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    },
+                    {
+                      "Substitution": {
+                        "meta": {},
+                        "var": "yBits",
+                        "access": [],
+                        "op": "AssignConstraintSignal",
+                        "rhe": {
+                          "AnonymousComp": {
+                            "meta": {},
+                            "id": "Num2BitsLE",
+                            "is_parallel": false,
+                            "params": [
+                              {
+                                "Number": [
+                                  {},
+                                  [
+                                    1,
+                                    [
+                                      254
+                                    ]
+                                  ]
+                                ]
+                              }
+                            ],
+                            "signals": [
+                              {
+                                "Variable": {
+                                  "meta": {},
+                                  "name": "in",
+                                  "access": [
+                                    {
+                                      "ArrayAccess": {
+                                        "Number": [
+                                          {},
+                                          [
+                                            1,
+                                            [
+                                              1
+                                            ]
+                                          ]
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            ],
+                            "names": null
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "Block": {
+                  "meta": {},
+                  "stmts": [
+                    {
+                      "InitializationBlock": {
+                        "meta": {},
+                        "xtype": "Var",
+                        "initializations": [
+                          {
+                            "Declaration": {
+                              "meta": {},
+                              "xtype": "Var",
+                              "name": "i",
+                              "dimensions": [],
+                              "is_constant": true,
+                              "is_anonymous": false
+                            }
+                          },
+                          {
+                            "Substitution": {
+                              "meta": {},
+                              "var": "i",
+                              "access": [],
+                              "op": "AssignVar",
+                              "rhe": {
+                                "Number": [
+                                  {},
+                                  [
+                                    0,
+                                    []
+                                  ]
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "While": {
+                        "meta": {},
+                        "cond": {
+                          "InfixOp": {
+                            "meta": {},
+                            "lhe": {
+                              "Variable": {
+                                "meta": {},
+                                "name": "i",
+                                "access": []
+                              }
+                            },
+                            "infix_op": "Lesser",
+                            "rhe": {
+                              "Number": [
+                                {},
+                                [
+                                  1,
+                                  [
+                                    254
+                                  ]
+                                ]
+                              ]
+                            }
+                          }
+                        },
+                        "stmt": {
+                          "Block": {
+                            "meta": {},
+                            "stmts": [
+                              {
+                                "Block": {
+                                  "meta": {},
+                                  "stmts": [
+                                    {
+                                      "Substitution": {
+                                        "meta": {},
+                                        "var": "out",
+                                        "access": [
+                                          {
+                                            "ArrayAccess": {
+                                              "Variable": {
+                                                "meta": {},
+                                                "name": "i",
+                                                "access": []
+                                              }
+                                            }
+                                          }
+                                        ],
+                                        "op": "AssignConstraintSignal",
+                                        "rhe": {
+                                          "Variable": {
+                                            "meta": {},
+                                            "name": "yBits",
+                                            "access": [
+                                              {
+                                                "ArrayAccess": {
+                                                  "Variable": {
+                                                    "meta": {},
+                                                    "name": "i",
+                                                    "access": []
+                                                  }
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "Substitution": {
+                                  "meta": {},
+                                  "var": "i",
+                                  "access": [],
+                                  "op": "AssignVar",
+                                  "rhe": {
+                                    "InfixOp": {
+                                      "meta": {},
+                                      "lhe": {
+                                        "Variable": {
+                                          "meta": {},
+                                          "name": "i",
+                                          "access": []
+                                        }
+                                      },
+                                      "infix_op": "Add",
+                                      "rhe": {
+                                        "Number": [
+                                          {},
+                                          [
+                                            1,
+                                            [
+                                              1
+                                            ]
+                                          ]
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "Substitution": {
+                  "meta": {},
+                  "var": "out",
+                  "access": [
+                    {
+                      "ArrayAccess": {
+                        "Number": [
+                          {},
+                          [
+                            1,
+                            [
+                              254
+                            ]
+                          ]
+                        ]
+                      }
+                    }
+                  ],
+                  "op": "AssignConstraintSignal",
+                  "rhe": {
+                    "Number": [
+                      {},
+                      [
+                        0,
+                        []
+                      ]
+                    ]
+                  }
+                }
+              },
+              {
+                "Substitution": {
+                  "meta": {},
+                  "var": "out",
+                  "access": [
+                    {
+                      "ArrayAccess": {
+                        "Number": [
+                          {},
+                          [
+                            1,
+                            [
+                              255
+                            ]
+                          ]
+                        ]
+                      }
+                    }
+                  ],
+                  "op": "AssignConstraintSignal",
+                  "rhe": {
+                    "Variable": {
+                      "meta": {},
+                      "name": "xBits",
+                      "access": [
+                        {
+                          "ArrayAccess": {
+                            "Number": [
+                              {},
+                              [
+                                0,
+                                []
+                              ]
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "parallel": false,
+        "is_custom_gate": false,
+        "is_extern_c": false
+      }
+    },
+    {
+      "Template": {
+        "meta": {},
+        "name": "BabyMultiCompress",
+        "args": [
+          "nPoints"
+        ],
+        "arg_location": {
+          "start": 700,
+          "end": 709
+        },
+        "body": {
+          "Block": {
+            "meta": {},
+            "stmts": [
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Input",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Input",
+                            []
+                          ]
+                        },
+                        "name": "in",
+                        "dimensions": [
+                          {
+                            "Variable": {
+                              "meta": {},
+                              "name": "nPoints",
+                              "access": []
+                            }
+                          },
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  2
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Output",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Output",
+                            []
+                          ]
+                        },
+                        "name": "out",
+                        "dimensions": [
+                          {
+                            "InfixOp": {
+                              "meta": {},
+                              "lhe": {
+                                "Variable": {
+                                  "meta": {},
+                                  "name": "nPoints",
+                                  "access": []
+                                }
+                              },
+                              "infix_op": "Mul",
+                              "rhe": {
+                                "Number": [
+                                  {},
+                                  [
+                                    1,
+                                    [
+                                      256
+                                    ]
+                                  ]
+                                ]
+                              }
+                            }
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": "Component",
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": "Component",
+                        "name": "comp",
+                        "dimensions": [
+                          {
+                            "Variable": {
+                              "meta": {},
+                              "name": "nPoints",
+                              "access": []
+                            }
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "Block": {
+                  "meta": {},
+                  "stmts": [
+                    {
+                      "InitializationBlock": {
+                        "meta": {},
+                        "xtype": "Var",
+                        "initializations": [
+                          {
+                            "Declaration": {
+                              "meta": {},
+                              "xtype": "Var",
+                              "name": "i",
+                              "dimensions": [],
+                              "is_constant": true,
+                              "is_anonymous": false
+                            }
+                          },
+                          {
+                            "Substitution": {
+                              "meta": {},
+                              "var": "i",
+                              "access": [],
+                              "op": "AssignVar",
+                              "rhe": {
+                                "Number": [
+                                  {},
+                                  [
+                                    0,
+                                    []
+                                  ]
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "While": {
+                        "meta": {},
+                        "cond": {
+                          "InfixOp": {
+                            "meta": {},
+                            "lhe": {
+                              "Variable": {
+                                "meta": {},
+                                "name": "i",
+                                "access": []
+                              }
+                            },
+                            "infix_op": "Lesser",
+                            "rhe": {
+                              "Variable": {
+                                "meta": {},
+                                "name": "nPoints",
+                                "access": []
+                              }
+                            }
+                          }
+                        },
+                        "stmt": {
+                          "Block": {
+                            "meta": {},
+                            "stmts": [
+                              {
+                                "Block": {
+                                  "meta": {},
+                                  "stmts": [
+                                    {
+                                      "Substitution": {
+                                        "meta": {},
+                                        "var": "comp",
+                                        "access": [
+                                          {
+                                            "ArrayAccess": {
+                                              "Variable": {
+                                                "meta": {},
+                                                "name": "i",
+                                                "access": []
+                                              }
+                                            }
+                                          }
+                                        ],
+                                        "op": "AssignVar",
+                                        "rhe": {
+                                          "Call": {
+                                            "meta": {},
+                                            "id": "BabyCompress",
+                                            "args": []
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "Substitution": {
+                                        "meta": {},
+                                        "var": "comp",
+                                        "access": [
+                                          {
+                                            "ArrayAccess": {
+                                              "Variable": {
+                                                "meta": {},
+                                                "name": "i",
+                                                "access": []
+                                              }
+                                            }
+                                          },
+                                          {
+                                            "ComponentAccess": "in"
+                                          },
+                                          {
+                                            "ArrayAccess": {
+                                              "Number": [
+                                                {},
+                                                [
+                                                  0,
+                                                  []
+                                                ]
+                                              ]
+                                            }
+                                          }
+                                        ],
+                                        "op": "AssignConstraintSignal",
+                                        "rhe": {
+                                          "Variable": {
+                                            "meta": {},
+                                            "name": "in",
+                                            "access": [
+                                              {
+                                                "ArrayAccess": {
+                                                  "Variable": {
+                                                    "meta": {},
+                                                    "name": "i",
+                                                    "access": []
+                                                  }
+                                                }
+                                              },
+                                              {
+                                                "ArrayAccess": {
+                                                  "Number": [
+                                                    {},
+                                                    [
+                                                      0,
+                                                      []
+                                                    ]
+                                                  ]
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "Substitution": {
+                                        "meta": {},
+                                        "var": "comp",
+                                        "access": [
+                                          {
+                                            "ArrayAccess": {
+                                              "Variable": {
+                                                "meta": {},
+                                                "name": "i",
+                                                "access": []
+                                              }
+                                            }
+                                          },
+                                          {
+                                            "ComponentAccess": "in"
+                                          },
+                                          {
+                                            "ArrayAccess": {
+                                              "Number": [
+                                                {},
+                                                [
+                                                  1,
+                                                  [
+                                                    1
+                                                  ]
+                                                ]
+                                              ]
+                                            }
+                                          }
+                                        ],
+                                        "op": "AssignConstraintSignal",
+                                        "rhe": {
+                                          "Variable": {
+                                            "meta": {},
+                                            "name": "in",
+                                            "access": [
+                                              {
+                                                "ArrayAccess": {
+                                                  "Variable": {
+                                                    "meta": {},
+                                                    "name": "i",
+                                                    "access": []
+                                                  }
+                                                }
+                                              },
+                                              {
+                                                "ArrayAccess": {
+                                                  "Number": [
+                                                    {},
+                                                    [
+                                                      1,
+                                                      [
+                                                        1
+                                                      ]
+                                                    ]
+                                                  ]
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "Block": {
+                                        "meta": {},
+                                        "stmts": [
+                                          {
+                                            "InitializationBlock": {
+                                              "meta": {},
+                                              "xtype": "Var",
+                                              "initializations": [
+                                                {
+                                                  "Declaration": {
+                                                    "meta": {},
+                                                    "xtype": "Var",
+                                                    "name": "j",
+                                                    "dimensions": [],
+                                                    "is_constant": true,
+                                                    "is_anonymous": false
+                                                  }
+                                                },
+                                                {
+                                                  "Substitution": {
+                                                    "meta": {},
+                                                    "var": "j",
+                                                    "access": [],
+                                                    "op": "AssignVar",
+                                                    "rhe": {
+                                                      "Number": [
+                                                        {},
+                                                        [
+                                                          0,
+                                                          []
+                                                        ]
+                                                      ]
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          {
+                                            "While": {
+                                              "meta": {},
+                                              "cond": {
+                                                "InfixOp": {
+                                                  "meta": {},
+                                                  "lhe": {
+                                                    "Variable": {
+                                                      "meta": {},
+                                                      "name": "j",
+                                                      "access": []
+                                                    }
+                                                  },
+                                                  "infix_op": "Lesser",
+                                                  "rhe": {
+                                                    "Number": [
+                                                      {},
+                                                      [
+                                                        1,
+                                                        [
+                                                          256
+                                                        ]
+                                                      ]
+                                                    ]
+                                                  }
+                                                }
+                                              },
+                                              "stmt": {
+                                                "Block": {
+                                                  "meta": {},
+                                                  "stmts": [
+                                                    {
+                                                      "Block": {
+                                                        "meta": {},
+                                                        "stmts": [
+                                                          {
+                                                            "Substitution": {
+                                                              "meta": {},
+                                                              "var": "out",
+                                                              "access": [
+                                                                {
+                                                                  "ArrayAccess": {
+                                                                    "InfixOp": {
+                                                                      "meta": {},
+                                                                      "lhe": {
+                                                                        "InfixOp": {
+                                                                          "meta": {},
+                                                                          "lhe": {
+                                                                            "Variable": {
+                                                                              "meta": {},
+                                                                              "name": "i",
+                                                                              "access": []
+                                                                            }
+                                                                          },
+                                                                          "infix_op": "Mul",
+                                                                          "rhe": {
+                                                                            "Number": [
+                                                                              {},
+                                                                              [
+                                                                                1,
+                                                                                [
+                                                                                  256
+                                                                                ]
+                                                                              ]
+                                                                            ]
+                                                                          }
+                                                                        }
+                                                                      },
+                                                                      "infix_op": "Add",
+                                                                      "rhe": {
+                                                                        "Variable": {
+                                                                          "meta": {},
+                                                                          "name": "j",
+                                                                          "access": []
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ],
+                                                              "op": "AssignConstraintSignal",
+                                                              "rhe": {
+                                                                "Variable": {
+                                                                  "meta": {},
+                                                                  "name": "comp",
+                                                                  "access": [
+                                                                    {
+                                                                      "ArrayAccess": {
+                                                                        "Variable": {
+                                                                          "meta": {},
+                                                                          "name": "i",
+                                                                          "access": []
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "ComponentAccess": "out"
+                                                                    },
+                                                                    {
+                                                                      "ArrayAccess": {
+                                                                        "Variable": {
+                                                                          "meta": {},
+                                                                          "name": "j",
+                                                                          "access": []
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        ]
+                                                      }
+                                                    },
+                                                    {
+                                                      "Substitution": {
+                                                        "meta": {},
+                                                        "var": "j",
+                                                        "access": [],
+                                                        "op": "AssignVar",
+                                                        "rhe": {
+                                                          "InfixOp": {
+                                                            "meta": {},
+                                                            "lhe": {
+                                                              "Variable": {
+                                                                "meta": {},
+                                                                "name": "j",
+                                                                "access": []
+                                                              }
+                                                            },
+                                                            "infix_op": "Add",
+                                                            "rhe": {
+                                                              "Number": [
+                                                                {},
+                                                                [
+                                                                  1,
+                                                                  [
+                                                                    1
+                                                                  ]
+                                                                ]
+                                                              ]
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "Substitution": {
+                                  "meta": {},
+                                  "var": "i",
+                                  "access": [],
+                                  "op": "AssignVar",
+                                  "rhe": {
+                                    "InfixOp": {
+                                      "meta": {},
+                                      "lhe": {
+                                        "Variable": {
+                                          "meta": {},
+                                          "name": "i",
+                                          "access": []
+                                        }
+                                      },
+                                      "infix_op": "Add",
+                                      "rhe": {
+                                        "Number": [
+                                          {},
+                                          [
+                                            1,
+                                            [
+                                              1
+                                            ]
+                                          ]
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        "parallel": false,
+        "is_custom_gate": false,
+        "is_extern_c": false
+      }
+    }
+  ],
+  "main_component": null
+}

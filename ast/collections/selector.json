@@ -1,0 +1,1196 @@
+{
+  "meta": {},
+  "compiler_version": [
+    2,
+    2,
+    2
+  ],
+  "custom_gates": false,
+  "custom_gates_declared": false,
+  "includes": [
+    "core/comparators.circom"
+  ],
+  "definitions": [
+    {
+      "Template": {
+        "meta": {},
+        "name": "IndexSelector",
+        "args": [
+          "rows",
+          "cells",
+          "count"
+        ],
+        "arg_location": {
+          "start": 265,
+          "end": 285
+        },
+        "body": {
+          "Block": {
+            "meta": {},
+            "stmts": [
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Input",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Input",
+                            []
+                          ]
+                        },
+                        "name": "in",
+                        "dimensions": [
+                          {
+                            "Variable": {
+                              "meta": {},
+                              "name": "rows",
+                              "access": []
+                            }
+                          },
+                          {
+                            "Variable": {
+                              "meta": {},
+                              "name": "cells",
+                              "access": []
+                            }
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Input",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Input",
+                            []
+                          ]
+                        },
+                        "name": "index",
+                        "dimensions": [
+                          {
+                            "Variable": {
+                              "meta": {},
+                              "name": "count",
+                              "access": []
+                            }
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Output",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Output",
+                            []
+                          ]
+                        },
+                        "name": "out",
+                        "dimensions": [
+                          {
+                            "Variable": {
+                              "meta": {},
+                              "name": "count",
+                              "access": []
+                            }
+                          },
+                          {
+                            "Variable": {
+                              "meta": {},
+                              "name": "cells",
+                              "access": []
+                            }
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": "Component",
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": "Component",
+                        "name": "eq",
+                        "dimensions": [
+                          {
+                            "Variable": {
+                              "meta": {},
+                              "name": "count",
+                              "access": []
+                            }
+                          },
+                          {
+                            "Variable": {
+                              "meta": {},
+                              "name": "rows",
+                              "access": []
+                            }
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Intermediate",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Intermediate",
+                            []
+                          ]
+                        },
+                        "name": "products",
+                        "dimensions": [
+                          {
+                            "Variable": {
+                              "meta": {},
+                              "name": "count",
+                              "access": []
+                            }
+                          },
+                          {
+                            "Variable": {
+                              "meta": {},
+                              "name": "rows",
+                              "access": []
+                            }
+                          },
+                          {
+                            "Variable": {
+                              "meta": {},
+                              "name": "cells",
+                              "access": []
+                            }
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "Block": {
+                  "meta": {},
+                  "stmts": [
+                    {
+                      "InitializationBlock": {
+                        "meta": {},
+                        "xtype": "Var",
+                        "initializations": [
+                          {
+                            "Declaration": {
+                              "meta": {},
+                              "xtype": "Var",
+                              "name": "i",
+                              "dimensions": [],
+                              "is_constant": true,
+                              "is_anonymous": false
+                            }
+                          },
+                          {
+                            "Substitution": {
+                              "meta": {},
+                              "var": "i",
+                              "access": [],
+                              "op": "AssignVar",
+                              "rhe": {
+                                "Number": [
+                                  {},
+                                  [
+                                    0,
+                                    []
+                                  ]
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "While": {
+                        "meta": {},
+                        "cond": {
+                          "InfixOp": {
+                            "meta": {},
+                            "lhe": {
+                              "Variable": {
+                                "meta": {},
+                                "name": "i",
+                                "access": []
+                              }
+                            },
+                            "infix_op": "Lesser",
+                            "rhe": {
+                              "Variable": {
+                                "meta": {},
+                                "name": "count",
+                                "access": []
+                              }
+                            }
+                          }
+                        },
+                        "stmt": {
+                          "Block": {
+                            "meta": {},
+                            "stmts": [
+                              {
+                                "Block": {
+                                  "meta": {},
+                                  "stmts": [
+                                    {
+                                      "Block": {
+                                        "meta": {},
+                                        "stmts": [
+                                          {
+                                            "InitializationBlock": {
+                                              "meta": {},
+                                              "xtype": "Var",
+                                              "initializations": [
+                                                {
+                                                  "Declaration": {
+                                                    "meta": {},
+                                                    "xtype": "Var",
+                                                    "name": "j",
+                                                    "dimensions": [],
+                                                    "is_constant": true,
+                                                    "is_anonymous": false
+                                                  }
+                                                },
+                                                {
+                                                  "Substitution": {
+                                                    "meta": {},
+                                                    "var": "j",
+                                                    "access": [],
+                                                    "op": "AssignVar",
+                                                    "rhe": {
+                                                      "Number": [
+                                                        {},
+                                                        [
+                                                          0,
+                                                          []
+                                                        ]
+                                                      ]
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          {
+                                            "While": {
+                                              "meta": {},
+                                              "cond": {
+                                                "InfixOp": {
+                                                  "meta": {},
+                                                  "lhe": {
+                                                    "Variable": {
+                                                      "meta": {},
+                                                      "name": "j",
+                                                      "access": []
+                                                    }
+                                                  },
+                                                  "infix_op": "Lesser",
+                                                  "rhe": {
+                                                    "Variable": {
+                                                      "meta": {},
+                                                      "name": "rows",
+                                                      "access": []
+                                                    }
+                                                  }
+                                                }
+                                              },
+                                              "stmt": {
+                                                "Block": {
+                                                  "meta": {},
+                                                  "stmts": [
+                                                    {
+                                                      "Block": {
+                                                        "meta": {},
+                                                        "stmts": [
+                                                          {
+                                                            "Substitution": {
+                                                              "meta": {},
+                                                              "var": "eq",
+                                                              "access": [
+                                                                {
+                                                                  "ArrayAccess": {
+                                                                    "Variable": {
+                                                                      "meta": {},
+                                                                      "name": "i",
+                                                                      "access": []
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "ArrayAccess": {
+                                                                    "Variable": {
+                                                                      "meta": {},
+                                                                      "name": "j",
+                                                                      "access": []
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ],
+                                                              "op": "AssignVar",
+                                                              "rhe": {
+                                                                "Call": {
+                                                                  "meta": {},
+                                                                  "id": "IsEqual",
+                                                                  "args": []
+                                                                }
+                                                              }
+                                                            }
+                                                          },
+                                                          {
+                                                            "Substitution": {
+                                                              "meta": {},
+                                                              "var": "eq",
+                                                              "access": [
+                                                                {
+                                                                  "ArrayAccess": {
+                                                                    "Variable": {
+                                                                      "meta": {},
+                                                                      "name": "i",
+                                                                      "access": []
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "ArrayAccess": {
+                                                                    "Variable": {
+                                                                      "meta": {},
+                                                                      "name": "j",
+                                                                      "access": []
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "ComponentAccess": "in"
+                                                                },
+                                                                {
+                                                                  "ArrayAccess": {
+                                                                    "Number": [
+                                                                      {},
+                                                                      [
+                                                                        0,
+                                                                        []
+                                                                      ]
+                                                                    ]
+                                                                  }
+                                                                }
+                                                              ],
+                                                              "op": "AssignConstraintSignal",
+                                                              "rhe": {
+                                                                "Variable": {
+                                                                  "meta": {},
+                                                                  "name": "in",
+                                                                  "access": [
+                                                                    {
+                                                                      "ArrayAccess": {
+                                                                        "Variable": {
+                                                                          "meta": {},
+                                                                          "name": "j",
+                                                                          "access": []
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "ArrayAccess": {
+                                                                        "Number": [
+                                                                          {},
+                                                                          [
+                                                                            0,
+                                                                            []
+                                                                          ]
+                                                                        ]
+                                                                      }
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              }
+                                                            }
+                                                          },
+                                                          {
+                                                            "Substitution": {
+                                                              "meta": {},
+                                                              "var": "eq",
+                                                              "access": [
+                                                                {
+                                                                  "ArrayAccess": {
+                                                                    "Variable": {
+                                                                      "meta": {},
+                                                                      "name": "i",
+                                                                      "access": []
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "ArrayAccess": {
+                                                                    "Variable": {
+                                                                      "meta": {},
+                                                                      "name": "j",
+                                                                      "access": []
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "ComponentAccess": "in"
+                                                                },
+                                                                {
+                                                                  "ArrayAccess": {
+                                                                    "Number": [
+                                                                      {},
+                                                                      [
+                                                                        1,
+                                                                        [
+                                                                          1
+                                                                        ]
+                                                                      ]
+                                                                    ]
+                                                                  }
+                                                                }
+                                                              ],
+                                                              "op": "AssignConstraintSignal",
+                                                              "rhe": {
+                                                                "Variable": {
+                                                                  "meta": {},
+                                                                  "name": "index",
+                                                                  "access": [
+                                                                    {
+                                                                      "ArrayAccess": {
+                                                                        "Variable": {
+                                                                          "meta": {},
+                                                                          "name": "i",
+                                                                          "access": []
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              }
+                                                            }
+                                                          },
+                                                          {
+                                                            "Block": {
+                                                              "meta": {},
+                                                              "stmts": [
+                                                                {
+                                                                  "InitializationBlock": {
+                                                                    "meta": {},
+                                                                    "xtype": "Var",
+                                                                    "initializations": [
+                                                                      {
+                                                                        "Declaration": {
+                                                                          "meta": {},
+                                                                          "xtype": "Var",
+                                                                          "name": "k",
+                                                                          "dimensions": [],
+                                                                          "is_constant": true,
+                                                                          "is_anonymous": false
+                                                                        }
+                                                                      },
+                                                                      {
+                                                                        "Substitution": {
+                                                                          "meta": {},
+                                                                          "var": "k",
+                                                                          "access": [],
+                                                                          "op": "AssignVar",
+                                                                          "rhe": {
+                                                                            "Number": [
+                                                                              {},
+                                                                              [
+                                                                                0,
+                                                                                []
+                                                                              ]
+                                                                            ]
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    ]
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "While": {
+                                                                    "meta": {},
+                                                                    "cond": {
+                                                                      "InfixOp": {
+                                                                        "meta": {},
+                                                                        "lhe": {
+                                                                          "Variable": {
+                                                                            "meta": {},
+                                                                            "name": "k",
+                                                                            "access": []
+                                                                          }
+                                                                        },
+                                                                        "infix_op": "Lesser",
+                                                                        "rhe": {
+                                                                          "Variable": {
+                                                                            "meta": {},
+                                                                            "name": "cells",
+                                                                            "access": []
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    "stmt": {
+                                                                      "Block": {
+                                                                        "meta": {},
+                                                                        "stmts": [
+                                                                          {
+                                                                            "Block": {
+                                                                              "meta": {},
+                                                                              "stmts": [
+                                                                                {
+                                                                                  "Substitution": {
+                                                                                    "meta": {},
+                                                                                    "var": "products",
+                                                                                    "access": [
+                                                                                      {
+                                                                                        "ArrayAccess": {
+                                                                                          "Variable": {
+                                                                                            "meta": {},
+                                                                                            "name": "i",
+                                                                                            "access": []
+                                                                                          }
+                                                                                        }
+                                                                                      },
+                                                                                      {
+                                                                                        "ArrayAccess": {
+                                                                                          "Variable": {
+                                                                                            "meta": {},
+                                                                                            "name": "j",
+                                                                                            "access": []
+                                                                                          }
+                                                                                        }
+                                                                                      },
+                                                                                      {
+                                                                                        "ArrayAccess": {
+                                                                                          "Variable": {
+                                                                                            "meta": {},
+                                                                                            "name": "k",
+                                                                                            "access": []
+                                                                                          }
+                                                                                        }
+                                                                                      }
+                                                                                    ],
+                                                                                    "op": "AssignConstraintSignal",
+                                                                                    "rhe": {
+                                                                                      "InfixOp": {
+                                                                                        "meta": {},
+                                                                                        "lhe": {
+                                                                                          "Variable": {
+                                                                                            "meta": {},
+                                                                                            "name": "in",
+                                                                                            "access": [
+                                                                                              {
+                                                                                                "ArrayAccess": {
+                                                                                                  "Variable": {
+                                                                                                    "meta": {},
+                                                                                                    "name": "j",
+                                                                                                    "access": []
+                                                                                                  }
+                                                                                                }
+                                                                                              },
+                                                                                              {
+                                                                                                "ArrayAccess": {
+                                                                                                  "Variable": {
+                                                                                                    "meta": {},
+                                                                                                    "name": "k",
+                                                                                                    "access": []
+                                                                                                  }
+                                                                                                }
+                                                                                              }
+                                                                                            ]
+                                                                                          }
+                                                                                        },
+                                                                                        "infix_op": "Mul",
+                                                                                        "rhe": {
+                                                                                          "Variable": {
+                                                                                            "meta": {},
+                                                                                            "name": "eq",
+                                                                                            "access": [
+                                                                                              {
+                                                                                                "ArrayAccess": {
+                                                                                                  "Variable": {
+                                                                                                    "meta": {},
+                                                                                                    "name": "i",
+                                                                                                    "access": []
+                                                                                                  }
+                                                                                                }
+                                                                                              },
+                                                                                              {
+                                                                                                "ArrayAccess": {
+                                                                                                  "Variable": {
+                                                                                                    "meta": {},
+                                                                                                    "name": "j",
+                                                                                                    "access": []
+                                                                                                  }
+                                                                                                }
+                                                                                              },
+                                                                                              {
+                                                                                                "ComponentAccess": "out"
+                                                                                              }
+                                                                                            ]
+                                                                                          }
+                                                                                        }
+                                                                                      }
+                                                                                    }
+                                                                                  }
+                                                                                }
+                                                                              ]
+                                                                            }
+                                                                          },
+                                                                          {
+                                                                            "Substitution": {
+                                                                              "meta": {},
+                                                                              "var": "k",
+                                                                              "access": [],
+                                                                              "op": "AssignVar",
+                                                                              "rhe": {
+                                                                                "InfixOp": {
+                                                                                  "meta": {},
+                                                                                  "lhe": {
+                                                                                    "Variable": {
+                                                                                      "meta": {},
+                                                                                      "name": "k",
+                                                                                      "access": []
+                                                                                    }
+                                                                                  },
+                                                                                  "infix_op": "Add",
+                                                                                  "rhe": {
+                                                                                    "Number": [
+                                                                                      {},
+                                                                                      [
+                                                                                        1,
+                                                                                        [
+                                                                                          1
+                                                                                        ]
+                                                                                      ]
+                                                                                    ]
+                                                                                  }
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          }
+                                                                        ]
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        ]
+                                                      }
+                                                    },
+                                                    {
+                                                      "Substitution": {
+                                                        "meta": {},
+                                                        "var": "j",
+                                                        "access": [],
+                                                        "op": "AssignVar",
+                                                        "rhe": {
+                                                          "InfixOp": {
+                                                            "meta": {},
+                                                            "lhe": {
+                                                              "Variable": {
+                                                                "meta": {},
+                                                                "name": "j",
+                                                                "access": []
+                                                              }
+                                                            },
+                                                            "infix_op": "Add",
+                                                            "rhe": {
+                                                              "Number": [
+                                                                {},
+                                                                [
+                                                                  1,
+                                                                  [
+                                                                    1
+                                                                  ]
+                                                                ]
+                                                              ]
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    {
+                                      "Block": {
+                                        "meta": {},
+                                        "stmts": [
+                                          {
+                                            "InitializationBlock": {
+                                              "meta": {},
+                                              "xtype": "Var",
+                                              "initializations": [
+                                                {
+                                                  "Declaration": {
+                                                    "meta": {},
+                                                    "xtype": "Var",
+                                                    "name": "k",
+                                                    "dimensions": [],
+                                                    "is_constant": true,
+                                                    "is_anonymous": false
+                                                  }
+                                                },
+                                                {
+                                                  "Substitution": {
+                                                    "meta": {},
+                                                    "var": "k",
+                                                    "access": [],
+                                                    "op": "AssignVar",
+                                                    "rhe": {
+                                                      "Number": [
+                                                        {},
+                                                        [
+                                                          0,
+                                                          []
+                                                        ]
+                                                      ]
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          {
+                                            "While": {
+                                              "meta": {},
+                                              "cond": {
+                                                "InfixOp": {
+                                                  "meta": {},
+                                                  "lhe": {
+                                                    "Variable": {
+                                                      "meta": {},
+                                                      "name": "k",
+                                                      "access": []
+                                                    }
+                                                  },
+                                                  "infix_op": "Lesser",
+                                                  "rhe": {
+                                                    "Variable": {
+                                                      "meta": {},
+                                                      "name": "cells",
+                                                      "access": []
+                                                    }
+                                                  }
+                                                }
+                                              },
+                                              "stmt": {
+                                                "Block": {
+                                                  "meta": {},
+                                                  "stmts": [
+                                                    {
+                                                      "Block": {
+                                                        "meta": {},
+                                                        "stmts": [
+                                                          {
+                                                            "InitializationBlock": {
+                                                              "meta": {},
+                                                              "xtype": "Var",
+                                                              "initializations": [
+                                                                {
+                                                                  "Declaration": {
+                                                                    "meta": {},
+                                                                    "xtype": "Var",
+                                                                    "name": "sum",
+                                                                    "dimensions": [],
+                                                                    "is_constant": true,
+                                                                    "is_anonymous": false
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "Substitution": {
+                                                                    "meta": {},
+                                                                    "var": "sum",
+                                                                    "access": [],
+                                                                    "op": "AssignVar",
+                                                                    "rhe": {
+                                                                      "Number": [
+                                                                        {},
+                                                                        [
+                                                                          0,
+                                                                          []
+                                                                        ]
+                                                                      ]
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          },
+                                                          {
+                                                            "Block": {
+                                                              "meta": {},
+                                                              "stmts": [
+                                                                {
+                                                                  "InitializationBlock": {
+                                                                    "meta": {},
+                                                                    "xtype": "Var",
+                                                                    "initializations": [
+                                                                      {
+                                                                        "Declaration": {
+                                                                          "meta": {},
+                                                                          "xtype": "Var",
+                                                                          "name": "j",
+                                                                          "dimensions": [],
+                                                                          "is_constant": true,
+                                                                          "is_anonymous": false
+                                                                        }
+                                                                      },
+                                                                      {
+                                                                        "Substitution": {
+                                                                          "meta": {},
+                                                                          "var": "j",
+                                                                          "access": [],
+                                                                          "op": "AssignVar",
+                                                                          "rhe": {
+                                                                            "Number": [
+                                                                              {},
+                                                                              [
+                                                                                0,
+                                                                                []
+                                                                              ]
+                                                                            ]
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    ]
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "While": {
+                                                                    "meta": {},
+                                                                    "cond": {
+                                                                      "InfixOp": {
+                                                                        "meta": {},
+                                                                        "lhe": {
+                                                                          "Variable": {
+                                                                            "meta": {},
+                                                                            "name": "j",
+                                                                            "access": []
+                                                                          }
+                                                                        },
+                                                                        "infix_op": "Lesser",
+                                                                        "rhe": {
+                                                                          "Variable": {
+                                                                            "meta": {},
+                                                                            "name": "rows",
+                                                                            "access": []
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    "stmt": {
+                                                                      "Block": {
+                                                                        "meta": {},
+                                                                        "stmts": [
+                                                                          {
+                                                                            "Block": {
+                                                                              "meta": {},
+                                                                              "stmts": [
+                                                                                {
+                                                                                  "Substitution": {
+                                                                                    "meta": {},
+                                                                                    "var": "sum",
+                                                                                    "access": [],
+                                                                                    "op": "AssignVar",
+                                                                                    "rhe": {
+                                                                                      "InfixOp": {
+                                                                                        "meta": {},
+                                                                                        "lhe": {
+                                                                                          "Variable": {
+                                                                                            "meta": {},
+                                                                                            "name": "sum",
+                                                                                            "access": []
+                                                                                          }
+                                                                                        },
+                                                                                        "infix_op": "Add",
+                                                                                        "rhe": {
+                                                                                          "Variable": {
+                                                                                            "meta": {},
+                                                                                            "name": "products",
+                                                                                            "access": [
+                                                                                              {
+                                                                                                "ArrayAccess": {
+                                                                                                  "Variable": {
+                                                                                                    "meta": {},
+                                                                                                    "name": "i",
+                                                                                                    "access": []
+                                                                                                  }
+                                                                                                }
+                                                                                              },
+                                                                                              {
+                                                                                                "ArrayAccess": {
+                                                                                                  "Variable": {
+                                                                                                    "meta": {},
+                                                                                                    "name": "j",
+                                                                                                    "access": []
+                                                                                                  }
+                                                                                                }
+                                                                                              },
+                                                                                              {
+                                                                                                "ArrayAccess": {
+                                                                                                  "Variable": {
+                                                                                                    "meta": {},
+                                                                                                    "name": "k",
+                                                                                                    "access": []
+                                                                                                  }
+                                                                                                }
+                                                                                              }
+                                                                                            ]
+                                                                                          }
+                                                                                        }
+                                                                                      }
+                                                                                    }
+                                                                                  }
+                                                                                }
+                                                                              ]
+                                                                            }
+                                                                          },
+                                                                          {
+                                                                            "Substitution": {
+                                                                              "meta": {},
+                                                                              "var": "j",
+                                                                              "access": [],
+                                                                              "op": "AssignVar",
+                                                                              "rhe": {
+                                                                                "InfixOp": {
+                                                                                  "meta": {},
+                                                                                  "lhe": {
+                                                                                    "Variable": {
+                                                                                      "meta": {},
+                                                                                      "name": "j",
+                                                                                      "access": []
+                                                                                    }
+                                                                                  },
+                                                                                  "infix_op": "Add",
+                                                                                  "rhe": {
+                                                                                    "Number": [
+                                                                                      {},
+                                                                                      [
+                                                                                        1,
+                                                                                        [
+                                                                                          1
+                                                                                        ]
+                                                                                      ]
+                                                                                    ]
+                                                                                  }
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          }
+                                                                        ]
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          },
+                                                          {
+                                                            "Substitution": {
+                                                              "meta": {},
+                                                              "var": "out",
+                                                              "access": [
+                                                                {
+                                                                  "ArrayAccess": {
+                                                                    "Variable": {
+                                                                      "meta": {},
+                                                                      "name": "i",
+                                                                      "access": []
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "ArrayAccess": {
+                                                                    "Variable": {
+                                                                      "meta": {},
+                                                                      "name": "k",
+                                                                      "access": []
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ],
+                                                              "op": "AssignConstraintSignal",
+                                                              "rhe": {
+                                                                "Variable": {
+                                                                  "meta": {},
+                                                                  "name": "sum",
+                                                                  "access": []
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        ]
+                                                      }
+                                                    },
+                                                    {
+                                                      "Substitution": {
+                                                        "meta": {},
+                                                        "var": "k",
+                                                        "access": [],
+                                                        "op": "AssignVar",
+                                                        "rhe": {
+                                                          "InfixOp": {
+                                                            "meta": {},
+                                                            "lhe": {
+                                                              "Variable": {
+                                                                "meta": {},
+                                                                "name": "k",
+                                                                "access": []
+                                                              }
+                                                            },
+                                                            "infix_op": "Add",
+                                                            "rhe": {
+                                                              "Number": [
+                                                                {},
+                                                                [
+                                                                  1,
+                                                                  [
+                                                                    1
+                                                                  ]
+                                                                ]
+                                                              ]
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "Substitution": {
+                                  "meta": {},
+                                  "var": "i",
+                                  "access": [],
+                                  "op": "AssignVar",
+                                  "rhe": {
+                                    "InfixOp": {
+                                      "meta": {},
+                                      "lhe": {
+                                        "Variable": {
+                                          "meta": {},
+                                          "name": "i",
+                                          "access": []
+                                        }
+                                      },
+                                      "infix_op": "Add",
+                                      "rhe": {
+                                        "Number": [
+                                          {},
+                                          [
+                                            1,
+                                            [
+                                              1
+                                            ]
+                                          ]
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        "parallel": false,
+        "is_custom_gate": false,
+        "is_extern_c": false
+      }
+    }
+  ],
+  "main_component": null
+}

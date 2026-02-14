@@ -1,0 +1,58 @@
+{
+  "meta": {},
+  "compiler_version": [
+    2,
+    2,
+    2
+  ],
+  "custom_gates": false,
+  "custom_gates_declared": false,
+  "includes": [
+    "linalg/orthogonal.circom"
+  ],
+  "definitions": [],
+  "main_component": [
+    [],
+    {
+      "Call": {
+        "meta": {},
+        "id": "OrthogonalTransform",
+        "args": [
+          {
+            "Number": [
+              {},
+              [
+                1,
+                [
+                  128
+                ]
+              ]
+            ]
+          },
+          {
+            "Number": [
+              {},
+              [
+                1,
+                [
+                  32
+                ]
+              ]
+            ]
+          },
+          {
+            "Number": [
+              {},
+              [
+                1,
+                [
+                  40
+                ]
+              ]
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,552 @@
+{
+  "meta": {},
+  "compiler_version": [
+    2,
+    2,
+    2
+  ],
+  "custom_gates": false,
+  "custom_gates_declared": false,
+  "includes": [
+    "curve/constants.circom",
+    "curve/babyjub.circom",
+    "curve/scalarmul.circom",
+    "packing/bitify.circom"
+  ],
+  "definitions": [
+    {
+      "Template": {
+        "meta": {},
+        "name": "SchnorrBlinding",
+        "args": [],
+        "arg_location": {
+          "start": 275,
+          "end": 277
+        },
+        "body": {
+          "Block": {
+            "meta": {},
+            "stmts": [
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Input",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Input",
+                            []
+                          ]
+                        },
+                        "name": "signerX",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  2
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Input",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Input",
+                            []
+                          ]
+                        },
+                        "name": "signerR",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  2
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Input",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Input",
+                            []
+                          ]
+                        },
+                        "name": "blindingA",
+                        "dimensions": [],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Input",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Input",
+                            []
+                          ]
+                        },
+                        "name": "blindingB",
+                        "dimensions": [],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Intermediate",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Intermediate",
+                            []
+                          ]
+                        },
+                        "name": "a_G",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  2
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    },
+                    {
+                      "Substitution": {
+                        "meta": {},
+                        "var": "a_G",
+                        "access": [],
+                        "op": "AssignConstraintSignal",
+                        "rhe": {
+                          "AnonymousComp": {
+                            "meta": {},
+                            "id": "EscalarMulFix",
+                            "is_parallel": false,
+                            "params": [
+                              {
+                                "Number": [
+                                  {},
+                                  [
+                                    1,
+                                    [
+                                      254
+                                    ]
+                                  ]
+                                ]
+                              },
+                              {
+                                "Call": {
+                                  "meta": {},
+                                  "id": "BABYJUB_BASE8",
+                                  "args": []
+                                }
+                              }
+                            ],
+                            "signals": [
+                              {
+                                "AnonymousComp": {
+                                  "meta": {},
+                                  "id": "Num2Bits",
+                                  "is_parallel": false,
+                                  "params": [
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            254
+                                          ]
+                                        ]
+                                      ]
+                                    }
+                                  ],
+                                  "signals": [
+                                    {
+                                      "Variable": {
+                                        "meta": {},
+                                        "name": "blindingA",
+                                        "access": []
+                                      }
+                                    }
+                                  ],
+                                  "names": null
+                                }
+                              }
+                            ],
+                            "names": null
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Intermediate",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Intermediate",
+                            []
+                          ]
+                        },
+                        "name": "b_X",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  2
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    },
+                    {
+                      "Substitution": {
+                        "meta": {},
+                        "var": "b_X",
+                        "access": [],
+                        "op": "AssignConstraintSignal",
+                        "rhe": {
+                          "AnonymousComp": {
+                            "meta": {},
+                            "id": "EscalarMulAny",
+                            "is_parallel": false,
+                            "params": [
+                              {
+                                "Number": [
+                                  {},
+                                  [
+                                    1,
+                                    [
+                                      254
+                                    ]
+                                  ]
+                                ]
+                              }
+                            ],
+                            "signals": [
+                              {
+                                "AnonymousComp": {
+                                  "meta": {},
+                                  "id": "Num2Bits",
+                                  "is_parallel": false,
+                                  "params": [
+                                    {
+                                      "Number": [
+                                        {},
+                                        [
+                                          1,
+                                          [
+                                            254
+                                          ]
+                                        ]
+                                      ]
+                                    }
+                                  ],
+                                  "signals": [
+                                    {
+                                      "Variable": {
+                                        "meta": {},
+                                        "name": "blindingB",
+                                        "access": []
+                                      }
+                                    }
+                                  ],
+                                  "names": null
+                                }
+                              },
+                              {
+                                "Variable": {
+                                  "meta": {},
+                                  "name": "signerX",
+                                  "access": []
+                                }
+                              }
+                            ],
+                            "names": null
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Intermediate",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Intermediate",
+                            []
+                          ]
+                        },
+                        "name": "R_plus_a_G",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  2
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    },
+                    {
+                      "Substitution": {
+                        "meta": {},
+                        "var": "R_plus_a_G",
+                        "access": [],
+                        "op": "AssignConstraintSignal",
+                        "rhe": {
+                          "AnonymousComp": {
+                            "meta": {},
+                            "id": "BabyPointAdd",
+                            "is_parallel": false,
+                            "params": [],
+                            "signals": [
+                              {
+                                "ArrayInLine": {
+                                  "meta": {},
+                                  "values": [
+                                    {
+                                      "Variable": {
+                                        "meta": {},
+                                        "name": "signerR",
+                                        "access": []
+                                      }
+                                    },
+                                    {
+                                      "Variable": {
+                                        "meta": {},
+                                        "name": "a_G",
+                                        "access": []
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            ],
+                            "names": null
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Output",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Output",
+                            []
+                          ]
+                        },
+                        "name": "out",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  2
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    },
+                    {
+                      "Substitution": {
+                        "meta": {},
+                        "var": "out",
+                        "access": [],
+                        "op": "AssignConstraintSignal",
+                        "rhe": {
+                          "AnonymousComp": {
+                            "meta": {},
+                            "id": "BabyPointAdd",
+                            "is_parallel": false,
+                            "params": [],
+                            "signals": [
+                              {
+                                "ArrayInLine": {
+                                  "meta": {},
+                                  "values": [
+                                    {
+                                      "Variable": {
+                                        "meta": {},
+                                        "name": "R_plus_a_G",
+                                        "access": []
+                                      }
+                                    },
+                                    {
+                                      "Variable": {
+                                        "meta": {},
+                                        "name": "b_X",
+                                        "access": []
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            ],
+                            "names": null
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        "parallel": false,
+        "is_custom_gate": false,
+        "is_extern_c": false
+      }
+    }
+  ],
+  "main_component": null
+}

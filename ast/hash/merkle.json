@@ -1,0 +1,1054 @@
+{
+  "meta": {},
+  "compiler_version": [
+    2,
+    2,
+    2
+  ],
+  "custom_gates": false,
+  "custom_gates_declared": false,
+  "includes": [
+    "hash/poseidon.circom",
+    "core/mux.circom"
+  ],
+  "definitions": [
+    {
+      "Template": {
+        "meta": {},
+        "name": "MerkleTreeInclusionProof",
+        "args": [
+          "nLevels"
+        ],
+        "arg_location": {
+          "start": 270,
+          "end": 279
+        },
+        "body": {
+          "Block": {
+            "meta": {},
+            "stmts": [
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Input",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Input",
+                            []
+                          ]
+                        },
+                        "name": "leaf",
+                        "dimensions": [],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Input",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Input",
+                            []
+                          ]
+                        },
+                        "name": "pathIndices",
+                        "dimensions": [
+                          {
+                            "Variable": {
+                              "meta": {},
+                              "name": "nLevels",
+                              "access": []
+                            }
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Input",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Input",
+                            []
+                          ]
+                        },
+                        "name": "siblings",
+                        "dimensions": [
+                          {
+                            "Variable": {
+                              "meta": {},
+                              "name": "nLevels",
+                              "access": []
+                            }
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Output",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Output",
+                            []
+                          ]
+                        },
+                        "name": "out",
+                        "dimensions": [],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Intermediate",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Intermediate",
+                            []
+                          ]
+                        },
+                        "name": "hashes",
+                        "dimensions": [
+                          {
+                            "InfixOp": {
+                              "meta": {},
+                              "lhe": {
+                                "Variable": {
+                                  "meta": {},
+                                  "name": "nLevels",
+                                  "access": []
+                                }
+                              },
+                              "infix_op": "Add",
+                              "rhe": {
+                                "Number": [
+                                  {},
+                                  [
+                                    1,
+                                    [
+                                      1
+                                    ]
+                                  ]
+                                ]
+                              }
+                            }
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "Substitution": {
+                  "meta": {},
+                  "var": "hashes",
+                  "access": [
+                    {
+                      "ArrayAccess": {
+                        "Number": [
+                          {},
+                          [
+                            0,
+                            []
+                          ]
+                        ]
+                      }
+                    }
+                  ],
+                  "op": "AssignConstraintSignal",
+                  "rhe": {
+                    "Variable": {
+                      "meta": {},
+                      "name": "leaf",
+                      "access": []
+                    }
+                  }
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": "Component",
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": "Component",
+                        "name": "poseidons",
+                        "dimensions": [
+                          {
+                            "Variable": {
+                              "meta": {},
+                              "name": "nLevels",
+                              "access": []
+                            }
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": "Component",
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": "Component",
+                        "name": "mux",
+                        "dimensions": [
+                          {
+                            "Variable": {
+                              "meta": {},
+                              "name": "nLevels",
+                              "access": []
+                            }
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "Block": {
+                  "meta": {},
+                  "stmts": [
+                    {
+                      "InitializationBlock": {
+                        "meta": {},
+                        "xtype": "Var",
+                        "initializations": [
+                          {
+                            "Declaration": {
+                              "meta": {},
+                              "xtype": "Var",
+                              "name": "i",
+                              "dimensions": [],
+                              "is_constant": true,
+                              "is_anonymous": false
+                            }
+                          },
+                          {
+                            "Substitution": {
+                              "meta": {},
+                              "var": "i",
+                              "access": [],
+                              "op": "AssignVar",
+                              "rhe": {
+                                "Number": [
+                                  {},
+                                  [
+                                    0,
+                                    []
+                                  ]
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "While": {
+                        "meta": {},
+                        "cond": {
+                          "InfixOp": {
+                            "meta": {},
+                            "lhe": {
+                              "Variable": {
+                                "meta": {},
+                                "name": "i",
+                                "access": []
+                              }
+                            },
+                            "infix_op": "Lesser",
+                            "rhe": {
+                              "Variable": {
+                                "meta": {},
+                                "name": "nLevels",
+                                "access": []
+                              }
+                            }
+                          }
+                        },
+                        "stmt": {
+                          "Block": {
+                            "meta": {},
+                            "stmts": [
+                              {
+                                "Block": {
+                                  "meta": {},
+                                  "stmts": [
+                                    {
+                                      "ConstraintEquality": {
+                                        "meta": {},
+                                        "lhe": {
+                                          "InfixOp": {
+                                            "meta": {},
+                                            "lhe": {
+                                              "Variable": {
+                                                "meta": {},
+                                                "name": "pathIndices",
+                                                "access": [
+                                                  {
+                                                    "ArrayAccess": {
+                                                      "Variable": {
+                                                        "meta": {},
+                                                        "name": "i",
+                                                        "access": []
+                                                      }
+                                                    }
+                                                  }
+                                                ]
+                                              }
+                                            },
+                                            "infix_op": "Mul",
+                                            "rhe": {
+                                              "InfixOp": {
+                                                "meta": {},
+                                                "lhe": {
+                                                  "Number": [
+                                                    {},
+                                                    [
+                                                      1,
+                                                      [
+                                                        1
+                                                      ]
+                                                    ]
+                                                  ]
+                                                },
+                                                "infix_op": "Sub",
+                                                "rhe": {
+                                                  "Variable": {
+                                                    "meta": {},
+                                                    "name": "pathIndices",
+                                                    "access": [
+                                                      {
+                                                        "ArrayAccess": {
+                                                          "Variable": {
+                                                            "meta": {},
+                                                            "name": "i",
+                                                            "access": []
+                                                          }
+                                                        }
+                                                      }
+                                                    ]
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "rhe": {
+                                          "Number": [
+                                            {},
+                                            [
+                                              0,
+                                              []
+                                            ]
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "Substitution": {
+                                        "meta": {},
+                                        "var": "mux",
+                                        "access": [
+                                          {
+                                            "ArrayAccess": {
+                                              "Variable": {
+                                                "meta": {},
+                                                "name": "i",
+                                                "access": []
+                                              }
+                                            }
+                                          }
+                                        ],
+                                        "op": "AssignVar",
+                                        "rhe": {
+                                          "Call": {
+                                            "meta": {},
+                                            "id": "MultiMux1",
+                                            "args": [
+                                              {
+                                                "Number": [
+                                                  {},
+                                                  [
+                                                    1,
+                                                    [
+                                                      2
+                                                    ]
+                                                  ]
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "Substitution": {
+                                        "meta": {},
+                                        "var": "mux",
+                                        "access": [
+                                          {
+                                            "ArrayAccess": {
+                                              "Variable": {
+                                                "meta": {},
+                                                "name": "i",
+                                                "access": []
+                                              }
+                                            }
+                                          },
+                                          {
+                                            "ComponentAccess": "c"
+                                          },
+                                          {
+                                            "ArrayAccess": {
+                                              "Number": [
+                                                {},
+                                                [
+                                                  0,
+                                                  []
+                                                ]
+                                              ]
+                                            }
+                                          },
+                                          {
+                                            "ArrayAccess": {
+                                              "Number": [
+                                                {},
+                                                [
+                                                  0,
+                                                  []
+                                                ]
+                                              ]
+                                            }
+                                          }
+                                        ],
+                                        "op": "AssignConstraintSignal",
+                                        "rhe": {
+                                          "Variable": {
+                                            "meta": {},
+                                            "name": "hashes",
+                                            "access": [
+                                              {
+                                                "ArrayAccess": {
+                                                  "Variable": {
+                                                    "meta": {},
+                                                    "name": "i",
+                                                    "access": []
+                                                  }
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "Substitution": {
+                                        "meta": {},
+                                        "var": "mux",
+                                        "access": [
+                                          {
+                                            "ArrayAccess": {
+                                              "Variable": {
+                                                "meta": {},
+                                                "name": "i",
+                                                "access": []
+                                              }
+                                            }
+                                          },
+                                          {
+                                            "ComponentAccess": "c"
+                                          },
+                                          {
+                                            "ArrayAccess": {
+                                              "Number": [
+                                                {},
+                                                [
+                                                  0,
+                                                  []
+                                                ]
+                                              ]
+                                            }
+                                          },
+                                          {
+                                            "ArrayAccess": {
+                                              "Number": [
+                                                {},
+                                                [
+                                                  1,
+                                                  [
+                                                    1
+                                                  ]
+                                                ]
+                                              ]
+                                            }
+                                          }
+                                        ],
+                                        "op": "AssignConstraintSignal",
+                                        "rhe": {
+                                          "Variable": {
+                                            "meta": {},
+                                            "name": "siblings",
+                                            "access": [
+                                              {
+                                                "ArrayAccess": {
+                                                  "Variable": {
+                                                    "meta": {},
+                                                    "name": "i",
+                                                    "access": []
+                                                  }
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "Substitution": {
+                                        "meta": {},
+                                        "var": "mux",
+                                        "access": [
+                                          {
+                                            "ArrayAccess": {
+                                              "Variable": {
+                                                "meta": {},
+                                                "name": "i",
+                                                "access": []
+                                              }
+                                            }
+                                          },
+                                          {
+                                            "ComponentAccess": "c"
+                                          },
+                                          {
+                                            "ArrayAccess": {
+                                              "Number": [
+                                                {},
+                                                [
+                                                  1,
+                                                  [
+                                                    1
+                                                  ]
+                                                ]
+                                              ]
+                                            }
+                                          },
+                                          {
+                                            "ArrayAccess": {
+                                              "Number": [
+                                                {},
+                                                [
+                                                  0,
+                                                  []
+                                                ]
+                                              ]
+                                            }
+                                          }
+                                        ],
+                                        "op": "AssignConstraintSignal",
+                                        "rhe": {
+                                          "Variable": {
+                                            "meta": {},
+                                            "name": "siblings",
+                                            "access": [
+                                              {
+                                                "ArrayAccess": {
+                                                  "Variable": {
+                                                    "meta": {},
+                                                    "name": "i",
+                                                    "access": []
+                                                  }
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "Substitution": {
+                                        "meta": {},
+                                        "var": "mux",
+                                        "access": [
+                                          {
+                                            "ArrayAccess": {
+                                              "Variable": {
+                                                "meta": {},
+                                                "name": "i",
+                                                "access": []
+                                              }
+                                            }
+                                          },
+                                          {
+                                            "ComponentAccess": "c"
+                                          },
+                                          {
+                                            "ArrayAccess": {
+                                              "Number": [
+                                                {},
+                                                [
+                                                  1,
+                                                  [
+                                                    1
+                                                  ]
+                                                ]
+                                              ]
+                                            }
+                                          },
+                                          {
+                                            "ArrayAccess": {
+                                              "Number": [
+                                                {},
+                                                [
+                                                  1,
+                                                  [
+                                                    1
+                                                  ]
+                                                ]
+                                              ]
+                                            }
+                                          }
+                                        ],
+                                        "op": "AssignConstraintSignal",
+                                        "rhe": {
+                                          "Variable": {
+                                            "meta": {},
+                                            "name": "hashes",
+                                            "access": [
+                                              {
+                                                "ArrayAccess": {
+                                                  "Variable": {
+                                                    "meta": {},
+                                                    "name": "i",
+                                                    "access": []
+                                                  }
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "Substitution": {
+                                        "meta": {},
+                                        "var": "mux",
+                                        "access": [
+                                          {
+                                            "ArrayAccess": {
+                                              "Variable": {
+                                                "meta": {},
+                                                "name": "i",
+                                                "access": []
+                                              }
+                                            }
+                                          },
+                                          {
+                                            "ComponentAccess": "s"
+                                          }
+                                        ],
+                                        "op": "AssignConstraintSignal",
+                                        "rhe": {
+                                          "Variable": {
+                                            "meta": {},
+                                            "name": "pathIndices",
+                                            "access": [
+                                              {
+                                                "ArrayAccess": {
+                                                  "Variable": {
+                                                    "meta": {},
+                                                    "name": "i",
+                                                    "access": []
+                                                  }
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "Substitution": {
+                                        "meta": {},
+                                        "var": "poseidons",
+                                        "access": [
+                                          {
+                                            "ArrayAccess": {
+                                              "Variable": {
+                                                "meta": {},
+                                                "name": "i",
+                                                "access": []
+                                              }
+                                            }
+                                          }
+                                        ],
+                                        "op": "AssignVar",
+                                        "rhe": {
+                                          "Call": {
+                                            "meta": {},
+                                            "id": "Poseidon",
+                                            "args": [
+                                              {
+                                                "Number": [
+                                                  {},
+                                                  [
+                                                    1,
+                                                    [
+                                                      2
+                                                    ]
+                                                  ]
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "Substitution": {
+                                        "meta": {},
+                                        "var": "poseidons",
+                                        "access": [
+                                          {
+                                            "ArrayAccess": {
+                                              "Variable": {
+                                                "meta": {},
+                                                "name": "i",
+                                                "access": []
+                                              }
+                                            }
+                                          },
+                                          {
+                                            "ComponentAccess": "inputs"
+                                          },
+                                          {
+                                            "ArrayAccess": {
+                                              "Number": [
+                                                {},
+                                                [
+                                                  0,
+                                                  []
+                                                ]
+                                              ]
+                                            }
+                                          }
+                                        ],
+                                        "op": "AssignConstraintSignal",
+                                        "rhe": {
+                                          "Variable": {
+                                            "meta": {},
+                                            "name": "mux",
+                                            "access": [
+                                              {
+                                                "ArrayAccess": {
+                                                  "Variable": {
+                                                    "meta": {},
+                                                    "name": "i",
+                                                    "access": []
+                                                  }
+                                                }
+                                              },
+                                              {
+                                                "ComponentAccess": "out"
+                                              },
+                                              {
+                                                "ArrayAccess": {
+                                                  "Number": [
+                                                    {},
+                                                    [
+                                                      0,
+                                                      []
+                                                    ]
+                                                  ]
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "Substitution": {
+                                        "meta": {},
+                                        "var": "poseidons",
+                                        "access": [
+                                          {
+                                            "ArrayAccess": {
+                                              "Variable": {
+                                                "meta": {},
+                                                "name": "i",
+                                                "access": []
+                                              }
+                                            }
+                                          },
+                                          {
+                                            "ComponentAccess": "inputs"
+                                          },
+                                          {
+                                            "ArrayAccess": {
+                                              "Number": [
+                                                {},
+                                                [
+                                                  1,
+                                                  [
+                                                    1
+                                                  ]
+                                                ]
+                                              ]
+                                            }
+                                          }
+                                        ],
+                                        "op": "AssignConstraintSignal",
+                                        "rhe": {
+                                          "Variable": {
+                                            "meta": {},
+                                            "name": "mux",
+                                            "access": [
+                                              {
+                                                "ArrayAccess": {
+                                                  "Variable": {
+                                                    "meta": {},
+                                                    "name": "i",
+                                                    "access": []
+                                                  }
+                                                }
+                                              },
+                                              {
+                                                "ComponentAccess": "out"
+                                              },
+                                              {
+                                                "ArrayAccess": {
+                                                  "Number": [
+                                                    {},
+                                                    [
+                                                      1,
+                                                      [
+                                                        1
+                                                      ]
+                                                    ]
+                                                  ]
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "Substitution": {
+                                        "meta": {},
+                                        "var": "hashes",
+                                        "access": [
+                                          {
+                                            "ArrayAccess": {
+                                              "InfixOp": {
+                                                "meta": {},
+                                                "lhe": {
+                                                  "Variable": {
+                                                    "meta": {},
+                                                    "name": "i",
+                                                    "access": []
+                                                  }
+                                                },
+                                                "infix_op": "Add",
+                                                "rhe": {
+                                                  "Number": [
+                                                    {},
+                                                    [
+                                                      1,
+                                                      [
+                                                        1
+                                                      ]
+                                                    ]
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          }
+                                        ],
+                                        "op": "AssignConstraintSignal",
+                                        "rhe": {
+                                          "Variable": {
+                                            "meta": {},
+                                            "name": "poseidons",
+                                            "access": [
+                                              {
+                                                "ArrayAccess": {
+                                                  "Variable": {
+                                                    "meta": {},
+                                                    "name": "i",
+                                                    "access": []
+                                                  }
+                                                }
+                                              },
+                                              {
+                                                "ComponentAccess": "out"
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "Substitution": {
+                                  "meta": {},
+                                  "var": "i",
+                                  "access": [],
+                                  "op": "AssignVar",
+                                  "rhe": {
+                                    "InfixOp": {
+                                      "meta": {},
+                                      "lhe": {
+                                        "Variable": {
+                                          "meta": {},
+                                          "name": "i",
+                                          "access": []
+                                        }
+                                      },
+                                      "infix_op": "Add",
+                                      "rhe": {
+                                        "Number": [
+                                          {},
+                                          [
+                                            1,
+                                            [
+                                              1
+                                            ]
+                                          ]
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "Substitution": {
+                  "meta": {},
+                  "var": "out",
+                  "access": [],
+                  "op": "AssignConstraintSignal",
+                  "rhe": {
+                    "Variable": {
+                      "meta": {},
+                      "name": "hashes",
+                      "access": [
+                        {
+                          "ArrayAccess": {
+                            "Variable": {
+                              "meta": {},
+                              "name": "nLevels",
+                              "access": []
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "parallel": false,
+        "is_custom_gate": false,
+        "is_extern_c": false
+      }
+    }
+  ],
+  "main_component": null
+}

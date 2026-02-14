@@ -1,0 +1,420 @@
+{
+  "meta": {},
+  "compiler_version": [
+    2,
+    2,
+    2
+  ],
+  "custom_gates": false,
+  "custom_gates_declared": false,
+  "includes": [
+    "curve/babyjub.circom"
+  ],
+  "definitions": [
+    {
+      "Template": {
+        "meta": {},
+        "name": "ElGamalBlinding",
+        "args": [],
+        "arg_location": {
+          "start": 189,
+          "end": 191
+        },
+        "body": {
+          "Block": {
+            "meta": {},
+            "stmts": [
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Input",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Input",
+                            []
+                          ]
+                        },
+                        "name": "message",
+                        "dimensions": [],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Input",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Input",
+                            []
+                          ]
+                        },
+                        "name": "point",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  2
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Output",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Output",
+                            []
+                          ]
+                        },
+                        "name": "out",
+                        "dimensions": [],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    },
+                    {
+                      "Substitution": {
+                        "meta": {},
+                        "var": "out",
+                        "access": [],
+                        "op": "AssignConstraintSignal",
+                        "rhe": {
+                          "InfixOp": {
+                            "meta": {},
+                            "lhe": {
+                              "InfixOp": {
+                                "meta": {},
+                                "lhe": {
+                                  "Variable": {
+                                    "meta": {},
+                                    "name": "message",
+                                    "access": []
+                                  }
+                                },
+                                "infix_op": "Sub",
+                                "rhe": {
+                                  "Variable": {
+                                    "meta": {},
+                                    "name": "point",
+                                    "access": [
+                                      {
+                                        "ArrayAccess": {
+                                          "Number": [
+                                            {},
+                                            [
+                                              0,
+                                              []
+                                            ]
+                                          ]
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            },
+                            "infix_op": "Mul",
+                            "rhe": {
+                              "PrefixOp": {
+                                "meta": {},
+                                "prefix_op": "Sub",
+                                "rhe": {
+                                  "Number": [
+                                    {},
+                                    [
+                                      1,
+                                      [
+                                        1
+                                      ]
+                                    ]
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        "parallel": false,
+        "is_custom_gate": false,
+        "is_extern_c": false
+      }
+    },
+    {
+      "Template": {
+        "meta": {},
+        "name": "ElGamalMessageCheck",
+        "args": [],
+        "arg_location": {
+          "start": 434,
+          "end": 436
+        },
+        "body": {
+          "Block": {
+            "meta": {},
+            "stmts": [
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Input",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Input",
+                            []
+                          ]
+                        },
+                        "name": "point",
+                        "dimensions": [
+                          {
+                            "Number": [
+                              {},
+                              [
+                                1,
+                                [
+                                  2
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Input",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Input",
+                            []
+                          ]
+                        },
+                        "name": "blinding",
+                        "dimensions": [],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Input",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Input",
+                            []
+                          ]
+                        },
+                        "name": "message",
+                        "dimensions": [],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "MultSubstitution": {
+                  "meta": {},
+                  "lhe": {
+                    "Tuple": {
+                      "meta": {},
+                      "values": []
+                    }
+                  },
+                  "op": "AssignConstraintSignal",
+                  "rhe": {
+                    "AnonymousComp": {
+                      "meta": {},
+                      "id": "BabyCheck",
+                      "is_parallel": false,
+                      "params": [],
+                      "signals": [
+                        {
+                          "Variable": {
+                            "meta": {},
+                            "name": "point",
+                            "access": [
+                              {
+                                "ArrayAccess": {
+                                  "Number": [
+                                    {},
+                                    [
+                                      0,
+                                      []
+                                    ]
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "Variable": {
+                            "meta": {},
+                            "name": "point",
+                            "access": [
+                              {
+                                "ArrayAccess": {
+                                  "Number": [
+                                    {},
+                                    [
+                                      1,
+                                      [
+                                        1
+                                      ]
+                                    ]
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ],
+                      "names": null
+                    }
+                  }
+                }
+              },
+              {
+                "ConstraintEquality": {
+                  "meta": {},
+                  "lhe": {
+                    "InfixOp": {
+                      "meta": {},
+                      "lhe": {
+                        "Variable": {
+                          "meta": {},
+                          "name": "point",
+                          "access": [
+                            {
+                              "ArrayAccess": {
+                                "Number": [
+                                  {},
+                                  [
+                                    0,
+                                    []
+                                  ]
+                                ]
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "infix_op": "Sub",
+                      "rhe": {
+                        "Variable": {
+                          "meta": {},
+                          "name": "blinding",
+                          "access": []
+                        }
+                      }
+                    }
+                  },
+                  "rhe": {
+                    "Variable": {
+                      "meta": {},
+                      "name": "message",
+                      "access": []
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "parallel": false,
+        "is_custom_gate": false,
+        "is_extern_c": false
+      }
+    }
+  ],
+  "main_component": null
+}

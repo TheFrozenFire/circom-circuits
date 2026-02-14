@@ -1,0 +1,189 @@
+{
+  "meta": {},
+  "compiler_version": [
+    2,
+    2,
+    2
+  ],
+  "custom_gates": false,
+  "custom_gates_declared": false,
+  "includes": [],
+  "definitions": [
+    {
+      "Function": {
+        "meta": {},
+        "name": "BABYJUB_A",
+        "args": [],
+        "arg_location": {
+          "start": 91,
+          "end": 91
+        },
+        "body": {
+          "Block": {
+            "meta": {},
+            "stmts": [
+              {
+                "Return": {
+                  "meta": {},
+                  "value": {
+                    "Number": [
+                      {},
+                      [
+                        1,
+                        [
+                          168700
+                        ]
+                      ]
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "Function": {
+        "meta": {},
+        "name": "BABYJUB_D",
+        "args": [],
+        "arg_location": {
+          "start": 186,
+          "end": 186
+        },
+        "body": {
+          "Block": {
+            "meta": {},
+            "stmts": [
+              {
+                "Return": {
+                  "meta": {},
+                  "value": {
+                    "Number": [
+                      {},
+                      [
+                        1,
+                        [
+                          168696
+                        ]
+                      ]
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "Function": {
+        "meta": {},
+        "name": "BABYJUB_SUBORDER",
+        "args": [],
+        "arg_location": {
+          "start": 282,
+          "end": 282
+        },
+        "body": {
+          "Block": {
+            "meta": {},
+            "stmts": [
+              {
+                "Return": {
+                  "meta": {},
+                  "value": {
+                    "Number": [
+                      {},
+                      [
+                        1,
+                        [
+                          958473969,
+                          1735563228,
+                          958459402,
+                          2873028024,
+                          3492817675,
+                          923404470,
+                          1546007557,
+                          101485006
+                        ]
+                      ]
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "Function": {
+        "meta": {},
+        "name": "BABYJUB_BASE8",
+        "args": [],
+        "arg_location": {
+          "start": 487,
+          "end": 487
+        },
+        "body": {
+          "Block": {
+            "meta": {},
+            "stmts": [
+              {
+                "Return": {
+                  "meta": {},
+                  "value": {
+                    "ArrayInLine": {
+                      "meta": {},
+                      "values": [
+                        {
+                          "Number": [
+                            {},
+                            [
+                              1,
+                              [
+                                3147133009,
+                                680784886,
+                                87351478,
+                                716756993,
+                                2640476097,
+                                1319940832,
+                                3594417051,
+                                196573802
+                              ]
+                            ]
+                          ]
+                        },
+                        {
+                          "Number": [
+                            {},
+                            [
+                              1,
+                              [
+                                2267905419,
+                                1262232954,
+                                3118543735,
+                                4242539807,
+                                3513514477,
+                                626470428,
+                                4154503753,
+                                628716035
+                              ]
+                            ]
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "main_component": null
+}

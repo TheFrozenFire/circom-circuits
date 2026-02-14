@@ -1,0 +1,729 @@
+{
+  "meta": {},
+  "compiler_version": [
+    2,
+    2,
+    2
+  ],
+  "custom_gates": false,
+  "custom_gates_declared": false,
+  "includes": [],
+  "definitions": [
+    {
+      "Template": {
+        "meta": {},
+        "name": "PolyUHF",
+        "args": [
+          "n"
+        ],
+        "arg_location": {
+          "start": 415,
+          "end": 418
+        },
+        "body": {
+          "Block": {
+            "meta": {},
+            "stmts": [
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Input",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Input",
+                            []
+                          ]
+                        },
+                        "name": "r",
+                        "dimensions": [],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Input",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Input",
+                            []
+                          ]
+                        },
+                        "name": "x",
+                        "dimensions": [
+                          {
+                            "Variable": {
+                              "meta": {},
+                              "name": "n",
+                              "access": []
+                            }
+                          }
+                        ],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "InitializationBlock": {
+                  "meta": {},
+                  "xtype": {
+                    "Signal": [
+                      "Output",
+                      []
+                    ]
+                  },
+                  "initializations": [
+                    {
+                      "Declaration": {
+                        "meta": {},
+                        "xtype": {
+                          "Signal": [
+                            "Output",
+                            []
+                          ]
+                        },
+                        "name": "out",
+                        "dimensions": [],
+                        "is_constant": true,
+                        "is_anonymous": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "IfThenElse": {
+                  "meta": {},
+                  "cond": {
+                    "InfixOp": {
+                      "meta": {},
+                      "lhe": {
+                        "Variable": {
+                          "meta": {},
+                          "name": "n",
+                          "access": []
+                        }
+                      },
+                      "infix_op": "Eq",
+                      "rhe": {
+                        "Number": [
+                          {},
+                          [
+                            1,
+                            [
+                              2
+                            ]
+                          ]
+                        ]
+                      }
+                    }
+                  },
+                  "if_case": {
+                    "Block": {
+                      "meta": {},
+                      "stmts": [
+                        {
+                          "Substitution": {
+                            "meta": {},
+                            "var": "out",
+                            "access": [],
+                            "op": "AssignConstraintSignal",
+                            "rhe": {
+                              "InfixOp": {
+                                "meta": {},
+                                "lhe": {
+                                  "InfixOp": {
+                                    "meta": {},
+                                    "lhe": {
+                                      "Variable": {
+                                        "meta": {},
+                                        "name": "x",
+                                        "access": [
+                                          {
+                                            "ArrayAccess": {
+                                              "Number": [
+                                                {},
+                                                [
+                                                  1,
+                                                  [
+                                                    1
+                                                  ]
+                                                ]
+                                              ]
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "infix_op": "Mul",
+                                    "rhe": {
+                                      "Variable": {
+                                        "meta": {},
+                                        "name": "r",
+                                        "access": []
+                                      }
+                                    }
+                                  }
+                                },
+                                "infix_op": "Add",
+                                "rhe": {
+                                  "Variable": {
+                                    "meta": {},
+                                    "name": "x",
+                                    "access": [
+                                      {
+                                        "ArrayAccess": {
+                                          "Number": [
+                                            {},
+                                            [
+                                              0,
+                                              []
+                                            ]
+                                          ]
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "else_case": {
+                    "Block": {
+                      "meta": {},
+                      "stmts": [
+                        {
+                          "InitializationBlock": {
+                            "meta": {},
+                            "xtype": {
+                              "Signal": [
+                                "Intermediate",
+                                []
+                              ]
+                            },
+                            "initializations": [
+                              {
+                                "Declaration": {
+                                  "meta": {},
+                                  "xtype": {
+                                    "Signal": [
+                                      "Intermediate",
+                                      []
+                                    ]
+                                  },
+                                  "name": "acc",
+                                  "dimensions": [
+                                    {
+                                      "InfixOp": {
+                                        "meta": {},
+                                        "lhe": {
+                                          "Variable": {
+                                            "meta": {},
+                                            "name": "n",
+                                            "access": []
+                                          }
+                                        },
+                                        "infix_op": "Sub",
+                                        "rhe": {
+                                          "Number": [
+                                            {},
+                                            [
+                                              1,
+                                              [
+                                                2
+                                              ]
+                                            ]
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "is_constant": true,
+                                  "is_anonymous": false
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "Substitution": {
+                            "meta": {},
+                            "var": "acc",
+                            "access": [
+                              {
+                                "ArrayAccess": {
+                                  "Number": [
+                                    {},
+                                    [
+                                      0,
+                                      []
+                                    ]
+                                  ]
+                                }
+                              }
+                            ],
+                            "op": "AssignConstraintSignal",
+                            "rhe": {
+                              "InfixOp": {
+                                "meta": {},
+                                "lhe": {
+                                  "InfixOp": {
+                                    "meta": {},
+                                    "lhe": {
+                                      "Variable": {
+                                        "meta": {},
+                                        "name": "x",
+                                        "access": [
+                                          {
+                                            "ArrayAccess": {
+                                              "InfixOp": {
+                                                "meta": {},
+                                                "lhe": {
+                                                  "Variable": {
+                                                    "meta": {},
+                                                    "name": "n",
+                                                    "access": []
+                                                  }
+                                                },
+                                                "infix_op": "Sub",
+                                                "rhe": {
+                                                  "Number": [
+                                                    {},
+                                                    [
+                                                      1,
+                                                      [
+                                                        1
+                                                      ]
+                                                    ]
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "infix_op": "Mul",
+                                    "rhe": {
+                                      "Variable": {
+                                        "meta": {},
+                                        "name": "r",
+                                        "access": []
+                                      }
+                                    }
+                                  }
+                                },
+                                "infix_op": "Add",
+                                "rhe": {
+                                  "Variable": {
+                                    "meta": {},
+                                    "name": "x",
+                                    "access": [
+                                      {
+                                        "ArrayAccess": {
+                                          "InfixOp": {
+                                            "meta": {},
+                                            "lhe": {
+                                              "Variable": {
+                                                "meta": {},
+                                                "name": "n",
+                                                "access": []
+                                              }
+                                            },
+                                            "infix_op": "Sub",
+                                            "rhe": {
+                                              "Number": [
+                                                {},
+                                                [
+                                                  1,
+                                                  [
+                                                    2
+                                                  ]
+                                                ]
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "Block": {
+                            "meta": {},
+                            "stmts": [
+                              {
+                                "InitializationBlock": {
+                                  "meta": {},
+                                  "xtype": "Var",
+                                  "initializations": [
+                                    {
+                                      "Declaration": {
+                                        "meta": {},
+                                        "xtype": "Var",
+                                        "name": "k",
+                                        "dimensions": [],
+                                        "is_constant": true,
+                                        "is_anonymous": false
+                                      }
+                                    },
+                                    {
+                                      "Substitution": {
+                                        "meta": {},
+                                        "var": "k",
+                                        "access": [],
+                                        "op": "AssignVar",
+                                        "rhe": {
+                                          "Number": [
+                                            {},
+                                            [
+                                              1,
+                                              [
+                                                1
+                                              ]
+                                            ]
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "While": {
+                                  "meta": {},
+                                  "cond": {
+                                    "InfixOp": {
+                                      "meta": {},
+                                      "lhe": {
+                                        "Variable": {
+                                          "meta": {},
+                                          "name": "k",
+                                          "access": []
+                                        }
+                                      },
+                                      "infix_op": "Lesser",
+                                      "rhe": {
+                                        "InfixOp": {
+                                          "meta": {},
+                                          "lhe": {
+                                            "Variable": {
+                                              "meta": {},
+                                              "name": "n",
+                                              "access": []
+                                            }
+                                          },
+                                          "infix_op": "Sub",
+                                          "rhe": {
+                                            "Number": [
+                                              {},
+                                              [
+                                                1,
+                                                [
+                                                  2
+                                                ]
+                                              ]
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "stmt": {
+                                    "Block": {
+                                      "meta": {},
+                                      "stmts": [
+                                        {
+                                          "Block": {
+                                            "meta": {},
+                                            "stmts": [
+                                              {
+                                                "Substitution": {
+                                                  "meta": {},
+                                                  "var": "acc",
+                                                  "access": [
+                                                    {
+                                                      "ArrayAccess": {
+                                                        "Variable": {
+                                                          "meta": {},
+                                                          "name": "k",
+                                                          "access": []
+                                                        }
+                                                      }
+                                                    }
+                                                  ],
+                                                  "op": "AssignConstraintSignal",
+                                                  "rhe": {
+                                                    "InfixOp": {
+                                                      "meta": {},
+                                                      "lhe": {
+                                                        "InfixOp": {
+                                                          "meta": {},
+                                                          "lhe": {
+                                                            "Variable": {
+                                                              "meta": {},
+                                                              "name": "acc",
+                                                              "access": [
+                                                                {
+                                                                  "ArrayAccess": {
+                                                                    "InfixOp": {
+                                                                      "meta": {},
+                                                                      "lhe": {
+                                                                        "Variable": {
+                                                                          "meta": {},
+                                                                          "name": "k",
+                                                                          "access": []
+                                                                        }
+                                                                      },
+                                                                      "infix_op": "Sub",
+                                                                      "rhe": {
+                                                                        "Number": [
+                                                                          {},
+                                                                          [
+                                                                            1,
+                                                                            [
+                                                                              1
+                                                                            ]
+                                                                          ]
+                                                                        ]
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          },
+                                                          "infix_op": "Mul",
+                                                          "rhe": {
+                                                            "Variable": {
+                                                              "meta": {},
+                                                              "name": "r",
+                                                              "access": []
+                                                            }
+                                                          }
+                                                        }
+                                                      },
+                                                      "infix_op": "Add",
+                                                      "rhe": {
+                                                        "Variable": {
+                                                          "meta": {},
+                                                          "name": "x",
+                                                          "access": [
+                                                            {
+                                                              "ArrayAccess": {
+                                                                "InfixOp": {
+                                                                  "meta": {},
+                                                                  "lhe": {
+                                                                    "InfixOp": {
+                                                                      "meta": {},
+                                                                      "lhe": {
+                                                                        "Variable": {
+                                                                          "meta": {},
+                                                                          "name": "n",
+                                                                          "access": []
+                                                                        }
+                                                                      },
+                                                                      "infix_op": "Sub",
+                                                                      "rhe": {
+                                                                        "Number": [
+                                                                          {},
+                                                                          [
+                                                                            1,
+                                                                            [
+                                                                              2
+                                                                            ]
+                                                                          ]
+                                                                        ]
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  "infix_op": "Sub",
+                                                                  "rhe": {
+                                                                    "Variable": {
+                                                                      "meta": {},
+                                                                      "name": "k",
+                                                                      "access": []
+                                                                    }
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          ]
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        },
+                                        {
+                                          "Substitution": {
+                                            "meta": {},
+                                            "var": "k",
+                                            "access": [],
+                                            "op": "AssignVar",
+                                            "rhe": {
+                                              "InfixOp": {
+                                                "meta": {},
+                                                "lhe": {
+                                                  "Variable": {
+                                                    "meta": {},
+                                                    "name": "k",
+                                                    "access": []
+                                                  }
+                                                },
+                                                "infix_op": "Add",
+                                                "rhe": {
+                                                  "Number": [
+                                                    {},
+                                                    [
+                                                      1,
+                                                      [
+                                                        1
+                                                      ]
+                                                    ]
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "Substitution": {
+                            "meta": {},
+                            "var": "out",
+                            "access": [],
+                            "op": "AssignConstraintSignal",
+                            "rhe": {
+                              "InfixOp": {
+                                "meta": {},
+                                "lhe": {
+                                  "InfixOp": {
+                                    "meta": {},
+                                    "lhe": {
+                                      "Variable": {
+                                        "meta": {},
+                                        "name": "acc",
+                                        "access": [
+                                          {
+                                            "ArrayAccess": {
+                                              "InfixOp": {
+                                                "meta": {},
+                                                "lhe": {
+                                                  "Variable": {
+                                                    "meta": {},
+                                                    "name": "n",
+                                                    "access": []
+                                                  }
+                                                },
+                                                "infix_op": "Sub",
+                                                "rhe": {
+                                                  "Number": [
+                                                    {},
+                                                    [
+                                                      1,
+                                                      [
+                                                        3
+                                                      ]
+                                                    ]
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "infix_op": "Mul",
+                                    "rhe": {
+                                      "Variable": {
+                                        "meta": {},
+                                        "name": "r",
+                                        "access": []
+                                      }
+                                    }
+                                  }
+                                },
+                                "infix_op": "Add",
+                                "rhe": {
+                                  "Variable": {
+                                    "meta": {},
+                                    "name": "x",
+                                    "access": [
+                                      {
+                                        "ArrayAccess": {
+                                          "Number": [
+                                            {},
+                                            [
+                                              0,
+                                              []
+                                            ]
+                                          ]
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "parallel": false,
+        "is_custom_gate": false,
+        "is_extern_c": false
+      }
+    }
+  ],
+  "main_component": null
+}

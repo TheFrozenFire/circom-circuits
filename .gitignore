@@ -4,7 +4,6 @@ dist/
 *.wtns
 *.sym
 *.json.bak
-ast/
 
 # Rocq/Coq build artifacts
 *.vo
