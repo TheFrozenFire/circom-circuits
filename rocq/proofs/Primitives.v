@@ -201,3 +201,26 @@ Proof.
   rewrite Z.mod_add by (apply Z.pow_nonzero; lia).
   apply Z.mod_small. apply bits_to_num_firstn_bound; assumption.
 Qed.
+
+(** * Bitwise Operation Definitions *)
+
+(** Binary XOR: a + b - 2*a*b *)
+Definition xor_bit (a b : Z) : Z := a + b - 2 * a * b.
+
+(** SHA-256 choice function: a*(b-c) + c = a&b | (!a)&c *)
+Definition ch_bit (a b c : Z) : Z := a * (b - c) + c.
+
+(** SHA-256 majority function: a&b ^ a&c ^ b&c *)
+Definition maj_bit (a b c : Z) : Z :=
+  a * b + a * c + b * c - 2 * a * b * c.
+
+(** Three-input XOR: a ^ b ^ c *)
+Definition xor3_bit (a b c : Z) : Z := xor_bit a (xor_bit b c).
+
+(** Fold XOR over a list of binary values (left fold). *)
+Fixpoint fold_xor (bits : list Z) : Z :=
+  match bits with
+  | [] => 0
+  | [x] => x
+  | x :: rest => xor_bit x (fold_xor rest)
+  end.
