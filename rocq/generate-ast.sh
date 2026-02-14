@@ -4,8 +4,7 @@ set -euo pipefail
 # Generate AST JSON for every circuit file using the patched circom compiler.
 #
 # The patched compiler (--ast-json) writes a .json alongside each .circom file
-# during the parse phase. We create a temporary driver that includes every
-# circuit file, run the compiler, then collect the JSONs into ast/.
+# during the parse phase. ASTs stay in circuits/ alongside their source files.
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CIRCOM="${CIRCOM:-$HOME/git/General/circom/target/release/circom}"
@@ -17,10 +16,6 @@ if [[ ! -x "$CIRCOM" ]]; then
 fi
 
 cd "$REPO_ROOT"
-
-# Clean output directory
-rm -rf ast
-mkdir -p ast
 
 # Build a temporary driver that includes every .circom file in circuits/.
 # Includes are relative to the -l search paths, so strip the circuits/ prefix.
@@ -56,18 +51,9 @@ if [[ $rc -gt 1 ]]; then
   echo "warning: circom exited with code $rc (expected 0 or 1)" >&2
 fi
 
-# Collect JSONs from circuits/ into ast/, preserving directory structure.
-echo "Collecting AST JSON files ..."
-count=0
-while IFS= read -r json; do
-  rel="${json#circuits/}"
-  dest="ast/$rel"
-  mkdir -p "$(dirname "$dest")"
-  mv "$json" "$dest"
-  count=$((count + 1))
-done < <(find circuits -name '*.json' -type f | sort)
-
-echo "Collected $count JSON files into ast/"
+# Count generated AST files.
+count=$(find circuits -name '*.json' -type f | wc -l | tr -d ' ')
+echo "Generated $count AST JSON files in circuits/"
 
 # Clean up any JSONs that landed in node_modules/ (circomlib parses).
 find node_modules -name '*.json.ast' -type f -delete 2>/dev/null || true
