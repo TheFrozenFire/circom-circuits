@@ -124,3 +124,31 @@ Proof.
     rewrite Nat2Z.inj_succ. rewrite Z.pow_succ_r by lia.
     lia.
 Qed.
+
+(** firstn preserves all_binary. *)
+Lemma all_binary_firstn : forall bits k,
+  all_binary bits -> all_binary (firstn k bits).
+Proof.
+  intros bits k Hall.
+  unfold all_binary in *. apply Forall_nth.
+  intros i d Hi.
+  rewrite nth_firstn.
+  assert (Hlt : (i <? k)%nat = true)
+    by (rewrite length_firstn in Hi; apply Nat.ltb_lt; lia).
+  rewrite Hlt.
+  apply Forall_nth with (i := i) (d := d) in Hall; [exact Hall |].
+  rewrite length_firstn in Hi. lia.
+Qed.
+
+(** bits_to_num of a firstn prefix is bounded by 2^k. *)
+Lemma bits_to_num_firstn_bound : forall bits k,
+  all_binary bits -> (k <= length bits)%nat ->
+  0 <= bits_to_num (firstn k bits) < 2 ^ Z.of_nat k.
+Proof.
+  intros bits k Hall Hle.
+  assert (Hfirst : all_binary (firstn k bits))
+    by (apply all_binary_firstn; exact Hall).
+  assert (Hbound := bits_to_num_bound (firstn k bits) Hfirst).
+  rewrite length_firstn in Hbound. rewrite Nat.min_l in Hbound by lia.
+  exact Hbound.
+Qed.
