@@ -152,3 +152,52 @@ Proof.
   rewrite length_firstn in Hbound. rewrite Nat.min_l in Hbound by lia.
   exact Hbound.
 Qed.
+
+(** Derive all_binary from pointwise binary constraints. *)
+Lemma binary_constraints_imply_all_binary : forall bits,
+  (forall i, (i < length bits)%nat ->
+    nth i bits 0 * (nth i bits 0 - 1) = 0) ->
+  all_binary bits.
+Proof.
+  intros bits Hbin. unfold all_binary. apply Forall_nth.
+  intros i d Hi. rewrite nth_indep with (d' := 0) by exact Hi.
+  apply binary_constraint. apply Hbin. exact Hi.
+Qed.
+
+(** skipn preserves all_binary. *)
+Lemma all_binary_skipn : forall bits k,
+  all_binary bits -> all_binary (skipn k bits).
+Proof.
+  intros bits k Hall. unfold all_binary in *.
+  rewrite <- (firstn_skipn k bits) in Hall.
+  apply Forall_app in Hall. destruct Hall as [_ Hall]. exact Hall.
+Qed.
+
+(** Decomposing bits_to_num at position n into low and high parts. *)
+Lemma bits_to_num_split : forall bits (n : nat),
+  (n <= length bits)%nat ->
+  bits_to_num bits =
+    bits_to_num (firstn n bits) + 2 ^ Z.of_nat n * bits_to_num (skipn n bits).
+Proof.
+  intros bits n Hle.
+  assert (Heq : bits = firstn n bits ++ skipn n bits)
+    by (symmetry; apply firstn_skipn).
+  rewrite Heq at 1.
+  rewrite bits_to_num_app.
+  rewrite length_firstn. rewrite Nat.min_l by lia.
+  reflexivity.
+Qed.
+
+(** The lower n bits of a binary number equal the number modulo 2^n. *)
+Lemma bits_to_num_firstn_mod : forall bits (n : nat),
+  all_binary bits -> (n <= length bits)%nat ->
+  bits_to_num (firstn n bits) = (bits_to_num bits) mod (2 ^ Z.of_nat n).
+Proof.
+  intros bits n Hall Hle.
+  symmetry.
+  rewrite (bits_to_num_split bits n Hle).
+  replace (2 ^ Z.of_nat n * bits_to_num (skipn n bits))
+    with (bits_to_num (skipn n bits) * 2 ^ Z.of_nat n) by ring.
+  rewrite Z.mod_add by (apply Z.pow_nonzero; lia).
+  apply Z.mod_small. apply bits_to_num_firstn_bound; assumption.
+Qed.
