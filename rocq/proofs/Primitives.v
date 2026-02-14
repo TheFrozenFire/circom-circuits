@@ -202,6 +202,79 @@ Proof.
   apply Z.mod_small. apply bits_to_num_firstn_bound; assumption.
 Qed.
 
+(** * List Aggregation *)
+
+(** Sum of all elements in a list. *)
+Fixpoint list_sum (l : list Z) : Z :=
+  match l with
+  | [] => 0
+  | x :: rest => x + list_sum rest
+  end.
+
+(** list_sum cons lemma. *)
+Lemma list_sum_cons : forall x rest,
+  list_sum (x :: rest) = x + list_sum rest.
+Proof. intros. reflexivity. Qed.
+
+(** list_sum of binary values is non-negative. *)
+Lemma list_sum_nonneg_binary : forall l,
+  Forall is_binary l -> 0 <= list_sum l.
+Proof.
+  induction l as [| x rest IH].
+  - intros _. simpl. lia.
+  - intro Hall. inversion_clear Hall.
+    rewrite list_sum_cons.
+    assert (0 <= x) by (destruct H; lia).
+    assert (0 <= list_sum rest) by (apply IH; assumption).
+    lia.
+Qed.
+
+(** If all indicators are binary and sum to 0, the weighted sum is 0. *)
+Lemma binary_zero_weighted_sum : forall indicators values,
+  Forall is_binary indicators ->
+  list_sum indicators = 0 ->
+  list_sum (map (fun p => fst p * snd p) (combine indicators values)) = 0.
+Proof.
+  induction indicators as [| ind rest IH]; intros values Hall Hsum.
+  - simpl. lia.
+  - destruct values as [| v vals].
+    + simpl. lia.
+    + inversion_clear Hall as [| ? ? Hind Hrest].
+      rewrite list_sum_cons in Hsum.
+      assert (Hind_nn : 0 <= ind) by (destruct Hind; lia).
+      assert (Hrest_nn : 0 <= list_sum rest)
+        by (apply list_sum_nonneg_binary; assumption).
+      assert (Hind0 : ind = 0) by lia.
+      subst ind. simpl.
+      rewrite IH; [lia | assumption | lia].
+Qed.
+
+Fixpoint list_product (l : list Z) : Z :=
+  match l with
+  | [] => 1
+  | x :: rest => x * list_product rest
+  end.
+
+(** An AND-chain of binary values equals 1 iff all values are 1. *)
+Lemma binary_and_chain : forall (eqs : list Z),
+  Forall is_binary eqs ->
+  (list_product eqs = 1 <-> Forall (fun x => x = 1) eqs).
+Proof.
+  induction eqs as [| e rest IH].
+  - intros _. split; intro; constructor.
+  - intro Hall. inversion Hall; subst.
+    split.
+    + intro Hprod. simpl in Hprod.
+      destruct H1 as [He | He]; subst.
+      * lia.
+      * assert (list_product rest = 1) by lia.
+        constructor; [reflexivity | apply IH; assumption].
+    + intro Hfall. inversion Hfall; subst.
+      unfold list_product. fold list_product.
+      assert (Hrest : list_product rest = 1) by (apply IH; assumption).
+      lia.
+Qed.
+
 (** * Bitwise Operation Definitions *)
 
 (** Binary XOR: a + b - 2*a*b *)
