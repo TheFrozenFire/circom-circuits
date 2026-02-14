@@ -1,16 +1,16 @@
 import { assert } from "chai";
-import { describe_circuit } from "./helpers.js";
+import { describe_circuit } from "../helpers.js";
 
 describe_circuit("Bitwise", {
-    xor: { path: "bitwise.circom", template: "XOR" },
-    and: { path: "bitwise.circom", template: "AND" },
-    or: { path: "bitwise.circom", template: "OR" },
-    muxor: { path: "bitwise.circom", template: "MUXOR", params: [4] },
-    multiXor: { path: "bitwise.circom", template: "MultiXOR", params: [8] },
-    bitwiseXor: { path: "bitwise.circom", template: "BitwiseXOR", params: [8] },
-    bitwiseAnd: { path: "bitwise.circom", template: "BitwiseAND", params: [8] },
-    bitwiseOr: { path: "bitwise.circom", template: "BitwiseOR", params: [8] },
-    bitwiseNot: { path: "bitwise.circom", template: "BitwiseNOT", params: [8] },
+    xor: { path: "core/bitwise.circom", template: "XOR" },
+    and: { path: "core/bitwise.circom", template: "AND" },
+    or: { path: "core/bitwise.circom", template: "OR" },
+    muxor: { path: "core/bitwise.circom", template: "MUXOR", params: [4] },
+    multiXor: { path: "core/bitwise.circom", template: "MultiXOR", params: [8] },
+    bitwiseXor: { path: "core/bitwise.circom", template: "BitwiseXOR", params: [8] },
+    bitwiseAnd: { path: "core/bitwise.circom", template: "BitwiseAND", params: [8] },
+    bitwiseOr: { path: "core/bitwise.circom", template: "BitwiseOR", params: [8] },
+    bitwiseNot: { path: "core/bitwise.circom", template: "BitwiseNOT", params: [8] },
 }, (calculators) => {
 
     describe("Bit-level gates", () => {

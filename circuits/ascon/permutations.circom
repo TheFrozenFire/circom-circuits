@@ -1,6 +1,6 @@
 pragma circom 2.2.2;
 
-include "bitwise.circom";
+include "core/bitwise.circom";
 include "ascon/constants.circom";
 include "ascon/functions.circom";
 include "ascon/types.circom";

@@ -1,7 +1,7 @@
 pragma circom 2.2.2;
 
 include "packing/bitify.circom";
-include "comparators.circom";
+include "core/comparators.circom";
 
 template AND() {
     signal input in[2];

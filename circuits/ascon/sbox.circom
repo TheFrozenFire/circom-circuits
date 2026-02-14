@@ -1,6 +1,6 @@
 pragma circom 2.2.2;
 
-include "bitwise.circom";
+include "core/bitwise.circom";
 
 // 𝑦0 = 𝑥4𝑥1 ⊕ 𝑥3 ⊕ 𝑥2𝑥1 ⊕ 𝑥2 ⊕ 𝑥1𝑥0 ⊕ 𝑥1 ⊕ 𝑥0
 template Ascon_Sbox_y0() {

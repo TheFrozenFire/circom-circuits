@@ -3,7 +3,7 @@ pragma circom 2.2.2;
 include "search/commit.circom";
 include "hash/merkle.circom";
 include "linalg/vector.circom";
-include "comparators.circom";
+include "core/comparators.circom";
 
 /// Private semantic search proof.
 ///

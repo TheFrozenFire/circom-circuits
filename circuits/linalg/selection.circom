@@ -1,6 +1,6 @@
 pragma circom 2.2.2;
 
-include "comparators.circom";
+include "core/comparators.circom";
 
 /// Maximum value and its index from an array of n elements.
 /// Prover witnesses the index; circuit verifies it via indicator mux and comparisons.

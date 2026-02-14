@@ -1,7 +1,7 @@
 pragma circom 2.2.2;
 
 include "hash/poseidon.circom";
-include "mux.circom";
+include "core/mux.circom";
 
 /// Standard Merkle tree inclusion proof.
 /// Hashes from leaf up to root using Poseidon(2), selecting left/right

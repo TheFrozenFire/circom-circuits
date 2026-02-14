@@ -1,6 +1,6 @@
 pragma circom 2.2.2;
 
-include "comparators.circom";
+include "core/comparators.circom";
 include "packing/bitify.circom";
 
 /// Element-wise vector addition. Zero constraints (addition is free in R1CS).

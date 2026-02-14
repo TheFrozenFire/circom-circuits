@@ -2,8 +2,8 @@ pragma circom 2.2.2;
 
 include "curve/babyjub.circom";
 include "curve/montgomery.circom";
-include "comparators.circom";
-include "mux.circom";
+include "core/comparators.circom";
+include "core/mux.circom";
 
 // ─── Fixed-base scalar multiplication ───
 

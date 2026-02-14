@@ -273,7 +273,7 @@ include "circomlib/circuits/bitify.circom";    // external lib (submodule)
 include "circomlib/circuits/comparators.circom";
 
 include "linalg/vector.circom";                // sibling module
-include "bitwise.circom";                      // root-level circuit
+include "core/bitwise.circom";                  // core module
 
 include "ascon/types.circom";                  // within own module
 include "ascon/functions.circom";

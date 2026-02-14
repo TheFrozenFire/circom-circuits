@@ -1,6 +1,6 @@
 pragma circom 2.2.2;
 
-include "comparators.circom";
+include "core/comparators.circom";
 
 /// Element-wise matrix addition. Zero constraints.
 template MatrixAdd(m, n) {

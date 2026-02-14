@@ -1,8 +1,8 @@
 import { assert } from "chai";
-import { describe_circuit } from "./helpers.js";
+import { describe_circuit } from "../helpers.js";
 
 describe_circuit("IsZero", {
-    iz: { path: "comparators.circom", template: "IsZero" },
+    iz: { path: "core/comparators.circom", template: "IsZero" },
 }, (calculators) => {
     it("returns 1 for zero input", async () => {
         const w = await calculators.iz.calculate({ in: 0 });
@@ -21,7 +21,7 @@ describe_circuit("IsZero", {
 });
 
 describe_circuit("IsEqual", {
-    eq: { path: "comparators.circom", template: "IsEqual" },
+    eq: { path: "core/comparators.circom", template: "IsEqual" },
 }, (calculators) => {
     it("returns 1 for equal values", async () => {
         const w = await calculators.eq.calculate({ in: [99, 99] });
@@ -40,7 +40,7 @@ describe_circuit("IsEqual", {
 });
 
 describe_circuit("LessThan", {
-    lt: { path: "comparators.circom", template: "LessThan", params: [8] },
+    lt: { path: "core/comparators.circom", template: "LessThan", params: [8] },
 }, (calculators) => {
     it("returns 1 when a < b", async () => {
         const w = await calculators.lt.calculate({ in: [10, 200] });
@@ -69,7 +69,7 @@ describe_circuit("LessThan", {
 });
 
 describe_circuit("ForceEqualIfEnabled", {
-    fe: { path: "comparators.circom", template: "ForceEqualIfEnabled" },
+    fe: { path: "core/comparators.circom", template: "ForceEqualIfEnabled" },
 }, (calculators) => {
     it("passes when disabled and values unequal", async () => {
         await calculators.fe.calculate({ enabled: 0, in: [1, 2] });

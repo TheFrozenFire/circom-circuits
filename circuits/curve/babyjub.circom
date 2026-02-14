@@ -2,7 +2,7 @@ pragma circom 2.2.2;
 
 include "curve/constants.circom";
 include "packing/bitify.circom";
-include "comparators.circom";
+include "core/comparators.circom";
 
 /// Twisted Edwards point addition on BabyJubjub.
 /// Uses a*x^2 + y^2 = 1 + d*x^2*y^2 with a=168700, d=168696.

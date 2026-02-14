@@ -1,8 +1,8 @@
 import { assert } from "chai";
-import { describe_circuit } from "./helpers.js";
+import { describe_circuit } from "../helpers.js";
 
 describe_circuit("MultiMux1", {
-    mux: { path: "mux.circom", template: "MultiMux1", params: [2] },
+    mux: { path: "core/mux.circom", template: "MultiMux1", params: [2] },
 }, (calculators) => {
     it("selects channel 0 when s=0", async () => {
         // 2 channels, each with 2 options: c[0]=[10,20], c[1]=[30,40]
@@ -26,7 +26,7 @@ describe_circuit("MultiMux1", {
 });
 
 describe_circuit("MultiMux3", {
-    mux: { path: "mux.circom", template: "MultiMux3", params: [2] },
+    mux: { path: "core/mux.circom", template: "MultiMux3", params: [2] },
 }, (calculators) => {
     // 2 channels, 8 options each. s[3] selects one of 8 slots.
     // c[channel][slot]

@@ -1,7 +1,7 @@
 pragma circom 2.2.2;
 
 include "packing/bitify.circom";
-include "comparators.circom";
+include "core/comparators.circom";
 
 /// Range check: constrains that `in` fits in `bits` bits (0 <= in < 2^bits).
 /// bits constraints.

@@ -1,6 +1,6 @@
 pragma circom 2.2.2;
 
-include "comparators.circom";
+include "core/comparators.circom";
 
 /// Verifies that all non-zero elements of right[] exist in left[].
 /// Zero values in right are treated as empty slots and skipped.
