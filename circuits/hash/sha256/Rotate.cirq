@@ -15,5 +15,7 @@ templates:
         assumes:
           - length inp = n, length out = n
           - forall i < n, nth i out 0 = nth ((i + r) mod n) inp 0
-        technique: direct from assumption (specification is the constraint)
+        technique: direct from assumption
         depends_on: []
+        placeholder: true
+        notes: restates rewiring constraint (no R1CS — pure signal permutation)

@@ -46,8 +46,10 @@ templates:
         type: Theorem
         statement: out = bits_to_num inp
         assumes: [out = bits_to_num inp]
-        technique: direct assumption
+        technique: direct from assumption
         depends_on: [Primitives.bits_to_num]
+        placeholder: true
+        notes: restates linear constraint (no R1CS — caller responsible for binary inputs)
       Bits2Num_correct:
         type: Theorem
         statement: 0 <= out < 2^(length inp)

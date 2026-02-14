@@ -31,6 +31,12 @@ templates:
           - out = merkle_root leaf pathIndices siblings
         technique: direct from assumption
         depends_on: [merkle_root, Primitives.is_binary]
+        placeholder: true
+        notes: >
+          restates merkle_root conclusion from assumption. The real verification
+          work is in mux_matches_merkle (connecting circuit mux constraints to
+          the Fixpoint) and merkle_root_cons (unfolding one level). A full proof
+          would compose these per-level results by induction on pathIndices.
       merkle_root_deterministic:
         type: Theorem
         statement: same inputs produce same root

@@ -16,6 +16,8 @@ templates:
         assumes: [out = list_sum inputs]
         technique: direct from assumption
         depends_on: [Primitives.list_sum]
+        placeholder: true
+        notes: restates linear constraint as conclusion
 
   CalculateProduct:
     source: aggregate.circom:16-28
@@ -30,3 +32,5 @@ templates:
         assumes: [out = list_product inputs]
         technique: direct from assumption
         depends_on: [Primitives.list_product]
+        placeholder: true
+        notes: restates product constraint as conclusion

@@ -33,11 +33,16 @@ templates:
         assumes:
           - k >= 2
           - length inp = k, length carries = k - 1
-          - carry propagation equations for all limbs
-          - final limb zeroes out
+          - "inp[0] = carries[0] * 2^n"
+          - "forall i, 0 < i < k-1 -> inp[i] + carries[i-1] = carries[i] * 2^n"
+          - "inp[k-1] + carries[k-2] = 0"
         technique: >
-          apply carry_propagation_preserves_value with target = repeat 0 k,
-          then limbs_to_num_repeat_zero
+          show limbs_to_num inp = limbs_to_num (repeat 0 k) via
+          carry_propagation_preserves_value with carries ++ [0] (padding
+          carries from k-1 to k entries; final carry forced to 0 via
+          app_nth2_plus). Three cases for the uniform equation: i=0 uses H0,
+          0 < i < k-1 uses Hmid with app_nth1, i=k-1 uses Hfinal with
+          carries[k-1]=0. Then limbs_to_num_repeat_zero.
         depends_on:
           - Primitives.carry_propagation_preserves_value
 
@@ -54,11 +59,14 @@ templates:
         assumes:
           - k >= 2
           - length inp = k, length out = k, length carries = k - 1
-          - carry propagation equations
-          - last output absorbs final carry
+          - "inp[0] = out[0] + carries[0] * 2^n"
+          - "forall i, 0 < i < k-1 -> inp[i] + carries[i-1] = out[i] + carries[i] * 2^n"
+          - "out[k-1] = inp[k-1] + carries[k-2]"
         technique: >
-          apply carry_propagation_preserves_value with carries ++ [0],
-          final carry is zero by construction
+          apply carry_propagation_preserves_value with carries ++ [0] (pad
+          carries from k-1 to k entries). Three cases: i=0 uses H0 with
+          app_nth1, 0 < i < k-1 uses Hmid with app_nth1, i=k-1 rewrites
+          carries[k-1] to 0 via app_nth2_plus then Z.mul_0_l.
         depends_on:
           - Primitives.carry_propagation_preserves_value
 
@@ -73,12 +81,18 @@ templates:
         type: Lemma
         statement: carry_in + limbs_to_num n a + limbs_to_num n b = limbs_to_num n out
         assumes:
-          - matching list lengths
-          - carry propagation equations with carry_in parameter
+          - length a = length b, length out = length a + 1, length carries = length a
+          - length a >= 1
+          - "a[0] + b[0] + carry_in = out[0] + carries[0] * 2^n"
+          - "forall i, 0 < i < length a -> a[i] + b[i] + carries[i-1] = out[i] + carries[i] * 2^n"
+          - "out[length a] = carries[length a - 1]"
         technique: >
-          induction on list a (destructing b, out, carries in parallel),
-          base case k=1 by lia, inductive step peels head limb and recurses
-        depends_on: [Primitives.limbs_to_num_cons]
+          induction on list a, destructing b/out/carries in parallel via
+          nested destruct. Base case (length a = 1): destruct all to single
+          elements, limbs_to_num_nil + lia. Inductive step: peel head limb,
+          build shifted hypotheses H0'/Hmid'/Hfinal' via nth_succ_cons and
+          nth_tl, apply IH with carry_in = c0 (first carry), lia.
+        depends_on: [Primitives.limbs_to_num_cons, nth_tl, nth_succ_cons]
         notes: generalized with carry_in to make induction work; BigAdd_correct instantiates with carry_in=0
       BigAdd_correct:
         type: Theorem
@@ -86,9 +100,10 @@ templates:
         assumes:
           - k >= 1
           - length a = k, length b = k, length out = k + 1, length carries = k
-          - carry propagation equations
-          - out[k] = carries[k-1]
-        technique: instantiate bigadd_with_carry with carry_in = 0
+          - "a[0] + b[0] = out[0] + carries[0] * 2^n"
+          - "forall i, 0 < i < k -> a[i] + b[i] + carries[i-1] = out[i] + carries[i] * 2^n"
+          - "out[k] = carries[k-1]"
+        technique: instantiate bigadd_with_carry with carry_in = 0, lia
         depends_on: [bigadd_with_carry]
 
   BigSub:
@@ -102,23 +117,32 @@ templates:
         type: Lemma
         statement: limbs_to_num n a - borrow_in - limbs_to_num n b = limbs_to_num n out
         assumes:
-          - matching list lengths, length a >= 2
-          - borrow propagation equations with borrow_in parameter
+          - length a = length b, length out = length a, length borrows = length a - 1
+          - length a >= 2
+          - "out[0] = a[0] - borrow_in - b[0] + borrows[0] * 2^n"
+          - "forall i, 0 < i < length a - 1 -> out[i] = a[i] - borrows[i-1] - b[i] + borrows[i] * 2^n"
+          - "out[length a - 1] = a[length a - 1] - borrows[length a - 2] - b[length a - 1]"
         technique: >
-          induction on list a, base cases for k=2 and k=3+,
-          destructing nested cons patterns to expose borrow chain.
-          nth_tl lemma shifts borrow indices through cons.
-        depends_on: [Primitives.limbs_to_num_cons, nth_tl]
-        notes: generalized with borrow_in for induction; BigSub_correct instantiates with borrow_in=0
+          induction on list a, destructing b/out/borrows in parallel.
+          Two base cases: length a = 2 (k=2, destruct to exact elements,
+          limbs_to_num_cons + limbs_to_num_nil + lia) and length a >= 3
+          (inductive step). Inductive step: peel head, build shifted
+          hypotheses H0'/Hmid'/Hfinal' via nth_succ_cons and nth_tl,
+          apply IH with borrow_in = bw0 (first borrow), lia.
+        depends_on: [Primitives.limbs_to_num_cons, nth_tl, nth_succ_cons]
+        notes: >
+          generalized with borrow_in for induction; BigSub_correct instantiates
+          with borrow_in=0. Requires length a >= 2 (not 1) because k=1 has no borrows.
       BigSub_correct:
         type: Theorem
         statement: limbs_to_num n a - limbs_to_num n b = limbs_to_num n out
         assumes:
           - k >= 2
           - length a = k, length b = k, length out = k, length borrows = k - 1
-          - borrow propagation equations
-          - final limb has no borrow output
-        technique: instantiate bigsub_with_borrow with borrow_in = 0
+          - "out[0] = a[0] - b[0] + borrows[0] * 2^n"
+          - "forall i, 0 < i < k-1 -> out[i] = a[i] - borrows[i-1] - b[i] + borrows[i] * 2^n"
+          - "out[k-1] = a[k-1] - borrows[k-2] - b[k-1]"
+        technique: instantiate bigsub_with_borrow with borrow_in = 0, lia
         depends_on: [bigsub_with_borrow]
 
   BigMultNoCarry:
@@ -133,8 +157,13 @@ templates:
           - ka >= 1, kb >= 1
           - length a = ka, length b = kb, length out = ka + kb - 1
           - out[l] = convolution_at a b l for all l
-        technique: direct from assumption (constraints are the specification)
+        technique: direct from assumption
         depends_on: [convolution_at]
+        placeholder: true
+        notes: >
+          restates the pointwise convolution constraint as conclusion.
+          A stronger proof would derive the convolution structure from
+          the circuit's nested multiplication constraints.
 
   BigMult:
     source: bigint.circom:132-174
@@ -147,12 +176,19 @@ templates:
         statement: limbs_to_num n rawLimbs = limbs_to_num n out
         assumes:
           - k >= 1
-          - length rawLimbs = 2k, length out = 2k, length carries = 2k - 1
-          - carry propagation equations
-          - final out absorbs last carry
+          - length rawLimbs = 2*k, length out = 2*k, length carries = 2*k - 1
+          - "rawLimbs[0] = out[0] + carries[0] * 2^n"
+          - "forall i, 0 < i < 2*k-1 -> rawLimbs[i] + carries[i-1] = out[i] + carries[i] * 2^n"
+          - "out[2*k-1] = rawLimbs[2*k-1] + carries[2*k-2]"
         technique: >
-          apply carry_propagation_preserves_value with carries ++ [0],
-          same pattern as LongToShortNoEndCarry
+          apply carry_propagation_preserves_value with carries ++ [0] (pad
+          carries from 2k-1 to 2k entries; circuit has 2k-1 carries but the
+          lemma needs 2k). Three cases: i=0 uses H0 with app_nth1,
+          0 < i < 2k-1 uses Hmid with app_nth1 (for both carries[i] and
+          carries[i-1]), i=2k-1 rewrites carries[2k-1] to 0 via
+          replace (2*k-1) with (length carries + 0) then app_nth2_plus,
+          then Z.mul_0_l eliminates the final carry term and lia closes.
+          Last obligation: carries ++ [0] has final entry 0 by app_nth2_plus.
         depends_on:
           - Primitives.carry_propagation_preserves_value
 
@@ -166,10 +202,19 @@ templates:
         type: Theorem
         statement: limbs_to_num n diff = 0
         assumes:
-          - diff encodes a - b*q - r
+          - length a = k+1, length b = k, length remainder = k, length quotient = 2
+          - length diff = k+1
           - limbs_to_num n diff = 0
-        technique: direct from assumption (placeholder — full proof would compose BigMult + CheckCarryToZero)
+        technique: direct from assumption
         depends_on: []
+        placeholder: true
+        notes: >
+          restates limbs_to_num conclusion from assumption. A full proof would:
+          (1) show diff encodes a - b*quotient - remainder from the circuit's
+          BigMult + subtraction constraints, (2) compose BigMult_carries_preserve
+          and CheckCarryToZero_correct to verify the carry chain zeroes diff,
+          (3) conclude limbs_to_num n a = limbs_to_num n b * limbs_to_num n quotient
+          + limbs_to_num n remainder as the real specification.
 
   BigLessThan:
     source: bigint.circom:407-434
@@ -183,10 +228,17 @@ templates:
         assumes:
           - k >= 1
           - length lt_vals = k, length eq_vals = k
-          - all lt_vals and eq_vals are binary
+          - forall i < k, is_binary (nth i lt_vals 0)
+          - forall i < k, is_binary (nth i eq_vals 0)
           - out = big_lt_chain lt_vals eq_vals
         technique: direct from assumption
         depends_on: [big_lt_chain]
+        placeholder: true
+        notes: >
+          restates big_lt_chain conclusion from assumption. A full proof would
+          connect big_lt_chain to actual numerical comparison: show that
+          out = 1 iff limbs_to_num n a < limbs_to_num n b, composing
+          per-limb LessThan_sound and IsEqual_sound results.
       big_lt_chain_last_decides:
         type: Lemma
         statement: >

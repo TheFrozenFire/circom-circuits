@@ -42,6 +42,8 @@ templates:
           - forall i < t, nth i out 0 = nth i inp 0 + nth (i + r) constants 0
         technique: direct from assumption
         depends_on: []
+        placeholder: true
+        notes: restates pointwise constraint as conclusion (linear only)
 
   Mix:
     source: poseidon.circom:23-35
@@ -54,9 +56,11 @@ templates:
         statement: forall i, nth i out 0 = list_sum (map (fun j => M j i * nth j inp 0) (seq 0 t))
         assumes:
           - length inp = t, length out = t
-          - pointwise constraint for each output
+          - forall i < t, nth i out 0 = list_sum (map (fun j => M j i * nth j inp 0) (seq 0 t))
         technique: direct from assumption
         depends_on: [Primitives.list_sum]
+        placeholder: true
+        notes: restates pointwise MDS constraint as conclusion
 
   MixLast:
     source: poseidon.circom:38-48
@@ -67,9 +71,13 @@ templates:
       MixLast_spec:
         type: Theorem
         statement: out = list_sum (map (fun j => M j s * nth j inp 0) (seq 0 t))
-        assumes: [length inp = t, output matches MDS row computation]
+        assumes:
+          - length inp = t
+          - out = list_sum (map (fun j => M j s * nth j inp 0) (seq 0 t))
         technique: direct from assumption
         depends_on: [Primitives.list_sum]
+        placeholder: true
+        notes: restates single MDS row computation as conclusion
 
   MixS:
     source: poseidon.circom:51-65
@@ -81,13 +89,16 @@ templates:
       MixS_spec:
         type: Theorem
         statement: >
-          out[0] = weighted sum via S_coeff /\
-          forall i >= 1, out[i] = inp[i] + inp[0] * S_coeff[t+i-1]
+          out[0] = list_sum (map (fun i => S_coeff i * nth i inp 0) (seq 0 t)) /\
+          forall i, 1 <= i < t -> out[i] = inp[i] + inp[0] * S_coeff (t + i - 1)
         assumes:
           - length inp = t, length out = t
-          - sparse matrix constraints
-        technique: direct from assumptions
+          - out[0] = list_sum (map (fun i => S_coeff i * nth i inp 0) (seq 0 t))
+          - forall i, 1 <= i < t -> out[i] = inp[i] + inp[0] * S_coeff (t + i - 1)
+        technique: split; both goals directly from assumptions
         depends_on: [Primitives.list_sum]
+        placeholder: true
+        notes: restates sparse matrix constraints as conclusion
 
   PoseidonEx:
     source: poseidon.circom:68-134
@@ -103,6 +114,11 @@ templates:
         assumes: [output = compose_rounds rounds initial_state]
         technique: direct from assumption
         depends_on: [compose_rounds]
+        placeholder: true
+        notes: >
+          restates composition as conclusion. A full proof would instantiate
+          each round (Ark+Sigma+Mix for full rounds, Ark+Sigma+MixS for
+          partial rounds) and show the composition matches the Poseidon spec.
       compose_rounds_length:
         type: Lemma
         statement: length (compose_rounds rounds state) = t
@@ -124,6 +140,8 @@ templates:
         assumes: [out = pex_out]
         technique: direct from assumption
         depends_on: []
+        placeholder: true
+        notes: trivial wiring — restates output extraction
 
   HashLeftRight:
     source: poseidon.circom:150-157

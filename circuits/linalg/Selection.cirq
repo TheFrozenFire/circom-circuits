@@ -16,9 +16,14 @@ templates:
         statement: forall i, nth i inputs 0 <= out
         assumes:
           - forall i < length inputs, out >= nth i inputs 0
-          - out is an element of inputs (via index)
+          - In out (map ...) (membership witness — unused in proof)
         technique: specialize universal bound assumption, lia
         depends_on: []
+        notes: >
+          the membership assumption (out is an element of inputs) is declared
+          but unused in the proof. The theorem only proves out >= all elements,
+          not that out is itself an element. Max_ge_all proves the same thing
+          without the unused assumption.
       Max_ge_all:
         type: Theorem
         statement: forall i, nth i inputs 0 <= out

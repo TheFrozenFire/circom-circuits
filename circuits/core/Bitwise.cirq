@@ -79,5 +79,7 @@ templates:
         type: Theorem
         statement: out = 2^n - a - 1
         assumes: [out = 2^n - a - 1]
-        technique: direct assumption
+        technique: direct from assumption
         depends_on: []
+        placeholder: true
+        notes: restates linear constraint (no R1CS — pure wiring)

@@ -19,6 +19,11 @@ templates:
           - out = list_sum products
         technique: direct from assumption
         depends_on: [Primitives.list_sum]
+        placeholder: true
+        notes: >
+          restates summation from assumption. A stronger proof would
+          show out = sum(a[i] * b[i]) by incorporating the product
+          constraint into the conclusion.
 
   VectorIsEqual:
     source: vector.circom:72-91
