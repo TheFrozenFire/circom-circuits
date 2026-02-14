@@ -1,0 +1,25 @@
+-R . ""
+
+Primitives.v
+core/Comparators.v
+core/Bitwise.v
+core/Mux.v
+packing/Bitify.v
+arithmetic/Mod.v
+arithmetic/BigInt.v
+hash/sha256/Xor3.v
+hash/sha256/Ch.v
+hash/sha256/Maj.v
+hash/sha256/Rotate.v
+hash/sha256/Shift.v
+hash/sha256/BinSum.v
+hash/Poseidon.v
+hash/Merkle.v
+linalg/Vector.v
+linalg/Matrix.v
+linalg/FixedPoint.v
+linalg/Selection.v
+collections/Aggregate.v
+collections/Ordered.v
+collections/Selector.v
+bridge/Uhf.v

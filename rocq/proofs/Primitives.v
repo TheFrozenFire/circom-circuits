@@ -424,3 +424,40 @@ Fixpoint fold_xor (bits : list Z) : Z :=
   | [x] => x
   | x :: rest => xor_bit x (fold_xor rest)
   end.
+
+(** xor_bit preserves binary. *)
+Lemma xor_bit_binary : forall a b,
+  is_binary a -> is_binary b -> is_binary (xor_bit a b).
+Proof.
+  intros a b Ha Hb.
+  destruct Ha as [Ha | Ha]; destruct Hb as [Hb | Hb];
+    subst; unfold xor_bit, is_binary; lia.
+Qed.
+
+(** xor_bit matches the constraint a + b - 2*a*b. *)
+Lemma xor_bit_correct : forall a b out,
+  is_binary a -> is_binary b ->
+  out = a + b - 2 * a * b ->
+  out = xor_bit a b.
+Proof.
+  intros a b out Ha Hb Hout.
+  destruct Ha as [Ha | Ha]; destruct Hb as [Hb | Hb];
+    subst; unfold xor_bit; lia.
+Qed.
+
+(** * Ordering Definitions *)
+
+(** Helper: strict ordering of a list via adjacent comparisons. *)
+Fixpoint strictly_ascending (l : list Z) : Prop :=
+  match l with
+  | [] => True
+  | [_] => True
+  | x :: ((y :: _) as rest) => x < y /\ strictly_ascending rest
+  end.
+
+Fixpoint strictly_descending (l : list Z) : Prop :=
+  match l with
+  | [] => True
+  | [_] => True
+  | x :: ((y :: _) as rest) => x > y /\ strictly_descending rest
+  end.
