@@ -30,10 +30,8 @@ Provides `rocq_start_proof`, `rocq_run_tactic`, `rocq_get_goals`, `rocq_search`,
 ```bash
 eval $(opam env --switch=rocq)
 cd rocq/proofs
-rocq compile Spike.v
+rocq compile Primitives.v && rocq compile Num2Bits.v && rocq compile Comparators.v
 ```
-
-Note: Rocq 9.0+ uses `From Stdlib` instead of `From Coq` (the old form still works but emits deprecation warnings).
 
 ## Prior Art: Formal Land's Garden Framework
 
@@ -114,9 +112,29 @@ We hand-model circuit semantics in Rocq rather than auto-translating from Circom
 
 ### Proof Files
 
-- `rocq/proofs/Spike.v` — spike proof: Horner evaluation properties (r=1 sum, concrete evaluation, vector distinguishing)
+| File | Proves | Circuits |
+|------|--------|----------|
+| `Primitives.v` | Shared definitions (`is_binary`, `bits_to_num`, `all_binary`) and foundational lemmas (`binary_constraint`, `bits_to_num_bound`, `bits_to_num_unique`) | — |
+| `Num2Bits.v` | Correctness and determinism of bit decomposition | `packing/bitify.circom` (Num2Bits) |
+| `Comparators.v` | Soundness of IsZero, IsEqual, LessThan | `comparators.circom` |
+| `Spike.v` | Horner evaluation properties (spike/demo) | — |
+
+All proofs are complete — zero `Admitted` axioms.
+
+### Compiling all proofs
+
+```bash
+eval $(opam env --switch=rocq)
+cd rocq/proofs
+rocq compile Primitives.v && rocq compile Num2Bits.v && rocq compile Comparators.v
+```
+
+`Num2Bits.v` and `Comparators.v` depend on `Primitives.v`, so compile order matters.
 
 ### Gotchas
 
-- Z arithmetic in Rocq: `1 * x` doesn't simplify cleanly because Z multiplication pattern-matches on the constructor (`Z.pos`, `Z.neg`, `0`). Use `destruct` on Z values or `lia` instead of `ring`/`reflexivity` when goals contain `match ... with | 0 => 0 | Z.pos y' => Z.pos y' | Z.neg y' => Z.neg y' end`.
-- `lia` requires `From Stdlib Require Import Lia.` (or `From Coq Require Import Lia.` with deprecation warning).
+- **`simpl` over-expands Z multiplication**: `simpl` on `2 * bits_to_num rest` produces a Z constructor match (`match bits_to_num rest with Z.pos y' => ... end`) that `lia` cannot solve. Fix: use `rewrite bits_to_num_cons` (or similar rewrite lemmas) instead of `simpl` when working with `bits_to_num`.
+- **`nia` vs `Z.mul_eq_0`**: `nia` can fail on simple integral domain reasoning like `b * (b-1) = 0 → b = 0 ∨ b-1 = 0`. Use `apply Z.mul_eq_0 in H` followed by `lia` instead.
+- **`at` is a keyword** in Rocq 9.0: avoid using `at` as a variable name in intro patterns (use `at_` or similar).
+- **`From Coq` is deprecated**: use `From Stdlib` in Rocq 9.0+.
+- `lia` requires `From Stdlib Require Import Lia.`.
