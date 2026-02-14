@@ -4,3 +4,4 @@ dist/
 *.wtns
 *.sym
 *.json.bak
+ast/
