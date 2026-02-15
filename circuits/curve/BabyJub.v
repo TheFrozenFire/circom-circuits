@@ -191,6 +191,54 @@ Proof.
   rewrite Hxeq, Hyeq. destruct R; reflexivity.
 Qed.
 
+(** ** BabyAdd Completeness
+    Witness: beta = x1*y2, gamma = y1*x2,
+             delta = (-a*x1+y1)*(x2+y2), tau = beta*gamma,
+             xout = px(baby_add P Q), yout = py(baby_add P Q)
+
+    The baby_add_formula axiom gives us the Z equations:
+      (1+d*tau) * xout = beta + gamma
+      (1-d*tau) * yout = delta + a*beta - gamma
+    from which the mod-p constraints follow immediately. *)
+
+Theorem BabyAdd_complete : forall x1 y1 x2 y2 : Z,
+  on_curve (mkPoint x1 y1) -> on_curve (mkPoint x2 y2) ->
+  let tau := x1 * y2 * (y1 * x2) in
+  (1 + babyjub_d * tau) mod p_field <> 0 ->
+  (1 - babyjub_d * tau) mod p_field <> 0 ->
+  exists xout yout beta gamma delta : Z,
+    beta = x1 * y2 /\ gamma = y1 * x2 /\
+    delta = (-babyjub_a * x1 + y1) * (x2 + y2) /\
+    ((1 + babyjub_d * tau) * xout - (beta + gamma)) mod p_field = 0 /\
+    ((1 - babyjub_d * tau) * yout - (delta + babyjub_a * beta - gamma)) mod p_field = 0.
+Proof.
+  intros x1 y1 x2 y2 Hcurve1 Hcurve2 tau Hne_plus Hne_minus.
+  assert (Hp_pos : 0 < p_field) by exact p_field_pos.
+  (* Get the addition formula from the axiom *)
+  assert (Hformula := baby_add_formula (mkPoint x1 y1) (mkPoint x2 y2)
+    Hcurve1 Hcurve2).
+  simpl px in Hformula. simpl py in Hformula.
+  destruct Hformula as [Hfx Hfy].
+  fold tau in Hfx. fold tau in Hfy.
+  (* The witnesses are the coordinates of baby_add P Q *)
+  set (R := baby_add (mkPoint x1 y1) (mkPoint x2 y2)).
+  exists (px R), (py R), (x1 * y2), (y1 * x2),
+    ((-babyjub_a * x1 + y1) * (x2 + y2)).
+  split; [reflexivity |]. split; [reflexivity |]. split; [reflexivity |].
+  unfold R.
+  split.
+  - (* ((1 + d*tau) * px(baby_add P Q) - (x1*y2 + y1*x2)) mod p = 0 *)
+    rewrite Hfx.
+    replace (x1 * y2 + y1 * x2 - (x1 * y2 + y1 * x2)) with 0 by ring.
+    rewrite Z.mod_0_l by lia. reflexivity.
+  - (* ((1 - d*tau) * py(baby_add P Q) - (delta + a*beta - gamma)) mod p = 0 *)
+    rewrite Hfy.
+    replace ((-babyjub_a * x1 + y1) * (x2 + y2) + babyjub_a * (x1 * y2) - y1 * x2 -
+      ((-babyjub_a * x1 + y1) * (x2 + y2) + babyjub_a * (x1 * y2) - y1 * x2))
+      with 0 by ring.
+    rewrite Z.mod_0_l by lia. reflexivity.
+Qed.
+
 (** ** Suborder Arithmetic Field Safety
 
     Values in the suborder range are also valid field elements,

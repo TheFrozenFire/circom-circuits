@@ -127,3 +127,50 @@ Lemma in_field_binary : forall b, b = 0 \/ b = 1 -> in_field b.
 Proof.
   intros b [H | H]; subst; [exact in_field_0 | exact in_field_1].
 Qed.
+
+(** If two values are congruent mod p, their difference is 0 mod p. *)
+Lemma mod_eq_sub_zero : forall a b n,
+  0 < n -> a mod n = b mod n -> (a - b) mod n = 0.
+Proof.
+  intros a b n Hn Heq.
+  rewrite <- Zminus_mod_idemp_l. rewrite <- Zminus_mod_idemp_r.
+  rewrite Heq. rewrite Z.sub_diag. rewrite Z.mod_0_l by lia. reflexivity.
+Qed.
+
+(** ** Field Multiplicative Inverse
+
+    Circom's field division (a/b) computes a * b^(p-2) mod p via Fermat's
+    little theorem. This cannot be expressed in Z, so we axiomatize the
+    inverse function and its key property. *)
+
+Parameter fp_inv : Z -> Z.
+
+Axiom fp_inv_in_field : forall a,
+  in_field a -> a <> 0 -> in_field (fp_inv a).
+
+Axiom fp_inv_spec : forall a,
+  in_field a -> a <> 0 -> (a * fp_inv a) mod p_field = 1.
+
+(** Derived convenience lemma for field division: a / b = a * fp_inv b. *)
+Lemma fp_div_spec : forall a b,
+  in_field a -> in_field b -> b <> 0 ->
+  let q := (a * fp_inv b) mod p_field in
+  in_field q /\ (q * b) mod p_field = a mod p_field.
+Proof.
+  intros a b Ha Hb Hb_nz q. subst q.
+  assert (Hinv_field : in_field (fp_inv b)) by (apply fp_inv_in_field; assumption).
+  assert (Hinv_spec : (b * fp_inv b) mod p_field = 1) by (apply fp_inv_spec; assumption).
+  split.
+  - unfold in_field. split.
+    + apply Z.mod_pos_bound. pose proof p_field_pos. lia.
+    + apply Z.mod_pos_bound. pose proof p_field_pos. lia.
+  - (* (a * fp_inv b) mod p * b mod p = a mod p *)
+    rewrite Z.mul_mod_idemp_l by (pose proof p_field_pos; lia).
+    rewrite <- Z.mul_assoc.
+    rewrite (Z.mul_comm (fp_inv b) b).
+    rewrite Z.mul_mod by (pose proof p_field_pos; lia).
+    rewrite Hinv_spec.
+    rewrite Z.mul_1_r.
+    rewrite Z.mod_mod by (pose proof p_field_pos; lia).
+    reflexivity.
+Qed.

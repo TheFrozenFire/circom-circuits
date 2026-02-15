@@ -60,6 +60,94 @@ Proof.
   lia.
 Qed.
 
+(** ** IsZero Completeness
+    Witness: inv <-- (inp != 0) ? 1/inp : 0
+             out <-- 1 - inp * inv
+
+    Two cases:
+    - inp = 0: inv = 0, out = 1. Both constraints hold trivially.
+    - inp != 0: inv = fp_inv inp, out = (1 - inp * fp_inv inp) mod p = 0.
+      By fp_inv_spec, inp * fp_inv inp ≡ 1, so out ≡ 0 and inp * out ≡ 0. *)
+
+Theorem IsZero_complete : forall inp : Z,
+  in_field inp ->
+  exists out inv : Z,
+    in_field out /\ in_field inv /\
+    (out - (1 - inp * inv)) mod p_field = 0 /\
+    (inp * out) mod p_field = 0.
+Proof.
+  intros inp Hinp.
+  destruct (Z.eq_dec inp 0) as [Hzero | Hnz].
+  - (* Case inp = 0 *)
+    exists 1, 0. split; [exact in_field_1 |]. split; [exact in_field_0 |].
+    subst inp. simpl. split.
+    + rewrite Z.mod_small; [lia | pose proof p_field_pos; lia].
+    + rewrite Z.mod_small; [lia | pose proof p_field_pos; lia].
+  - (* Case inp != 0 *)
+    set (inv := fp_inv inp).
+    set (out := (1 - inp * inv) mod p_field).
+    exists out, inv.
+    assert (Hp_pos : 0 < p_field) by exact p_field_pos.
+    assert (Hinv_field : in_field inv) by (apply fp_inv_in_field; assumption).
+    assert (Hinv_spec : (inp * inv) mod p_field = 1) by (apply fp_inv_spec; assumption).
+    (* Key: out = 0 because inp * inv ≡ 1 (mod p), so 1 - inp*inv ≡ 0 *)
+    assert (Hout_zero : out = 0).
+    { unfold out. rewrite <- Hinv_spec.
+      rewrite Zminus_mod_idemp_l.
+      replace (inp * inv - inp * inv) with 0 by ring.
+      rewrite Z.mod_0_l by lia. reflexivity. }
+    split.
+    + (* in_field out *)
+      rewrite Hout_zero. exact in_field_0.
+    + split; [exact Hinv_field |].
+      split.
+      * (* (out - (1 - inp * inv)) mod p = 0 *)
+        unfold out.
+        rewrite Zminus_mod_idemp_l.
+        replace ((1 - inp * inv) - (1 - inp * inv)) with 0 by ring.
+        rewrite Z.mod_0_l by lia. reflexivity.
+      * (* (inp * out) mod p = 0 *)
+        rewrite Hout_zero. rewrite Z.mul_0_r.
+        rewrite Z.mod_0_l by lia. reflexivity.
+Qed.
+
+(** ** IsEqual Completeness
+    Delegates to IsZero(b - a). *)
+
+Theorem IsEqual_complete : forall a b : Z,
+  in_field a -> in_field b ->
+  exists out inv : Z,
+    in_field out /\ in_field inv /\
+    (out - (1 - (b - a) * inv)) mod p_field = 0 /\
+    ((b - a) * out) mod p_field = 0.
+Proof.
+  intros a b Ha Hb.
+  assert (Hp_pos : 0 < p_field) by exact p_field_pos.
+  (* b - a may not be in [0, p), so we reduce it mod p first *)
+  set (diff := (b - a) mod p_field).
+  assert (Hdiff_field : in_field diff).
+  { unfold diff, in_field. split; apply Z.mod_pos_bound; lia. }
+  destruct (IsZero_complete diff Hdiff_field)
+    as [out [inv [Hout_field [Hinv_field [Hc1 Hc2]]]]].
+  exists out, inv.
+  split; [exact Hout_field |]. split; [exact Hinv_field |].
+  assert (Hba_cong : ((b - a) - diff) mod p_field = 0).
+  { unfold diff. rewrite Zminus_mod_idemp_r.
+    replace ((b - a) - (b - a)) with 0 by ring.
+    apply Z.mod_0_l. lia. }
+  split.
+  - (* (out - (1 - (b-a)*inv)) mod p = 0 *)
+    replace (out - (1 - (b - a) * inv))
+      with ((out - (1 - diff * inv)) + ((b - a) - diff) * inv) by ring.
+    rewrite Zplus_mod.
+    rewrite (Z.mul_mod ((b - a) - diff) inv) by lia.
+    rewrite Hba_cong. simpl (0 * (inv mod p_field)%Z).
+    rewrite Z.mod_0_l by lia. rewrite Z.add_0_r.
+    rewrite Z.mod_mod by lia. exact Hc1.
+  - (* ((b-a) * out) mod p = 0 *)
+    rewrite <- Z.mul_mod_idemp_l by lia. fold diff. exact Hc2.
+Qed.
+
 (** ** LessThan (comparators.circom:27-34)
     Constraints:
       bits = Num2Bits(n+1)(a + 2^n - b)
