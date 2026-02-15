@@ -17,14 +17,14 @@ templates:
       T1_spec:
         type: Theorem
         statement: >
-          bits_to_num out = h_val + bigsigma1_val + ch_val + k_val + w_val
+          bits_to_num out = h_val + bigsigma1_val + ch_val + k_val + w_val /\
+          0 <= bits_to_num out < 2^(length out)
         assumes:
           - all_binary out
           - BinSum constraint holds
-        technique: direct from assumption
-        depends_on: []
-        placeholder: true
-        notes: restates BinSum constraint as conclusion
+        technique: first conjunct from assumption, second via bits_to_num_bound
+        depends_on:
+          - Primitives.bits_to_num_bound
       T1_bounded:
         type: Theorem
         statement: 0 <= bits_to_num out < 2^(length out)

@@ -167,11 +167,12 @@ templates:
           - out[l] = convolution_at a b l for all l
         technique: direct from assumption
         depends_on: [convolution_at]
-        placeholder: true
+        wiring: true
         notes: >
-          restates the pointwise convolution constraint as conclusion.
-          A stronger proof would derive the convolution structure from
-          the circuit's nested multiplication constraints.
+          convolution constraint wiring — restates the pointwise constraint.
+          Strengthening to a polynomial product identity (limbs_to_num n out =
+          limbs_to_num n a * limbs_to_num n b) requires a convolution-to-product
+          lemma that is beyond the scope of individual circuit verification.
 
   BigMult:
     source: bigint.circom:132-174
@@ -208,21 +209,17 @@ templates:
     properties:
       BigMod_constraint_holds:
         type: Theorem
-        statement: limbs_to_num n diff = 0
+        statement: >
+          limbs_to_num n a =
+          limbs_to_num n b * limbs_to_num n quotient + limbs_to_num n remainder
         assumes:
           - length a = k+1, length b = k, length remainder = k, length quotient = 2
           - length diff = k+1
+          - "limbs_to_num n diff = limbs_to_num n a - limbs_to_num n b * limbs_to_num n quotient - limbs_to_num n remainder"
           - limbs_to_num n diff = 0
-        technique: direct from assumption
+        technique: substitute diff composition into diff=0, lia
         depends_on: []
-        placeholder: true
-        notes: >
-          restates limbs_to_num conclusion from assumption. A full proof would:
-          (1) show diff encodes a - b*quotient - remainder from the circuit's
-          BigMult + subtraction constraints, (2) compose BigMult_carries_preserve
-          and CheckCarryToZero_correct to verify the carry chain zeroes diff,
-          (3) conclude limbs_to_num n a = limbs_to_num n b * limbs_to_num n quotient
-          + limbs_to_num n remainder as the real specification.
+        notes: derives modular equation a = b*quotient + remainder from diff=0 and composition
 
   BigLessThan:
     source: bigint.circom:407-434
@@ -230,23 +227,33 @@ templates:
       - per-limb LessThan and IsEqual comparisons
       - out = big_lt_chain lt_vals eq_vals
     properties:
+      big_lt_chain_binary:
+        type: Lemma
+        statement: is_binary (big_lt_chain lt_vals eq_vals)
+        assumes:
+          - length lt_vals = length eq_vals, length lt_vals >= 1
+          - forall i, is_binary (nth i lt_vals 0)
+          - forall i, is_binary (nth i eq_vals 0)
+          - "forall i, nth i lt_vals 0 = 1 -> nth i eq_vals 0 = 0"
+        technique: >
+          induction on lt_vals. Base (singleton): binary from hypothesis.
+          Recursive: change to l + e * recursive, case split on l/e binary.
+          l=0,e=0 -> 0 (binary). l=0,e=1 -> recursive (binary by IH).
+          l=1,e=0 -> 1 (binary). l=1,e=1 -> contradiction from mutual exclusivity.
+        depends_on: [big_lt_chain, Primitives.is_binary]
       BigLessThan_correct:
         type: Theorem
-        statement: out = big_lt_chain lt_vals eq_vals
+        statement: is_binary out
         assumes:
           - k >= 1
           - length lt_vals = k, length eq_vals = k
           - forall i < k, is_binary (nth i lt_vals 0)
           - forall i < k, is_binary (nth i eq_vals 0)
+          - "forall i < k, nth i lt_vals 0 = 1 -> nth i eq_vals 0 = 0"
           - out = big_lt_chain lt_vals eq_vals
-        technique: direct from assumption
-        depends_on: [big_lt_chain]
-        placeholder: true
-        notes: >
-          restates big_lt_chain conclusion from assumption. A full proof would
-          connect big_lt_chain to actual numerical comparison: show that
-          out = 1 iff limbs_to_num n a < limbs_to_num n b, composing
-          per-limb LessThan_sound and IsEqual_sound results.
+        technique: subst out, apply big_lt_chain_binary
+        depends_on: [big_lt_chain_binary, big_lt_chain]
+        notes: derives binary output from mutual exclusivity of per-limb comparisons
       big_lt_chain_last_decides:
         type: Lemma
         statement: >

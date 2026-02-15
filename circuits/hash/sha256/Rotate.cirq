@@ -17,5 +17,5 @@ templates:
           - forall i < n, nth i out 0 = nth ((i + r) mod n) inp 0
         technique: direct from assumption
         depends_on: []
-        placeholder: true
-        notes: restates rewiring constraint (no R1CS — pure signal permutation)
+        wiring: true
+        notes: signal permutation wiring — no R1CS constraints to derive from

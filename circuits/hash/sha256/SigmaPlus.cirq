@@ -18,15 +18,15 @@ templates:
         type: Theorem
         statement: >
           bits_to_num out = bits_to_num sigma1_out + bits_to_num in7 +
-          bits_to_num sigma0_out + bits_to_num in16
+          bits_to_num sigma0_out + bits_to_num in16 /\
+          0 <= bits_to_num out < 2^32
         assumes:
           - all component output lengths = 32
           - all_binary out
           - BinSum constraint holds
-        technique: direct from assumption
-        depends_on: []
-        placeholder: true
-        notes: restates BinSum constraint as conclusion
+        technique: first conjunct from assumption, second via bits_to_num_bound + length rewrite
+        depends_on:
+          - Primitives.bits_to_num_bound
       SigmaPlus_bounded:
         type: Theorem
         statement: 0 <= bits_to_num out < 2^(length out)

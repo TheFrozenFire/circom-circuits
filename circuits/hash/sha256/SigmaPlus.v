@@ -33,11 +33,18 @@ Theorem SigmaPlus_spec :
   bits_to_num out =
     bits_to_num sigma1_out + bits_to_num in7 +
     bits_to_num sigma0_out + bits_to_num in16 ->
-  (* Conclusion *)
+  (* Conclusion: sum equation + concrete range bound *)
   bits_to_num out =
     bits_to_num sigma1_out + bits_to_num in7 +
-    bits_to_num sigma0_out + bits_to_num in16.
-Proof. intros. assumption. Qed.
+    bits_to_num sigma0_out + bits_to_num in16 /\
+  0 <= bits_to_num out < 2 ^ 32.
+Proof.
+  intros sigma1_out sigma0_out in7 in16 out
+    Hl1 Hl7 Hl0 Hl16 Hlout Hall Hsum.
+  split; [exact Hsum |].
+  assert (Hb := bits_to_num_bound out Hall).
+  rewrite Hlout in Hb. exact Hb.
+Qed.
 
 (** The output is bounded by 2^nout where nout accommodates the sum. *)
 Theorem SigmaPlus_bounded :

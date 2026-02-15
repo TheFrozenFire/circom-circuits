@@ -77,9 +77,10 @@ templates:
     properties:
       BitwiseNOT_spec:
         type: Theorem
-        statement: out = 2^n - a - 1
-        assumes: [out = 2^n - a - 1]
-        technique: direct from assumption
+        statement: 0 <= out < 2^n
+        assumes:
+          - 0 <= a < 2^n
+          - out = 2^n - a - 1
+        technique: lia from constraint and input range
         depends_on: []
-        placeholder: true
-        notes: restates linear constraint (no R1CS — pure wiring)
+        notes: derives output range preservation from input range and NOT formula

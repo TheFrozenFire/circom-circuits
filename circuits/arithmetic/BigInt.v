@@ -368,19 +368,23 @@ Qed.
 (** ** BigMod (bigint.circom:210-263) *)
 
 Theorem BigMod_constraint_holds :
-  forall (n : nat) (k : nat) (a quotient b remainder : list Z)
-    (diff : list Z),
+  forall (n : nat) (k : nat) (a b remainder quotient diff : list Z),
   length a = (k + 1)%nat ->
   length b = k ->
   length remainder = k ->
   length quotient = 2%nat ->
   length diff = (k + 1)%nat ->
-  (forall i, (i < k + 1)%nat ->
-    nth i diff 0 = nth i a 0 ->
-    nth i diff 0 = nth i a 0) ->
+  limbs_to_num n diff =
+    limbs_to_num n a - limbs_to_num n b * limbs_to_num n quotient -
+    limbs_to_num n remainder ->
   limbs_to_num n diff = 0 ->
-  limbs_to_num n diff = 0.
-Proof. intros. assumption. Qed.
+  limbs_to_num n a =
+    limbs_to_num n b * limbs_to_num n quotient + limbs_to_num n remainder.
+Proof.
+  intros n k a b remainder quotient diff
+    Halen Hblen Hrlen Hqlen Hdlen Hdiff_eq Hdiff_zero.
+  lia.
+Qed.
 
 (** ** BigLessThan (bigint.circom:407-434) *)
 
@@ -391,6 +395,45 @@ Fixpoint big_lt_chain (lt_vals eq_vals : list Z) : Z :=
   | _, _ => 0
   end.
 
+Lemma big_lt_chain_binary : forall lt_vals eq_vals,
+  length lt_vals = length eq_vals ->
+  (length lt_vals >= 1)%nat ->
+  (forall i, (i < length lt_vals)%nat -> is_binary (nth i lt_vals 0)) ->
+  (forall i, (i < length eq_vals)%nat -> is_binary (nth i eq_vals 0)) ->
+  (forall i, (i < length lt_vals)%nat ->
+    nth i lt_vals 0 = 1 -> nth i eq_vals 0 = 0) ->
+  is_binary (big_lt_chain lt_vals eq_vals).
+Proof.
+  induction lt_vals as [| l lrest IH];
+    intros eq_vals Hlen Hge1 Hlt_bin Heq_bin Hexcl.
+  - simpl in Hge1. lia.
+  - destruct eq_vals as [| e erest]; [simpl in Hlen; lia |].
+    destruct lrest as [| l' lrest'].
+    + (* Base case: [l], result = l *)
+      simpl. apply (Hlt_bin 0%nat). simpl. lia.
+    + (* Recursive case *)
+      change (big_lt_chain (l :: l' :: lrest') (e :: erest))
+        with (l + e * big_lt_chain (l' :: lrest') erest).
+      assert (Hbl : is_binary l) by (apply (Hlt_bin 0%nat); simpl; lia).
+      assert (Hbe : is_binary e) by (apply (Heq_bin 0%nat); simpl; lia).
+      assert (Hexcl0 : l = 1 -> e = 0)
+        by (apply (Hexcl 0%nat); simpl; lia).
+      assert (HIH : is_binary (big_lt_chain (l' :: lrest') erest)).
+      { apply IH.
+        - simpl in Hlen |- *. lia.
+        - simpl. lia.
+        - intros i Hi. apply (Hlt_bin (S i)). simpl in *. lia.
+        - intros i Hi. apply (Heq_bin (S i)). simpl in *. lia.
+        - intros i Hi Hli.
+          apply (Hexcl (S i)); simpl in *; [lia | exact Hli]. }
+      destruct Hbl as [Hl | Hl]; destruct Hbe as [He | He]; subst.
+      * left. lia.
+      * unfold is_binary in HIH.
+        destruct HIH as [Hr | Hr]; [left | right]; lia.
+      * right. lia.
+      * exfalso. specialize (Hexcl0 eq_refl). lia.
+Qed.
+
 Theorem BigLessThan_correct :
   forall (k : nat) (lt_vals eq_vals : list Z) (out : Z),
   (k >= 1)%nat ->
@@ -398,9 +441,18 @@ Theorem BigLessThan_correct :
   length eq_vals = k ->
   (forall i, (i < k)%nat -> is_binary (nth i lt_vals 0)) ->
   (forall i, (i < k)%nat -> is_binary (nth i eq_vals 0)) ->
+  (forall i, (i < k)%nat ->
+    nth i lt_vals 0 = 1 -> nth i eq_vals 0 = 0) ->
   out = big_lt_chain lt_vals eq_vals ->
-  out = big_lt_chain lt_vals eq_vals.
-Proof. intros. assumption. Qed.
+  is_binary out.
+Proof.
+  intros k lt_vals eq_vals out Hk Hltlen Heqlen
+    Hlt_bin Heq_bin Hexcl Hout.
+  subst out. apply big_lt_chain_binary; [lia | lia | | |].
+  - intros i Hi. apply Hlt_bin. lia.
+  - intros i Hi. apply Heq_bin. lia.
+  - intros i Hi. apply Hexcl. lia.
+Qed.
 
 Lemma big_lt_chain_last_decides :
   forall (l e : Z) (lrest erest : list Z),

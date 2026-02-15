@@ -23,8 +23,12 @@ Theorem T2_spec :
   forall (bigsigma0_val maj_val : Z) (out : list Z),
   all_binary out ->
   bits_to_num out = bigsigma0_val + maj_val ->
-  bits_to_num out = bigsigma0_val + maj_val.
-Proof. intros. assumption. Qed.
+  bits_to_num out = bigsigma0_val + maj_val /\
+  0 <= bits_to_num out < 2 ^ Z.of_nat (length out).
+Proof.
+  intros bigsigma0_val maj_val out Hall Hsum.
+  split; [exact Hsum | apply bits_to_num_bound; exact Hall].
+Qed.
 
 (** T2 output is bounded. *)
 Theorem T2_bounded :

@@ -23,8 +23,12 @@ Theorem T1_spec :
   forall (h_val bigsigma1_val ch_val k_val w_val : Z) (out : list Z),
   all_binary out ->
   bits_to_num out = h_val + bigsigma1_val + ch_val + k_val + w_val ->
-  bits_to_num out = h_val + bigsigma1_val + ch_val + k_val + w_val.
-Proof. intros. assumption. Qed.
+  bits_to_num out = h_val + bigsigma1_val + ch_val + k_val + w_val /\
+  0 <= bits_to_num out < 2 ^ Z.of_nat (length out).
+Proof.
+  intros h_val bigsigma1_val ch_val k_val w_val out Hall Hsum.
+  split; [exact Hsum | apply bits_to_num_bound; exact Hall].
+Qed.
 
 (** T1 output is bounded. *)
 Theorem T1_bounded :

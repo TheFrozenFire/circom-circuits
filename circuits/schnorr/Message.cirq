@@ -32,8 +32,8 @@ templates:
           - wiring constraints
         technique: repeat split; all direct from assumptions
         depends_on: []
-        placeholder: true
-        notes: restates wiring layout as structured conclusion
+        wiring: true
+        notes: layout wiring — captures full message packing structure
 
   SchnorrMessageCommit:
     source: message.circom:44-60

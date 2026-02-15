@@ -17,5 +17,5 @@ templates:
           - forall i < n, nth i out 0 = if (i+r <? n) then nth (i+r) inp 0 else 0
         technique: direct from assumption
         depends_on: []
-        placeholder: true
-        notes: restates rewiring constraint (no R1CS — pure signal routing)
+        wiring: true
+        notes: signal routing wiring — no R1CS constraints to derive from

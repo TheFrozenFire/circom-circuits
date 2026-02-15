@@ -110,6 +110,9 @@ Qed.
     Flips all bits of an n-bit value. *)
 
 Theorem BitwiseNOT_spec : forall (n : nat) (a out : Z),
+  0 <= a < 2 ^ Z.of_nat n ->
   out = 2 ^ Z.of_nat n - a - 1 ->
-  out = 2 ^ Z.of_nat n - a - 1.
-Proof. intros. assumption. Qed.
+  0 <= out < 2 ^ Z.of_nat n.
+Proof.
+  intros n a out Ha Hout. lia.
+Qed.
