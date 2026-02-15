@@ -36,3 +36,6 @@ hash/sha256/T1.v
 hash/sha256/T2.v
 hash/sha256/Sha256compression.v
 hash/sha256/Sha256.v
+curve/Montgomery.v
+curve/BabyJub.v
+curve/Compress.v
