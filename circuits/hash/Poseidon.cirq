@@ -6,11 +6,11 @@ imports: [Primitives]
 definitions:
   round_fn:
     type: Definition
-    signature: list Z -> list Z
+    signature: "list Z -> list Z"
     description: a single round function mapping state to state
   compose_rounds:
     type: Fixpoint
-    signature: (rounds : list round_fn) (state : list Z) -> list Z
+    signature: "(rounds : list round_fn) (state : list Z) -> list Z"
     description: sequential composition of round functions
 
 templates:

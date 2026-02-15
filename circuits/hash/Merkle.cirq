@@ -6,7 +6,7 @@ imports: [Primitives]
 definitions:
   merkle_root:
     type: Fixpoint
-    signature: (hash : Z) (pathIndices siblings : list Z) -> Z
+    signature: "(hash : Z) (pathIndices siblings : list Z) -> Z"
     description: >
       recursive Merkle root computation. At each level, uses pathIndex to
       select left/right ordering of (hash, sibling) then applies hash function H.

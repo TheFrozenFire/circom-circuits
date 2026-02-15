@@ -4,7 +4,7 @@ proof: Selector.v
 imports: [Primitives]
 
 templates:
-  Selector:
+  IndexSelector:
     source: selector.circom:7-34
     constraints:
       - indicators[i] = IsEqual(i, index) for each i

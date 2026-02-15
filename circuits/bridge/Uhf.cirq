@@ -6,14 +6,14 @@ imports: [Primitives]
 definitions:
   poly_eval:
     type: Fixpoint
-    signature: (coeffs : list Z) (r : Z) -> Z
+    signature: "(coeffs : list Z) (r : Z) -> Z"
     description: >
       polynomial evaluation: c0 + r * (c1 + r * (c2 + ...)).
       Standard left-to-right evaluation matching the mathematical definition
       x[0] + x[1]*r + x[2]*r^2 + ... + x[n-1]*r^(n-1).
   horner_chain:
     type: Fixpoint
-    signature: (seed : Z) (r : Z) (coeffs : list Z) -> Z
+    signature: "(seed : Z) (r : Z) (coeffs : list Z) -> Z"
     description: >
       right-to-left Horner accumulation: starts from seed, at each step
       computes acc * r + c. This matches the circuit's constraint structure.

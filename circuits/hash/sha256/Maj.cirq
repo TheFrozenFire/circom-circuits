@@ -4,7 +4,7 @@ proof: Maj.v
 imports: [Primitives]
 
 templates:
-  Maj:
+  Maj_t:
     source: maj.circom:5-16
     constraints:
       - mid[k] = b[k] * c[k]

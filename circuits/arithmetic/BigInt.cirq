@@ -6,11 +6,19 @@ imports: [Primitives]
 definitions:
   convolution_at:
     type: Definition
-    signature: (a b : list Z) (l : nat) -> Z
+    signature: "(a b : list Z) (l : nat) -> Z"
     description: sum of pairwise products a[i] * b[l-i] for i in 0..l
+  nth_succ_cons:
+    type: Fact
+    statement: nth (S i) (x :: l) 0 = nth i l 0
+    notes: definitionally true; used to shift indices during induction
+  nth_tl:
+    type: Lemma
+    statement: (i >= 1) -> nth i (x :: l) 0 = nth (i - 1) l 0
+    notes: generalizes nth_succ_cons for opaque i >= 1
   big_lt_chain:
     type: Fixpoint
-    signature: (lt_vals eq_vals : list Z) -> Z
+    signature: "(lt_vals eq_vals : list Z) -> Z"
     description: recursive comparison chain; lt + eq * recursive_result
 
 templates:

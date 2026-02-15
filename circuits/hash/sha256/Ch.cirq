@@ -4,7 +4,7 @@ proof: Ch.v
 imports: [Primitives]
 
 templates:
-  Ch:
+  Ch_t:
     source: ch.circom:4-13
     constraints:
       - out[k] = a[k] * (b[k] - c[k]) + c[k]
