@@ -1,0 +1,35 @@
+circuit: dedup.circom
+ast: dedup.json
+proof: Dedup.v
+imports: [Primitives, Comparators, Merkle]
+
+templates:
+  PrivateDedup:
+    source: dedup.circom:18-61
+    constraints:
+      - VectorCommit(document) = docHash; docHash === documentCommit
+      - VectorCommit(candidate) = candHash
+      - MerkleTreeInclusionProof(candHash, pathIndices, siblings) = computedRoot
+      - computedRoot === merkleRoot
+      - EuclideanDistanceSquared(document, candidate) = distSq
+      - LessThan(bits)(minDistSq, distSq) = 1 (i.e., distSq > minDistSq)
+    notes: >
+      private deduplication proof. Proves a document is sufficiently distant
+      from a candidate in a committed database, without revealing either
+      document's content.
+    properties:
+      PrivateDedup_sound:
+        type: Theorem
+        statement: >
+          docHash = documentCommit /\
+          computedRoot = merkleRoot /\
+          minDistSq < distSq
+        assumes:
+          - length document = n, length candidate = n
+          - docHash = documentCommit
+          - Merkle path: length pathIndices = dbDepth, all_binary pathIndices
+          - computedRoot = merkleRoot
+          - 0 <= minDistSq, 0 <= distSq
+          - minDistSq < distSq
+        technique: repeat split; all direct from assumptions
+        depends_on: []

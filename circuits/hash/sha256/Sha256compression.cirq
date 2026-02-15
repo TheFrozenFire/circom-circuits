@@ -1,0 +1,86 @@
+circuit: sha256compression.circom
+ast: sha256compression.json
+proof: Sha256compression.v
+imports: [Primitives, T1, T2, SigmaPlus, BinSum]
+
+definitions:
+  sha256_state:
+    type: Definition
+    signature: "(Z * Z * Z * Z * Z * Z * Z * Z)"
+    description: 8-word SHA-256 state tuple (a, b, c, d, e, f, g, h)
+  sha256_round_step:
+    type: Definition
+    signature: "sha256_state -> Z -> Z -> Z -> Z -> Z -> Z -> sha256_state"
+    description: >
+      one round of state evolution: (new_a, a, b, c, new_e, e, f, g)
+      where new_a = T1 + T2 and new_e = d + T1
+
+templates:
+  Sha256compression:
+    source: sha256compression.circom:11-143
+    constraints:
+      - w[t] for t < 16: wired from inp (reversed bit order per word)
+      - w[t] for t >= 16: SigmaPlus(w[t-2], w[t-7], w[t-15], w[t-16])
+      - state[0] initialized from hin (8 words)
+      - "64 rounds: T1, T2, BinSum for new_a and new_e, state rotation"
+      - fsum[i] = BinSum(32,2)(hin[i], state[64][i]) for output
+    notes: >
+      one block of SHA-256 compression (64 rounds). Message schedule
+      expands 16 input words to 64 via SigmaPlus. State evolves through
+      T1/T2 computation and BinSum additions.
+    properties:
+      message_schedule_direct:
+        type: Theorem
+        statement: "forall k < 32, nth k w_t 0 = nth (t*32 + 31 - k) inp 0"
+        assumes:
+          - t < 16
+          - length w_t = 32
+          - direct wiring constraints
+        technique: direct from assumption
+        depends_on: []
+        placeholder: true
+        notes: restates direct wiring for first 16 message words
+      message_schedule_expansion:
+        type: Theorem
+        statement: >
+          bits_to_num w_t = bits_to_num w_t2 + bits_to_num w_t7 +
+          bits_to_num w_t15 + bits_to_num w_t16
+        assumes:
+          - length w_t = 32, all_binary w_t
+          - SigmaPlus constraint holds
+        technique: direct from assumption
+        depends_on: []
+        placeholder: true
+        notes: restates SigmaPlus constraint for expanded words
+      state_evolution_correct:
+        type: Theorem
+        statement: >
+          sha256_round_step(a,b,c,d,e,f,g,h, t1, t2, new_a, new_e) =
+          (new_a, a, b, c, new_e, e, f, g)
+        assumes: []
+        technique: reflexivity (definitional)
+        depends_on: [sha256_round_step]
+      final_addition_correct:
+        type: Theorem
+        statement: bits_to_num fsum_out = hin_word + final_word
+        assumes:
+          - all_binary fsum_out
+          - length fsum_out = 32
+          - BinSum constraint holds
+        technique: direct from assumption
+        depends_on: []
+        placeholder: true
+        notes: restates BinSum constraint for final addition
+      Sha256compression_spec:
+        type: Theorem
+        statement: True
+        assumes:
+          - length hin = 256, length inp = 512, length out = 256
+          - all_binary out
+        technique: trivial (True)
+        depends_on: []
+        placeholder: true
+        notes: >
+          placeholder for full compression function correctness.
+          A complete proof would compose message_schedule, state_evolution,
+          and final_addition to show output matches SHA-256 spec.

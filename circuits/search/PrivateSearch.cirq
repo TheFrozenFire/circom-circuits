@@ -1,0 +1,30 @@
+circuit: private_search.circom
+ast: private_search.json
+proof: PrivateSearch.v
+imports: [Primitives, Comparators, Merkle]
+
+templates:
+  PrivateSearch:
+    source: private_search.circom:16-53
+    constraints:
+      - VectorCommit(document) = docHash
+      - MerkleTreeInclusionProof(docHash, pathIndices, siblings) = computedRoot
+      - computedRoot === merkleRoot
+      - EuclideanDistanceSquared(query, document) = distSq
+      - LessThan(bits)(distSq, maxDistSq) = 1
+    notes: >
+      private semantic search proof. Proves that a private query is within
+      distance threshold of a document in a committed database, without
+      revealing the query or which document matched.
+    properties:
+      PrivateSearch_sound:
+        type: Theorem
+        statement: computedRoot = merkleRoot /\ distSq < maxDistSq
+        assumes:
+          - length query = n, length document = n
+          - Merkle path: length pathIndices = dbDepth, all_binary pathIndices
+          - computedRoot = merkleRoot
+          - LessThan range constraints on distSq and maxDistSq
+          - distSq < maxDistSq
+        technique: split; both direct from assumptions
+        depends_on: []

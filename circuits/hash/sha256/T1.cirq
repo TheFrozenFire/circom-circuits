@@ -1,0 +1,34 @@
+circuit: t1.circom
+ast: t1.json
+proof: T1.v
+imports: [Primitives, Sigma, Ch, BinSum]
+
+templates:
+  T1:
+    source: t1.circom:8-39
+    constraints:
+      - bigsigma1 = BigSigma(6,11,25)(e)
+      - ch = Ch_t(32)(e, f, g)
+      - out = BinSum(32,5)(h, bigsigma1, ch, k, w)
+    notes: >
+      T1 = h + BigSigma1(e) + Ch(e,f,g) + k + w (mod 2^nout).
+      One of two intermediate values in SHA-256 round function.
+    properties:
+      T1_spec:
+        type: Theorem
+        statement: >
+          bits_to_num out = h_val + bigsigma1_val + ch_val + k_val + w_val
+        assumes:
+          - all_binary out
+          - BinSum constraint holds
+        technique: direct from assumption
+        depends_on: []
+        placeholder: true
+        notes: restates BinSum constraint as conclusion
+      T1_bounded:
+        type: Theorem
+        statement: 0 <= bits_to_num out < 2^(length out)
+        assumes: [all_binary out]
+        technique: apply bits_to_num_bound
+        depends_on:
+          - Primitives.bits_to_num_bound

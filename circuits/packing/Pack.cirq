@@ -1,0 +1,64 @@
+circuit: pack.circom
+ast: pack.json
+proof: Pack.v
+imports: [Primitives, Bitify]
+
+templates:
+  Pack_Elements:
+    source: pack.circom:8-36
+    constraints:
+      - Num2BitsLE(bitsPerItem)(in[i]) — binary decomposition of each input
+      - out[e] = Bits2NumLE(bitsPerElement)(concatenated bits for element e)
+    notes: >
+      packs flat field elements into packed elements. Each output element
+      contains itemsPerElement items of bitsPerItem bits each.
+    properties:
+      Pack_Elements_correct:
+        type: Theorem
+        statement: 0 <= out < 2^bitsPerElement
+        assumes:
+          - bpe <= 253
+          - length concat_bits = bpe
+          - all_binary concat_bits
+          - out = bits_to_num concat_bits
+        technique: substitute out, rewrite length, apply bits_to_num_bound
+        depends_on:
+          - Primitives.bits_to_num_bound
+          - Primitives.all_binary
+
+  Pack_Elements_FromBits:
+    source: pack.circom:40-60
+    constraints:
+      - out[e] = Bits2NumLE(bitsPerElement)(concatenated pre-decomposed bits)
+    notes: same as Pack_Elements but input is pre-decomposed bits
+    properties:
+      Pack_Elements_FromBits_correct:
+        type: Theorem
+        statement: 0 <= out < 2^bitsPerElement
+        assumes:
+          - bpe <= 253
+          - length concat_bits = bpe
+          - all_binary concat_bits
+          - out = bits_to_num concat_bits
+        technique: substitute out, rewrite length, apply bits_to_num_bound
+        depends_on:
+          - Primitives.bits_to_num_bound
+          - Primitives.all_binary
+
+  Unpack_Elements:
+    source: pack.circom:64-89
+    constraints:
+      - Num2BitsLE(bitsPerElement)(in[e]) — binary decomposition of packed element
+      - out[itemIdx] = Bits2NumLE(bitsPerItem)(bit window for item)
+    notes: inverse of Pack_Elements
+    properties:
+      Unpack_roundtrip:
+        type: Theorem
+        statement: out = item (unpacking recovers original)
+        assumes:
+          - all_binary item_bits
+          - length item_bits = bitsPerItem
+          - item = bits_to_num item_bits
+          - out = bits_to_num item_bits
+        technique: substitution, reflexivity
+        depends_on: []

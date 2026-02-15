@@ -1,0 +1,33 @@
+circuit: t2.circom
+ast: t2.json
+proof: T2.v
+imports: [Primitives, Sigma, Maj, BinSum]
+
+templates:
+  T2:
+    source: t2.circom:8-32
+    constraints:
+      - bigsigma0 = BigSigma(2,13,22)(a)
+      - maj = Maj_t(32)(a, b, c)
+      - out = BinSum(32,2)(bigsigma0, maj)
+    notes: >
+      T2 = BigSigma0(a) + Maj(a,b,c) (mod 2^nout).
+      Second intermediate value in SHA-256 round function.
+    properties:
+      T2_spec:
+        type: Theorem
+        statement: bits_to_num out = bigsigma0_val + maj_val
+        assumes:
+          - all_binary out
+          - BinSum constraint holds
+        technique: direct from assumption
+        depends_on: []
+        placeholder: true
+        notes: restates BinSum constraint as conclusion
+      T2_bounded:
+        type: Theorem
+        statement: 0 <= bits_to_num out < 2^(length out)
+        assumes: [all_binary out]
+        technique: apply bits_to_num_bound
+        depends_on:
+          - Primitives.bits_to_num_bound

@@ -1,0 +1,52 @@
+circuit: commit.circom
+ast: commit.json
+proof: Commit.v
+imports: [Primitives]
+
+templates:
+  VectorCommit:
+    source: commit.circom:10-42
+    constraints:
+      - chunkHash[i] = Poseidon(chunkSize)(v[i*chunkSize..(i+1)*chunkSize-1])
+      - nodes[nChunks-1+i] = chunkHash[i] (leaves)
+      - nodes[i] = Poseidon(2)(nodes[2i+1], nodes[2i+2]) (internal nodes)
+      - out = nodes[0] (root)
+    notes: >
+      chunked Poseidon hashing with binary tree reduction. Splits vector
+      into nChunks groups, hashes each with Poseidon(chunkSize), reduces
+      via binary tree of Poseidon(2). Uses heap layout for tree.
+    properties:
+      VectorCommit_deterministic:
+        type: Theorem
+        statement: True
+        assumes:
+          - length v = n
+          - chunkSize > 0
+          - n mod chunkSize = 0
+        technique: trivial (True)
+        depends_on: []
+        placeholder: true
+        notes: placeholder stating output is determined by inputs
+      VectorCommit_tree_structure:
+        type: Theorem
+        statement: nth 0 nodes 0 = nth 0 nodes 0
+        assumes:
+          - nChunks > 0
+          - length nodes = 2 * nChunks - 1
+          - leaves are chunk hashes
+          - internal nodes are Poseidon(2) of children
+        technique: reflexivity
+        depends_on: []
+        placeholder: true
+        notes: >
+          placeholder for tree structure. States root equals nodes[0]
+          (trivially true). A full proof would show the root is the
+          Merkle tree hash of all chunk hashes.
+      VectorCommit_same_input_same_output:
+        type: Theorem
+        statement: True
+        assumes: [v1 = v2, length v1 = n, length v2 = n]
+        technique: trivial (True)
+        depends_on: []
+        placeholder: true
+        notes: placeholder for collision resistance (same inputs -> same output)

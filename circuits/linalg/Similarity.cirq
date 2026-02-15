@@ -1,0 +1,62 @@
+circuit: similarity.circom
+ast: similarity.json
+proof: Similarity.v
+imports: [Primitives, Comparators, Bitify, Selector]
+
+templates:
+  CosineSimilarityCheck:
+    source: similarity.circom:10-64
+    constraints:
+      - dotAB = sum(a[i] * b[i])
+      - normSqA = sum(a[i]^2), normSqB = sum(b[i]^2)
+      - lhs = dotAB^2
+      - normProd = normSqA * normSqB
+      - rhs = threshold_sq * normProd
+      - LessThan(bits)(lhs, rhs) = 0 (i.e., lhs >= rhs)
+      - Num2Bits(bits)(dotAB) — sign check (non-negative)
+    notes: >
+      proves cos(a,b) >= threshold without division or sqrt.
+      Rewrites as: (a.b)^2 >= threshold_sq * ||a||^2 * ||b||^2.
+      Constraint-only template (no outputs).
+    properties:
+      CosineSimilarityCheck_sound:
+        type: Theorem
+        statement: dotAB^2 >= threshold_sq * normSqA * normSqB /\ dotAB >= 0
+        assumes:
+          - 0 < bits
+          - 0 <= dotAB < 2^bits, 0 <= lhs < 2^bits, 0 <= rhs < 2^bits
+          - lhs = dotAB * dotAB
+          - normProd = normSqA * normSqB
+          - rhs = threshold_sq * normProd
+          - lhs < rhs -> False
+        technique: substitute lhs/rhs/normProd, lia
+        depends_on: []
+
+  NearestNeighborCheck:
+    source: similarity.circom:68-110
+    constraints:
+      - dist[c] = sum((query[i] - candidates[c][i])^2) for each candidate
+      - IsEqual indicator mux extracts dist[claimedIdx]
+      - LessThan(bits)(dist[c], claimedDist) = 0 for all c
+    notes: proves the claimed index is the nearest neighbor among k candidates
+    properties:
+      NearestNeighborCheck_sound:
+        type: Theorem
+        statement: forall c < k, claimedDist <= dist[c]
+        assumes:
+          - length dist = k
+          - "forall c < k, NOT (dist[c] < claimedDist)"
+        technique: specialize non-LessThan to each c, lia
+        depends_on: []
+      indicator_mux_extracts_distance:
+        type: Theorem
+        statement: >
+          exists idx, idx < k /\ indicators[idx] = 1 /\ claimedDist = dist[idx]
+        assumes:
+          - length dist = k, length indicators = k
+          - Forall is_binary indicators
+          - list_sum indicators = 1
+          - claimedDist = list_sum (map (fun p => fst p * snd p) (combine indicators dist))
+        technique: apply indicator_mux_correct from Primitives
+        depends_on:
+          - Primitives.indicator_mux_correct

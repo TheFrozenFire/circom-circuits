@@ -1,0 +1,121 @@
+circuit: babyjub.circom
+ast: babyjub.json
+proof: BabyJub.v
+imports: [Primitives, Bitify, Comparators]
+
+templates:
+  BabyAdd:
+    source: babyjub.circom:9-35
+    constraints:
+      - beta = x1 * y2
+      - gamma = y1 * x2
+      - delta = (-a*x1 + y1) * (x2 + y2)
+      - tau = beta * gamma
+      - (1 + d*tau) * xout = beta + gamma
+      - (1 - d*tau) * yout = delta + a*beta - gamma
+    notes: twisted Edwards point addition on BabyJubjub
+    properties:
+      BabyAdd_spec:
+        type: Theorem
+        statement: >
+          (1 + d*tau) * xout = beta + gamma /\
+          (1 - d*tau) * yout = delta + a*beta - gamma /\
+          tau = x1*y2 * (y1*x2)
+        assumes:
+          - beta = x1 * y2, gamma = y1 * x2
+          - delta = (-a*x1 + y1) * (x2 + y2)
+          - tau = beta * gamma
+          - (1 + d*tau) * xout = beta + gamma
+          - (1 - d*tau) * yout = delta + a*beta - gamma
+        technique: substitute beta/gamma/tau, first two goals direct, third by ring
+        depends_on: []
+
+  BabyDbl:
+    source: babyjub.circom:38-52
+    constraints:
+      - delegates to BabyAdd(P, P)
+    notes: point doubling via self-addition
+    properties:
+      BabyDbl_spec:
+        type: Theorem
+        statement: >
+          (1 + d*tau) * xout = beta + gamma /\
+          (1 - d*tau) * yout = delta + a*beta - gamma
+        assumes:
+          - BabyAdd constraints with (x2,y2) = (x1,y1)
+        technique: direct from assumptions
+        depends_on: [BabyAdd_spec]
+        placeholder: true
+        notes: same as BabyAdd with duplicated inputs
+
+  BabyCheck:
+    source: babyjub.circom:55-69
+    constraints:
+      - x2 = x * x
+      - y2 = y * y
+      - a * x2 + y2 = 1 + d * x2 * y2
+    notes: twisted Edwards curve equation check
+    properties:
+      BabyCheck_spec:
+        type: Theorem
+        statement: a * (x*x) + y*y = 1 + d * (x*x) * (y*y)
+        assumes:
+          - x2 = x * x, y2 = y * y
+          - a * x2 + y2 = 1 + d * x2 * y2
+        technique: substitute x2 and y2
+        depends_on: []
+
+  BabyPointAdd:
+    source: babyjub.circom:73-80
+    constraints:
+      - delegates to BabyAdd with array interface
+    properties:
+      BabyPointAdd_spec:
+        type: Theorem
+        statement: True
+        assumes: [delegates to BabyAdd]
+        technique: trivial
+        depends_on: []
+        placeholder: true
+        notes: array wrapper around BabyAdd
+
+  BabySuborderCheck:
+    source: babyjub.circom:95-101
+    constraints:
+      - diff = SUBORDER - 1 - in
+      - Num2BitsLE(253)(diff) — binary decomposition exists
+    notes: proves 0 <= in <= SUBORDER - 1
+    properties:
+      BabySuborderCheck_spec:
+        type: Theorem
+        statement: inp <= suborder - 1
+        assumes:
+          - suborder > 0
+          - diff = suborder - 1 - inp
+          - length bits = 253, all_binary bits
+          - diff = bits_to_num bits
+        technique: >
+          derive bits_to_num bits >= 0 via bits_to_num_nonneg,
+          rewrite diff, lia
+        depends_on:
+          - Primitives.bits_to_num_nonneg
+
+  BabySuborderAdd:
+    source: babyjub.circom:105-120
+    constraints:
+      - sum = a + b
+      - k = sum \ q (Euclidean quotient)
+      - out = sum - k * q
+      - LessThan(252)(out, q) = 1
+    notes: scalar addition modulo suborder
+    properties:
+      BabySuborderAdd_spec:
+        type: Theorem
+        statement: out = (a + b) mod q
+        assumes:
+          - q > 0
+          - sum = a + b
+          - out = sum - k * q
+          - 0 <= out < q
+        technique: substitute sum/out, apply Zmod_unique with quotient k
+        depends_on: []

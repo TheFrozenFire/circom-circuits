@@ -1,0 +1,113 @@
+circuit: elgamal.circom
+ast: elgamal.json
+proof: ElGamal.v
+imports: [Primitives, Bitify, BabyJub, ScalarMul]
+
+templates:
+  ElGamalShare:
+    source: elgamal.circom:11-20
+    constraints:
+      - yBits = Num2Bits(254)(y)
+      - out = EscalarMulAny(254)(yBits, pubKey)
+      - c1 = EscalarMulFix(254, BASE8)(yBits)
+    notes: >
+      computes shared secret out = pubKey^y and ephemeral key c1 = G8^y.
+      Both use the same scalar y.
+    properties:
+      ElGamalBlinding_spec:
+        type: Theorem
+        statement: out = point_x - message
+        assumes: [out = (message - point_x) * (-1)]
+        technique: lia
+        depends_on: []
+        notes: from helpers.circom ElGamalBlinding template
+      ElGamalMessageCheck_sound:
+        type: Theorem
+        statement: >
+          a * (point_x^2) + point_y^2 = 1 + d * (point_x^2) * (point_y^2) /\
+          message = point_x - blinding
+        assumes:
+          - x2 = point_x * point_x, y2 = point_y * point_y
+          - a * x2 + y2 = 1 + d * x2 * y2
+          - point_x - blinding = message
+        technique: substitute x2/y2, split; first goal direct, second by lia
+        depends_on:
+          - BabyJub.BabyCheck_spec
+        notes: from helpers.circom ElGamalMessageCheck template
+      ElGamalShare_spec:
+        type: Theorem
+        statement: True
+        assumes:
+          - length yBits = 254, all_binary yBits
+          - y = bits_to_num yBits
+        technique: trivial (True)
+        depends_on: []
+        placeholder: true
+        notes: placeholder stating output is determined by scalar y and keys
+
+  ElGamalEncrypt:
+    source: elgamal.circom:25-44
+    constraints:
+      - shared = ElGamalShare(pubKey, y)
+      - c1 = shared.c1
+      - c2 = BabyAdd(message, shared.out)
+    notes: >
+      ElGamal encryption: c1 = G8^y, c2 = message + pubKey^y
+    properties:
+      ElGamalEncrypt_structure:
+        type: Theorem
+        statement: >
+          (1 + d*tau) * c2_x = beta + gamma /\
+          (1 - d*tau) * c2_y = delta + a*beta - gamma
+        assumes:
+          - BabyAdd constraints for c2 = message + shared
+        technique: direct from assumptions
+        depends_on:
+          - BabyJub.BabyAdd_spec
+        placeholder: true
+        notes: restates BabyAdd constraints for encryption output
+
+  ElGamalDecrypt:
+    source: elgamal.circom:48-72
+    constraints:
+      - privKeyBits = Num2Bits(254)(privKey)
+      - s = EscalarMulAny(254)(privKeyBits, c1)
+      - c1xInvX = 0 - s.out[0] (negate x-coordinate)
+      - message = BabyAdd((-s_x, s_y), c2)
+    notes: >
+      ElGamal decryption: message = c2 - c1^privKey.
+      Negation inverts x-coordinate on twisted Edwards curve.
+      Proof also covers helpers.circom templates (ElGamalBlinding,
+      ElGamalMessageCheck) and algebraic roundtrip property.
+    properties:
+      ElGamalDecrypt_negation:
+        type: Theorem
+        statement: c1xInvX = -c1x_out_x
+        assumes: [c1xInvX = 0 - c1x_out_x]
+        technique: lia
+        depends_on: []
+      ElGamalDecrypt_structure:
+        type: Theorem
+        statement: >
+          (1 + d*tau) * msg_x = beta + gamma /\
+          (1 - d*tau) * msg_y = delta + a*beta - gamma
+        assumes:
+          - length privKeyBits = 254, all_binary privKeyBits
+          - privKey = bits_to_num privKeyBits
+          - neg_s_x = -s_x
+          - BabyAdd constraints for message = (-s, c2)
+        technique: direct from BabyAdd assumptions
+        depends_on:
+          - BabyJub.BabyAdd_spec
+        placeholder: true
+        notes: restates BabyAdd constraints for decryption output
+      ElGamal_roundtrip_algebraic:
+        type: Theorem
+        statement: True
+        assumes: []
+        technique: trivial (True)
+        depends_on: []
+        placeholder: true
+        notes: >
+          placeholder for roundtrip correctness. A full proof would require
+          group law commutativity: y*(privKey*G8) = privKey*(y*G8).

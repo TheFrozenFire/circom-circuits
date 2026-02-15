@@ -1,0 +1,60 @@
+circuit: contains.circom
+ast: contains.json
+proof: Contains.v
+imports: [Primitives, Comparators]
+
+templates:
+  Contains:
+    source: contains.circom:8-37
+    constraints:
+      - IsEqual(right[i], left[j]) for each (i, j)
+      - IsZero(right[i]) detects empty slots
+      - ForceEqualIfEnabled forces noMatch = 0 when right[i] /= 0
+    notes: >
+      verifies all non-zero elements of right[] exist in left[].
+      Zero values in right are treated as empty slots and skipped.
+      Constraint-only (no outputs).
+    properties:
+      exists_positive_binary:
+        type: Lemma
+        statement: >
+          list_sum eq_out > 0 -> exists j, j < length eq_out /\ nth j eq_out 0 = 1
+        assumes:
+          - Forall is_binary eq_out
+          - list_sum eq_out > 0
+        technique: induction on eq_out, case split on head being 0 or 1
+        depends_on:
+          - Primitives.is_binary
+          - Primitives.list_sum
+      Contains_sound:
+        type: Theorem
+        statement: exists j, j < nLeft /\ nth j left_ 0 = right_i
+        assumes:
+          - length left_ = nLeft, length eq_out = nLeft, length eq_inv = nLeft
+          - "forall j < nLeft, IsEqual constraints on eq_out[j]"
+          - Forall is_binary eq_out
+          - list_sum eq_out > 0
+        technique: >
+          use exists_positive_binary to find j with eq_out[j] = 1,
+          apply IsEqual_sound to derive left[j] = right_i
+        depends_on:
+          - exists_positive_binary
+          - Comparators.IsEqual_sound
+
+  Contains_Points:
+    source: contains.circom:42-86
+    constraints:
+      - IsEqual on x-coordinates and y-coordinates separately
+      - match[i][j] = eqX[i][j].out * eqY[i][j].out
+      - ForceEqualIfEnabled forces match when point is non-null
+    notes: same structure as Contains but matching on both coordinates
+    properties:
+      Contains_Points_match_correct:
+        type: Theorem
+        statement: match_val = 1 <-> eqX = 1 /\ eqY = 1
+        assumes:
+          - is_binary eqX, is_binary eqY
+          - match_val = eqX * eqY
+        technique: case analysis on eqX and eqY binary values
+        depends_on:
+          - Primitives.is_binary

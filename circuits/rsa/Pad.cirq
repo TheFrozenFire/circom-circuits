@@ -1,0 +1,51 @@
+circuit: pad.circom
+ast: pad.json
+proof: Pad.v
+imports: [Primitives, Bitify]
+
+templates:
+  RSAPKCSv15Pad:
+    source: pad.circom:13-48
+    constraints:
+      - padded_message_bwe[0] = 0x0001FFFF
+      - padded_message_bwe[1..18] = 0xFFFFFFFF
+      - padded_message_bwe[19] = 0x00303130 (ASN.1 prefix)
+      - padded_message_bwe[20..23] = DigestInfo constants
+      - padded_message_bwe[24..31] = Bits2NumLE(n)(hash windows)
+      - padded_message[k-i-1] = padded_message_bwe[i] (reversal)
+    notes: >
+      PKCS#1 v1.5 SHA-256 padding for 1024-bit RSA keys with 32-bit windows.
+      Layout: 00 01 [FF padding] 00 [ASN.1 DigestInfo] [32-byte hash].
+      Output is reversed to little-endian limb order.
+    properties:
+      RSAPKCSv15Pad_deterministic:
+        type: Theorem
+        statement: pad1 = pad2 (same hash -> same padding)
+        assumes:
+          - hash1 = hash2
+          - length pad1 = k, length pad2 = k
+          - "forall i < k, nth i pad1 0 = nth i pad2 0"
+        technique: nth_ext with pointwise equality
+        depends_on: []
+      RSAPKCSv15Pad_prefix_correct:
+        type: Theorem
+        statement: >
+          nth 0 padded_bwe 0 = 0x0001FFFF /\
+          forall i, 1 <= i <= 18 -> nth i padded_bwe 0 = 0xFFFFFFFF
+        assumes:
+          - length padded_bwe = 32
+          - constant word constraints for positions 0..23
+        technique: direct from assumptions
+        depends_on: []
+        placeholder: true
+        notes: restates constant placement constraints as conclusion
+      RSAPKCSv15Pad_reverse:
+        type: Theorem
+        statement: "forall i < k, nth i le 0 = nth (k-1-i) bwe 0"
+        assumes:
+          - length bwe = k, length le = k
+          - "forall i < k, nth i le 0 = nth (k-1-i) bwe 0"
+        technique: direct from assumption
+        depends_on: []
+        placeholder: true
+        notes: restates reversal constraint as conclusion

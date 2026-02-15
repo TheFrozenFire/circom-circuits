@@ -1,0 +1,51 @@
+circuit: blind.circom
+ast: blind.json
+proof: Blind.v
+imports: [Primitives, Bitify, BabyJub, Blinding, Message]
+
+templates:
+  SchnorrMessageBlind:
+    source: blind.circom:12-27
+    constraints:
+      - BabySuborderCheck(blindingA), BabySuborderCheck(blindingB)
+      - blinded_R = SchnorrBlinding(signerX, signerR, blindingA, blindingB)
+      - c_blind = SchnorrMessageCommit(n)(blinded_R, signerX, message)
+      - out = BabySuborderAdd(c_blind, blindingB)
+    notes: >
+      full Schnorr message blinding: range-check blindings, blind R,
+      hash commitment, add blinding mod suborder.
+    properties:
+      SchnorrMessageBlind_range_checks:
+        type: Theorem
+        statement: blindingA <= suborder - 1 /\ blindingB <= suborder - 1
+        assumes:
+          - suborder > 0
+          - diffA = suborder - 1 - blindingA, diffB = suborder - 1 - blindingB
+          - length bitsA = 253, all_binary bitsA, diffA = bits_to_num bitsA
+          - length bitsB = 253, all_binary bitsB, diffB = bits_to_num bitsB
+        technique: >
+          for each blinding, derive bits_to_num >= 0 via bits_to_num_nonneg,
+          rewrite diff, lia
+        depends_on:
+          - Primitives.bits_to_num_nonneg
+      SchnorrMessageBlind_output:
+        type: Theorem
+        statement: out = (c_blind + blindingB) mod q
+        assumes:
+          - q > 0
+          - out = (c_blind + blindingB) - k * q
+          - 0 <= out < q
+        technique: substitute out, apply Zmod_unique with quotient k
+        depends_on: []
+      SchnorrMessageBlind_spec:
+        type: Theorem
+        statement: True
+        assumes:
+          - length message = n
+          - blindings range-checked, R blinded, commitment hashed, output added mod suborder
+        technique: trivial (True)
+        depends_on: []
+        placeholder: true
+        notes: >
+          placeholder for full protocol correctness. Composes range checks,
+          blinding, commitment, and modular addition.

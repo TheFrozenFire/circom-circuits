@@ -1,0 +1,61 @@
+circuit: sha256.circom
+ast: sha256.json
+proof: Sha256.v
+imports: [Primitives, Sha256compression]
+
+definitions:
+  sha256_chain:
+    type: Fixpoint
+    signature: "(compress : list Z -> list Z -> list Z) (h0 : list Z) (blocks : list (list Z)) -> list Z"
+    description: sequential chaining of compression function over blocks
+
+templates:
+  Sha256:
+    source: sha256.circom:7-74
+    constraints:
+      - paddedIn[0..nBits-1] = in[0..nBits-1]
+      - paddedIn[nBits] = 1
+      - paddedIn[nBits+1..end-65] = 0
+      - paddedIn[end-64..end-1] = 64-bit big-endian length encoding
+      - block 0 uses H[0..7] initial hash values
+      - block i > 0 chains from sha256compression[i-1].out
+      - out = sha256compression[nBlocks-1].out
+    notes: >
+      full SHA-256 hash of nBits input bits. Pads input, chains
+      Sha256compression over all 512-bit blocks.
+    properties:
+      sha256_padding_structure:
+        type: Theorem
+        statement: True
+        assumes:
+          - length inp = nBits
+          - correct padding layout (input copy, 1-bit, zeros, length encoding)
+        technique: trivial (True)
+        depends_on: []
+        placeholder: true
+        notes: >
+          placeholder for padding correctness. States that padding
+          is deterministic given input length.
+      sha256_chain_step:
+        type: Theorem
+        statement: >
+          sha256_chain compress h0 (block :: rest) =
+          sha256_chain compress (compress h0 block) rest
+        assumes: []
+        technique: reflexivity (definitional unfolding)
+        depends_on: [sha256_chain]
+      sha256_chain_nil:
+        type: Theorem
+        statement: sha256_chain compress h0 [] = h0
+        assumes: []
+        technique: reflexivity (definitional unfolding)
+        depends_on: [sha256_chain]
+      Sha256_spec:
+        type: Theorem
+        statement: 0 <= bits_to_num out < 2^(length out)
+        assumes:
+          - length inp = nBits, length out = 256
+          - all_binary out
+        technique: apply bits_to_num_bound
+        depends_on:
+          - Primitives.bits_to_num_bound

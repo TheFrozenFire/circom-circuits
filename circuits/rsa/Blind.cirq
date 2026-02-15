@@ -1,0 +1,28 @@
+circuit: blind.circom
+ast: blind.json
+proof: Blind.v
+imports: [Primitives, BigInt]
+
+templates:
+  RSAMessageBlind:
+    source: blind.circom:7-13
+    constraints:
+      - out = BigMultModP(n, k)(padded_message, blinding, public_modulus)
+    notes: >
+      blinds a padded RSA message via modular multiplication.
+      Pure delegation to BigMultModP.
+    properties:
+      RSAMessageBlind_spec:
+        type: Theorem
+        statement: >
+          limbs_to_num n out =
+          (limbs_to_num n padded * limbs_to_num n blinding) mod (limbs_to_num n modulus)
+        assumes:
+          - length padded = k, length blinding = k, length modulus = k, length out = k
+          - product_val = limbs_to_num n padded * limbs_to_num n blinding
+          - mod_val = limbs_to_num n modulus
+          - mod_val > 0
+          - limbs_to_num n out = product_val mod mod_val
+        technique: substitute product_val and mod_val, direct from assumption
+        depends_on:
+          - Primitives.limbs_to_num

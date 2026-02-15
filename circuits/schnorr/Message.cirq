@@ -1,0 +1,68 @@
+circuit: message.circom
+ast: message.json
+proof: Message.v
+imports: [Primitives, Bitify, Compress]
+
+templates:
+  SchnorrMessagePack:
+    source: message.circom:12-40
+    constraints:
+      - compR = BabyCompress(R), compX = BabyCompress(signerX)
+      - out[0] = 0, out[1] = compR[255] (sign bit)
+      - out[2..255] = compR[0..253] (y bits)
+      - out[256] = 0, out[257] = compX[255] (sign bit)
+      - out[258..511] = compX[0..253] (y bits)
+      - out[512..512+n-1] = message[0..n-1]
+    notes: >
+      serializes R, signerX (as compressed points) and message bits.
+      Layout: [0|sign(R)|y(R)_0..y(R)_253] [0|sign(X)|y(X)_0..y(X)_253] [message...].
+      Total: 512 + n bits.
+    properties:
+      SchnorrMessagePack_layout:
+        type: Theorem
+        statement: >
+          out[0] = 0 /\ out[1] = compR[255] /\
+          (forall j < 254, out[2+j] = compR[j]) /\
+          out[256] = 0 /\ out[257] = compX[255] /\
+          (forall j < 254, out[258+j] = compX[j]) /\
+          (forall i < n, out[512+i] = message[i])
+        assumes:
+          - length compR = 256, length compX = 256
+          - length message = n, length out = 512 + n
+          - wiring constraints
+        technique: repeat split; all direct from assumptions
+        depends_on: []
+        placeholder: true
+        notes: restates wiring layout as structured conclusion
+
+  SchnorrMessageCommit:
+    source: message.circom:44-60
+    constraints:
+      - commitment_bits = SchnorrMessagePack(R, signerX, message)
+      - commitment_hash = SHA256(commitment_bits)
+      - truncated = commitment_hash[0..247]
+      - out = Bits2NumLE(248)(truncated)
+    notes: >
+      hashes packed message with SHA-256, truncates to 248 bits,
+      converts to field element. Fits safely in BN128 field.
+    properties:
+      SchnorrMessageCommit_spec:
+        type: Theorem
+        statement: 0 <= out < 2^248
+        assumes:
+          - length hash_out = 256, length truncated = 248
+          - all_binary truncated
+          - truncation wiring (first 248 bits of hash)
+          - out = bits_to_num truncated
+        technique: substitute out, apply bits_to_num_bound with length 248
+        depends_on:
+          - Primitives.bits_to_num_bound
+      SchnorrMessageCommit_deterministic:
+        type: Theorem
+        statement: True
+        assumes:
+          - length message = n
+        technique: trivial (True)
+        depends_on: []
+        placeholder: true
+        notes: placeholder stating same inputs yield same commitment

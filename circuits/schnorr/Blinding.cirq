@@ -1,0 +1,37 @@
+circuit: blinding.circom
+ast: blinding.json
+proof: Blinding.v
+imports: [Primitives, Bitify, BabyJub, ScalarMul]
+
+templates:
+  SchnorrBlinding:
+    source: blinding.circom:10-22
+    constraints:
+      - a_G = EscalarMulFix(254, BASE8)(Num2Bits(254)(blindingA))
+      - b_X = EscalarMulAny(254)(Num2Bits(254)(blindingB), signerX)
+      - R_plus_a_G = BabyPointAdd(signerR, a_G)
+      - out = BabyPointAdd(R_plus_a_G, b_X)
+    notes: >
+      Schnorr blinding: R' = signerR + blindingA*G8 + blindingB*signerX.
+      Three-step process: fixed-base mul, variable-base mul, two point additions.
+    properties:
+      SchnorrBlinding_structure:
+        type: Theorem
+        statement: True
+        assumes:
+          - length aBits = 254, all_binary aBits, blindingA = bits_to_num aBits
+          - length bBits = 254, all_binary bBits, blindingB = bits_to_num bBits
+        technique: trivial (True)
+        depends_on: []
+        placeholder: true
+        notes: >
+          placeholder stating output is determined by inputs (signerX,
+          signerR, blindingA, blindingB)
+      SchnorrBlinding_deterministic:
+        type: Theorem
+        statement: True
+        assumes: []
+        technique: trivial (True)
+        depends_on: []
+        placeholder: true
+        notes: placeholder for determinism of blinding output

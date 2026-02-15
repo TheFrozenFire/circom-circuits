@@ -1,0 +1,171 @@
+circuit: scalarmul.circom
+ast: scalarmul.json
+proof: ScalarMul.v
+imports: [Primitives, BabyJub, Montgomery, Comparators, Mux]
+
+templates:
+  Multiplexor2:
+    source: scalarmul.circom:236-243
+    constraints:
+      - out[0] = (in[1][0] - in[0][0]) * sel + in[0][0]
+      - out[1] = (in[1][1] - in[0][1]) * sel + in[0][1]
+    notes: 2-to-1 point multiplexer
+    properties:
+      Multiplexor2_correct:
+        type: Theorem
+        statement: (sel = 0 -> out = in0) /\ (sel = 1 -> out = in1)
+        assumes:
+          - is_binary sel
+          - out = (in1 - in0) * sel + in0
+        technique: case split on sel binary values, substitute, lia
+        depends_on:
+          - Primitives.is_binary
+
+  WindowMulFix:
+    source: scalarmul.circom:11-94
+    constraints:
+      - lookup table base*{1..8} via MontgomeryDouble/Add
+      - MultiMux3 selects entry from 3-bit input
+      - out8 = 8*base
+    notes: >
+      fixed-base lookup window: computes base*{1..8} in Montgomery,
+      selects via 3-bit input using MultiMux3.
+    properties:
+      WindowMulFix_mux_correct:
+        type: Theorem
+        statement: >
+          out_x = fst(table[bits_to_num sel]) /\
+          out_y = snd(table[bits_to_num sel])
+        assumes:
+          - length sel = 3, all_binary sel
+          - length table = 8
+          - 0 <= bits_to_num sel < 8
+          - out_x/out_y equal selected table entry
+        technique: direct from assumptions
+        depends_on: []
+        placeholder: true
+        notes: restates mux selection as conclusion
+
+  SegmentMulFix:
+    source: scalarmul.circom:97-172
+    constraints:
+      - WindowMulFix for each 3-bit window
+      - MontgomeryAdd chains window results
+      - Edwards2Montgomery/Montgomery2Edwards conversions
+      - BabyAdd for final correction
+    notes: >
+      processes nWindows*3 scalar bits against a base point.
+      Each window selects a multiple, results accumulated in Montgomery.
+    properties:
+      SegmentMulFix_deterministic:
+        type: Theorem
+        statement: True
+        assumes:
+          - length e = nWindows * 3
+          - all_binary e
+        technique: trivial (True)
+        depends_on: []
+        placeholder: true
+        notes: >
+          placeholder stating output is determined by scalar bits
+          and base point
+
+  EscalarMulFix:
+    source: scalarmul.circom:175-231
+    constraints:
+      - splits 253 scalar bits into segments
+      - SegmentMulFix per segment
+      - BabyAdd accumulates segment results
+    notes: >
+      full fixed-base scalar multiplication. Splits scalar bits into
+      segments of nWindows*3 bits, processes each, accumulates in Edwards.
+    properties:
+      EscalarMulFix_spec:
+        type: Theorem
+        statement: True
+        assumes:
+          - length e = 253
+          - all_binary e
+        technique: trivial (True)
+        depends_on: []
+        placeholder: true
+        notes: >
+          placeholder for full fixed-base scalar mul correctness.
+          Would prove output = scalar * BASE in the curve group.
+
+  BitElementMulAny:
+    source: scalarmul.circom:247-275
+    constraints:
+      - dblOut = MontgomeryDouble(dblIn)
+      - adder = MontgomeryAdd(dblOut, addIn)
+      - addOut = Multiplexor2(sel, addIn, adder)
+    notes: >
+      single-bit step of variable-base multiplication.
+      Doubles dblIn, conditionally adds to addIn based on sel.
+    properties:
+      BitElementMulAny_correct:
+        type: Theorem
+        statement: True
+        assumes:
+          - is_binary sel
+          - sel = 0 -> addOut = addIn
+        technique: trivial (True)
+        depends_on: []
+        placeholder: true
+        notes: >
+          placeholder for conditional addition property.
+          When sel=0: addOut = addIn. When sel=1: addOut = addIn + dblOut.
+
+  SegmentMulAny:
+    source: scalarmul.circom:279-333
+    constraints:
+      - Edwards2Montgomery conversion
+      - BitElementMulAny for each bit
+      - Montgomery2Edwards conversion
+      - BabyAdd + Multiplexor2 for final correction
+    notes: variable-base segment processing n scalar bits
+    properties:
+      SegmentMulAny_spec:
+        type: Theorem
+        statement: True
+        assumes:
+          - length e = nBits
+          - all_binary e
+        technique: trivial (True)
+        depends_on: []
+        placeholder: true
+        notes: placeholder for segment scalar mul correctness
+
+  EscalarMulAny:
+    source: scalarmul.circom:337-398
+    constraints:
+      - IsZero on p[0] to detect identity point
+      - substitutes G8 when p = identity
+      - SegmentMulAny per segment
+      - BabyAdd accumulates segments
+      - output zeroed when p = identity
+    notes: >
+      full variable-base scalar multiplication with zero-point handling.
+      If P = identity: output = identity. If P /= identity: output = e * P.
+    properties:
+      EscalarMulAny_zero_handling:
+        type: Theorem
+        statement: p_x = 0 <-> isZero_out = 1
+        assumes:
+          - isZero_out = 1 - p_x * inv
+          - p_x * isZero_out = 0
+        technique: apply IsZero_sound from Comparators
+        depends_on:
+          - Comparators.IsZero_sound
+      EscalarMulAny_spec:
+        type: Theorem
+        statement: True
+        assumes:
+          - length e = nBits
+          - all_binary e
+        technique: trivial (True)
+        depends_on: []
+        placeholder: true
+        notes: >
+          placeholder for full variable-base scalar mul correctness.
+          Would prove: if p_x /= 0 then output = e*P, else output = identity.

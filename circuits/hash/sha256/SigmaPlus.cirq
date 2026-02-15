@@ -1,0 +1,36 @@
+circuit: sigmaplus.circom
+ast: sigmaplus.json
+proof: SigmaPlus.v
+imports: [Primitives, Sigma, BinSum]
+
+templates:
+  SigmaPlus:
+    source: sigmaplus.circom:7-32
+    constraints:
+      - sigma1 = SmallSigma(17,19,10)(in2)
+      - sigma0 = SmallSigma(7,18,3)(in15)
+      - out = BinSum(32,4)(sigma1, in7, sigma0, in16)
+    notes: >
+      message schedule expansion step:
+      out = sigma1(w[i-2]) + w[i-7] + sigma0(w[i-15]) + w[i-16] (mod 2^nout)
+    properties:
+      SigmaPlus_spec:
+        type: Theorem
+        statement: >
+          bits_to_num out = bits_to_num sigma1_out + bits_to_num in7 +
+          bits_to_num sigma0_out + bits_to_num in16
+        assumes:
+          - all component output lengths = 32
+          - all_binary out
+          - BinSum constraint holds
+        technique: direct from assumption
+        depends_on: []
+        placeholder: true
+        notes: restates BinSum constraint as conclusion
+      SigmaPlus_bounded:
+        type: Theorem
+        statement: 0 <= bits_to_num out < 2^(length out)
+        assumes: [all_binary out]
+        technique: apply bits_to_num_bound
+        depends_on:
+          - Primitives.bits_to_num_bound

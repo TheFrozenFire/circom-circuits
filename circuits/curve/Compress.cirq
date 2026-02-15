@@ -1,0 +1,65 @@
+circuit: compress.circom
+ast: compress.json
+proof: Compress.v
+imports: [Primitives, Bitify]
+
+templates:
+  BabyCompress:
+    source: compress.circom:8-23
+    constraints:
+      - xBits = Num2BitsLE(254)(x)
+      - yBits = Num2BitsLE(254)(y)
+      - out[0..253] = yBits[0..253]
+      - out[254] = 0
+      - out[255] = xBits[0]
+    notes: >
+      compresses a BabyJubjub point to 256 bits.
+      Output layout (little-endian): [y bits (254)][0][sign(x)].
+      Sign bit is LSB of x (parity).
+    properties:
+      BabyCompress_layout:
+        type: Theorem
+        statement: >
+          (forall i < 254, out[i] = yBits[i]) /\
+          out[254] = 0 /\
+          out[255] = xBits[0]
+        assumes:
+          - length xBits = 254, length yBits = 254
+          - all_binary xBits, all_binary yBits
+          - x = bits_to_num xBits, y = bits_to_num yBits
+          - length out = 256
+          - wiring constraints
+        technique: direct from assumptions
+        depends_on: []
+        placeholder: true
+        notes: restates wiring constraints as structured conclusion
+      BabyCompress_sign_binary:
+        type: Theorem
+        statement: is_binary (nth 0 xBits 0)
+        assumes:
+          - all_binary xBits
+          - length xBits > 0
+        technique: Forall_nth on all_binary
+        depends_on:
+          - Primitives.is_binary
+          - Primitives.all_binary
+
+  BabyMultiCompress:
+    source: compress.circom:26-39
+    constraints:
+      - comp[i] = BabyCompress(in[i])
+      - out[i*256 + j] = comp[i].out[j]
+    notes: concatenates BabyCompress outputs for multiple points
+    properties:
+      BabyMultiCompress_spec:
+        type: Theorem
+        statement: >
+          forall p j, p < nPoints -> j < 256 ->
+          nth (p*256 + j) out 0 = nth j (compress_out p) 0
+        assumes:
+          - length out = nPoints * 256
+          - per-point compression and concatenation wiring
+        technique: direct from assumption
+        depends_on: []
+        placeholder: true
+        notes: restates concatenation wiring as conclusion

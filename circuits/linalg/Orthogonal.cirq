@@ -1,0 +1,48 @@
+circuit: orthogonal.circom
+ast: orthogonal.json
+proof: Orthogonal.v
+imports: [Primitives, FixedPoint, Matrix]
+
+templates:
+  OrthogonalCheck:
+    source: orthogonal.circom:15-49
+    constraints:
+      - products[i][j][k] = Q[k][i] * Q[k][j]
+      - qtq[i][j] = sum_k products[i][j][k]
+      - ApproxEqual(tolerance_bits)(qtq[i][j], target) for each (i,j)
+    notes: >
+      verifies Q is orthogonal: Q^T * Q ~ I. Diagonal entries should be
+      approximately S^2 = 2^(2*scale_bits), off-diagonal approximately 0.
+    properties:
+      OrthogonalCheck_spec:
+        type: Theorem
+        statement: >
+          diagonal: |qtq[i][i] - S^2| < 2^tolerance_bits /\
+          off-diagonal: |qtq[i][j]| < 2^tolerance_bits (i /= j)
+        assumes:
+          - s_squared = 2^(2 * scale_bits)
+          - "forall i j, ApproxEqual bounds satisfied for qtq[i][j]"
+        technique: >
+          split into diagonal (rewrite Nat.eqb_refl) and off-diagonal
+          (assert Nat.eqb_neq, simplify target to 0), apply ApproxEqual bounds
+        depends_on: []
+
+  OrthogonalTransform:
+    source: orthogonal.circom:56-80
+    constraints:
+      - y = FixedPointMatrixVectorMul(Q, x)
+      - OrthogonalCheck(Q) passes
+    notes: computes y = Q * x and verifies Q is orthogonal
+    properties:
+      OrthogonalTransform_spec:
+        type: Theorem
+        statement: >
+          diagonal: |qtq[i][i] - S^2| < 2^tolerance_bits /\
+          off-diagonal: |qtq[i][j]| < 2^tolerance_bits (i /= j)
+        assumes:
+          - length x = n, length y = n
+          - s_squared = 2^(2 * scale_bits)
+          - y = Q * x via FixedPointMatrixVectorMul
+          - OrthogonalCheck constraints satisfied
+        technique: delegate to OrthogonalCheck_spec
+        depends_on: [OrthogonalCheck_spec]

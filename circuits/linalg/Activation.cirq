@@ -1,0 +1,54 @@
+circuit: activation.circom
+ast: activation.json
+proof: Activation.v
+imports: [Primitives, Bitify]
+
+templates:
+  ReLU:
+    source: activation.circom:8-22
+    constraints:
+      - biased = in + 2^(max_bits-1)
+      - Num2Bits(max_bits)(biased) — binary decomposition
+      - out = bits[max_bits-1] * in
+    notes: >
+      ReLU activation: max(0, in) for signed fixed-point values.
+      Uses bias trick: shift into non-negative range, decompose, check MSB.
+      If in >= 0: MSB = 1, out = in. If in < 0: MSB = 0, out = 0.
+    properties:
+      ReLU_correct:
+        type: Theorem
+        statement: (inp >= 0 -> out = inp) /\ (inp < 0 -> out = 0)
+        assumes:
+          - max_bits >= 2
+          - biased = inp + 2^(max_bits - 1)
+          - length bits = max_bits
+          - all_binary bits
+          - biased = bits_to_num bits
+          - out = nth (max_bits - 1) bits 0 * inp
+        technique: >
+          decompose bits_to_num via bits_to_num_split at position max_bits-1,
+          show skipn has length 1 (the MSB), case split on MSB being 0 or 1,
+          derive sign of inp from bias equation and bit bounds
+        depends_on:
+          - Primitives.bits_to_num_bound
+          - Primitives.bits_to_num_split
+          - Primitives.all_binary
+          - Primitives.all_binary_firstn
+
+  ReLUVector:
+    source: activation.circom:25-35
+    constraints:
+      - ReLU(max_bits)(in[i]) for each i
+    notes: element-wise application of ReLU
+    properties:
+      ReLUVector_spec:
+        type: Theorem
+        statement: >
+          forall i < n, (inp[i] >= 0 -> out[i] = inp[i]) /\ (inp[i] < 0 -> out[i] = 0)
+        assumes:
+          - length inp = n, length out = n
+          - per-element ReLU correctness
+        technique: direct from per-element assumption
+        depends_on: [ReLU_correct]
+        placeholder: true
+        notes: restates per-element ReLU correctness as conclusion

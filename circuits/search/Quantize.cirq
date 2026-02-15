@@ -1,0 +1,51 @@
+circuit: quantize.circom
+ast: quantize.json
+proof: Quantize.v
+imports: [Primitives, FixedPoint]
+
+templates:
+  QuantizationProof:
+    source: quantize.circom:18-49
+    constraints:
+      - VectorCommit(embedding) === embeddingCommit
+      - VectorCommit(quantized) === quantizedCommit
+      - remainder[i] = embedding[i]*scale - quantized[i]*fullRange + halfRange
+      - InRange(precision)(remainder[i]) for each i
+    notes: >
+      proves correct rounding of fixed-point embeddings to quantized integers.
+      The rounding constraint ensures |emb[i]*scale - q[i]*2^precision| < 2^(precision-1).
+      Scale and precision are compile-time constants (zero constraint cost for linear combo).
+    properties:
+      QuantizationProof_commitment_match:
+        type: Theorem
+        statement: >
+          embCommitResult = embeddingCommit /\ qCommitResult = quantizedCommit
+        assumes:
+          - embCommitResult = embeddingCommit
+          - qCommitResult = quantizedCommit
+        technique: direct from assumptions
+        depends_on: []
+        placeholder: true
+        notes: restates commitment equality as conclusion
+      QuantizationProof_rounding:
+        type: Theorem
+        statement: 0 <= remainder_i < fullRange
+        assumes:
+          - fullRange = 2^precision
+          - halfRange = 2^(precision - 1)
+          - remainder_i = embedding_i * scale - quantized_i * fullRange + halfRange
+          - length bits = precision, all_binary bits
+          - remainder_i = bits_to_num bits
+        technique: substitute fullRange, rewrite via bits_to_num, apply bits_to_num_bound
+        depends_on:
+          - Primitives.bits_to_num_bound
+      QuantizationProof_error_bound:
+        type: Theorem
+        statement: >
+          -halfRange <= embedding_i*scale - quantized_i*fullRange < halfRange
+        assumes:
+          - fullRange = 2 * halfRange
+          - remainder_i = embedding_i*scale - quantized_i*fullRange + halfRange
+          - 0 <= remainder_i < fullRange
+        technique: substitute remainder_i and fullRange, lia
+        depends_on: []

@@ -1,0 +1,58 @@
+circuit: sigma.circom
+ast: sigma.json
+proof: Sigma.v
+imports: [Primitives, Xor3, Rotate, Shift]
+
+templates:
+  SmallSigma:
+    source: sigma.circom:8-32
+    constraints:
+      - rota = RotR(32, ra)(in)
+      - rotb = RotR(32, rb)(in)
+      - shrc = ShR(32, rc)(in)
+      - out = Xor3(32)(rota, rotb, shrc)
+    notes: >
+      small sigma function for SHA-256 message schedule.
+      XOR of two rotations and one right shift.
+    properties:
+      SmallSigma_spec:
+        type: Theorem
+        statement: >
+          out[k] = xor3_bit(in[(k+ra) mod n], in[(k+rb) mod n],
+            if k+rc < n then in[k+rc] else 0)
+        assumes:
+          - length inp = n, all component output lengths = n
+          - RotR wiring for rota and rotb
+          - ShR wiring for shrc
+          - Xor3 per-element correctness
+          - all rotation/shift outputs are binary
+        technique: rewrite Xor3 output using Xor3 spec, substitute RotR and ShR wiring
+        depends_on:
+          - Xor3.xor3_bit
+          - Rotate.RotR
+          - Shift.ShR
+
+  BigSigma:
+    source: sigma.circom:35-58
+    constraints:
+      - rota = RotR(32, ra)(in)
+      - rotb = RotR(32, rb)(in)
+      - rotc = RotR(32, rc)(in)
+      - out = Xor3(32)(rota, rotb, rotc)
+    notes: >
+      big sigma function for SHA-256 working variable updates.
+      XOR of three rotations.
+    properties:
+      BigSigma_spec:
+        type: Theorem
+        statement: >
+          out[k] = xor3_bit(in[(k+ra) mod n], in[(k+rb) mod n], in[(k+rc) mod n])
+        assumes:
+          - length inp = n, all component output lengths = n
+          - RotR wiring for rota, rotb, rotc
+          - Xor3 per-element correctness
+          - all rotation outputs are binary
+        technique: rewrite Xor3 output using Xor3 spec, substitute all three RotR wirings
+        depends_on:
+          - Xor3.xor3_bit
+          - Rotate.RotR
