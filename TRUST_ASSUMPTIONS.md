@@ -53,17 +53,25 @@ These are standard cryptographic hardness assumptions that the *protocols* (not 
 | **RSA assumption** | RSA blinding | Factoring hardness |
 | **BabyJubjub group law** | Curve arithmetic, scalar multiplication | Axiomatized in `CurveParams.v`. 11 axioms state closure, associativity, commutativity, identity, inverse, scalar multiplication properties, and the connection between the Edwards addition formula and the abstract group operation. These are standard properties of twisted Edwards curves with the BabyJubjub parameters (a=168700, d=168696), verified in published literature but not machine-checked. ([#5][i5]) |
 
-## Trust Assumptions Adjacent to the Proofs (Verification Gaps)
+## Resolved Verification Gaps
+
+These gaps have been addressed by dedicated work items.
+
+| Gap | Resolution | Issue |
+|---|---|---|
+| **Z vs F_p** | `FieldBridge.v` provides the BN128 scalar field prime and bridging lemmas. Key templates (Num2Bits, LessThan, BigAdd, BigSub, BigMult, CheckCarryToZero) have proven field-safety theorems showing that under standard parameter constraints (e.g., n <= 253 for bit widths), all intermediate constraint values stay below p, so the Z proofs apply unchanged in F_p. Templates without explicit field-safety theorems inherit safety from their components. | [#4][i4] |
+| **Witness generation (Tiers 1-3)** | 15 templates have fully machine-checked completeness proofs with zero `Admitted` axioms: Num2BitsLE, TruncNumLE, BinSum, FixedPointMul/Div/DotProduct, VectorMean, BabySuborderAdd, BigAdd, BigSub, BigMult, LongToShortNoEndCarry, CheckCarryToZero. | [#2][i2] |
+| **Under-constraint** | Automated under-constraint detection suite covers all circuit templates with signal coverage and degree-of-freedom checks. | [#3][i3] |
+
+## Remaining Verification Gaps
 
 These are known gaps between what the proofs cover and full end-to-end verification.
 
-| Gap | Description | Mitigation | Issue |
-|---|---|---|---|
-| **Z vs F_p** | Proofs reason over unbounded integers, not the prime field F_p. Results hold only when intermediate values stay within the field modulus. | Bridged in `FieldBridge.v`. Key templates (Num2Bits, LessThan, BigAdd, BigSub, BigMult, CheckCarryToZero) have proven field-safety conditions showing when Z proofs apply in F_p. Templates without explicit field-safety theorems inherit safety from their components. | [#4][i4] |
-| **Witness generation** | The `<--` (assign-only) computations in circom are covered by completeness proofs for 15 Tier 1-3 templates: Num2BitsLE, TruncNumLE, BinSum, FixedPointMul/Div/DotProduct, VectorMean, BabySuborderAdd, BigAdd, BigSub, BigMult, LongToShortNoEndCarry, and CheckCarryToZero. All are fully machine-checked with zero `Admitted` axioms. Templates without completeness proofs (Tier 4-5: field inversion, composite circuits) rely on test coverage. | Completeness proofs + 1,036 tests exercise witness generation across all circuits. | [#2][i2] |
-| **Under-constraint** | There is no automated check that every signal is fully constrained by `<==` or `===`. An under-constrained signal could allow a malicious prover to forge proofs. | Test coverage, manual audit, and circuit review. | [#3][i3] |
-| **Parameter correctness** | Curve constants (BabyJubjub base point, order), SHA-256 round constants, and Poseidon parameters are assumed correct. | Values are taken from published standards and reference implementations. | -- |
-| **Circuit composition** | Most proofs verify individual templates in isolation, not full application-level compositions of multiple templates. | Integration tests cover composed circuits. | -- |
+| Gap | Description | Mitigation |
+|---|---|---|
+| **Witness generation (Tiers 4-5)** | Templates using field inversion (IsZero, BabyAdd, Edwards2Montgomery, Montgomery2Edwards, MontgomeryAdd/Double) and composite circuits (Max, BigMod, BigSubModP, BigMultModP, BigModInv, Sha256compression) lack completeness proofs. | Test coverage (1,036 tests exercise witness generation across all circuits). Requires axiomatizing `fp_inv` in `FieldBridge.v`. |
+| **Parameter correctness** | Curve constants (BabyJubjub base point, order), SHA-256 round constants, and Poseidon parameters are assumed correct. | Values are taken from published standards and reference implementations. |
+| **Circuit composition** | Most proofs verify individual templates in isolation, not full application-level compositions of multiple templates. | Integration tests cover composed circuits. |
 
 ## What This Means for Users
 
@@ -71,9 +79,9 @@ These are known gaps between what the proofs cover and full end-to-end verificat
 
 **The proofs do not guarantee protocol-level security.** Whether a circuit is *secure* as a cryptographic protocol depends on the layers above (hardness assumptions, protocol design) and below (compiler, proving system, trusted setup). The proofs sit in the middle of this stack.
 
-**The biggest practical risk is under-constraint** ([#3][i3]). If a signal lacks a constraining equation, a malicious prover can set it to any value and still produce a valid proof. The proofs verify that the constraints *that exist* are correct, but cannot detect missing constraints.
+**Under-constraint detection is automated** ([#3][i3]). All circuit templates have signal coverage and degree-of-freedom checks to catch missing constraints.
 
-**The Z-vs-F_p gap is bridged for key templates** ([#4][i4]). `FieldBridge.v` provides the BN128 scalar field prime and bridging lemmas, and key templates (Num2Bits, LessThan, BigAdd, BigSub, BigMult, CheckCarryToZero) have proven field-safety theorems showing that under standard parameter constraints (e.g., n <= 253 for bit widths), all intermediate constraint values stay below p, so the Z proofs apply unchanged in F_p.
+**The Z-vs-F_p gap is bridged for key templates** ([#4][i4]). Under standard parameter constraints, the Z proofs apply unchanged in F_p.
 
 ## References
 
