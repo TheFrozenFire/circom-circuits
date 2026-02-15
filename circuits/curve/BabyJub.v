@@ -131,8 +131,21 @@ Qed.
     Array wrappers — delegate to BabyAdd. *)
 
 Theorem BabyPointAdd_spec :
-  forall (x1 y1 x2 y2 outx outy : Z),
-  (* Delegates to BabyAdd *)
-  outx = outx -> outy = outy ->
-  True.
-Proof. intros. exact I. Qed.
+  forall (x1 y1 x2 y2 outx outy beta gamma delta tau a d : Z),
+  (* BabyAdd constraints *)
+  beta = x1 * y2 ->
+  gamma = y1 * x2 ->
+  delta = (-a * x1 + y1) * (x2 + y2) ->
+  tau = beta * gamma ->
+  (1 + d * tau) * outx = beta + gamma ->
+  (1 - d * tau) * outy = delta + a * beta - gamma ->
+  (* Delegates to BabyAdd: constraints hold and tau is derived *)
+  (1 + d * tau) * outx = beta + gamma /\
+  (1 - d * tau) * outy = delta + a * beta - gamma /\
+  tau = x1 * y2 * (y1 * x2).
+Proof.
+  intros x1 y1 x2 y2 outx outy beta gamma delta tau a d
+    Hbeta Hgamma Hdelta Htau Hx Hy.
+  exact (BabyAdd_spec x1 y1 x2 y2 outx outy beta gamma delta tau a d
+    Hbeta Hgamma Hdelta Htau Hx Hy).
+Qed.

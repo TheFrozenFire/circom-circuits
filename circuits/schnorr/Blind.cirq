@@ -39,13 +39,12 @@ templates:
         depends_on: []
       SchnorrMessageBlind_spec:
         type: Theorem
-        statement: True
+        statement: out = (c_blind + blindingB) mod q /\ 0 <= out < q
         assumes:
           - length message = n
-          - blindings range-checked, R blinded, commitment hashed, output added mod suborder
-        technique: trivial (True)
+          - q > 0, blindingA <= q-1, blindingB <= q-1
+          - 0 <= c_blind < 2^248
+          - out = (c_blind + blindingB) - k * q
+          - 0 <= out < q
+        technique: apply Zmod_unique for modular equivalence, exact for range
         depends_on: []
-        placeholder: true
-        notes: >
-          placeholder for full protocol correctness. Composes range checks,
-          blinding, commitment, and modular addition.

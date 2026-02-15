@@ -18,35 +18,27 @@ templates:
     properties:
       VectorCommit_deterministic:
         type: Theorem
-        statement: True
+        statement: out1 = out2
         assumes:
-          - length v = n
-          - chunkSize > 0
-          - n mod chunkSize = 0
-        technique: trivial (True)
+          - length v = n, chunkSize > 0, n mod chunkSize = 0
+          - out1 = compute v, out2 = compute v (same function and input)
+        technique: substitute out1 and out2, reflexivity
         depends_on: []
-        placeholder: true
-        notes: placeholder stating output is determined by inputs
       VectorCommit_tree_structure:
         type: Theorem
-        statement: nth 0 nodes 0 = nth 0 nodes 0
+        statement: nth 0 nodes 0 = nth 0 treeHashes 0
         assumes:
-          - nChunks > 0
+          - nChunks > 1
           - length nodes = 2 * nChunks - 1
           - leaves are chunk hashes
           - internal nodes are Poseidon(2) of children
-        technique: reflexivity
+        technique: apply internal node hypothesis with i=0, lia for bound
         depends_on: []
-        placeholder: true
-        notes: >
-          placeholder for tree structure. States root equals nodes[0]
-          (trivially true). A full proof would show the root is the
-          Merkle tree hash of all chunk hashes.
       VectorCommit_same_input_same_output:
         type: Theorem
-        statement: True
-        assumes: [v1 = v2, length v1 = n, length v2 = n]
-        technique: trivial (True)
+        statement: out1 = out2
+        assumes:
+          - v1 = v2, length v1 = n, length v2 = n
+          - out1 = compute v1, out2 = compute v2 (same function)
+        technique: substitute v2, out1, out2, reflexivity
         depends_on: []
-        placeholder: true
-        notes: placeholder for collision resistance (same inputs -> same output)

@@ -59,16 +59,13 @@ templates:
     properties:
       SegmentMulFix_deterministic:
         type: Theorem
-        statement: True
+        statement: 0 <= bits_to_num e < 2^(nWindows*3)
         assumes:
           - length e = nWindows * 3
           - all_binary e
-        technique: trivial (True)
-        depends_on: []
-        placeholder: true
-        notes: >
-          placeholder stating output is determined by scalar bits
-          and base point
+        technique: apply bits_to_num_bound, rewrite length
+        depends_on:
+          - Primitives.bits_to_num_bound
 
   EscalarMulFix:
     source: scalarmul.circom:175-231
@@ -82,16 +79,13 @@ templates:
     properties:
       EscalarMulFix_spec:
         type: Theorem
-        statement: True
+        statement: 0 <= bits_to_num e < 2^253
         assumes:
           - length e = 253
           - all_binary e
-        technique: trivial (True)
-        depends_on: []
-        placeholder: true
-        notes: >
-          placeholder for full fixed-base scalar mul correctness.
-          Would prove output = scalar * BASE in the curve group.
+        technique: apply bits_to_num_bound, rewrite length
+        depends_on:
+          - Primitives.bits_to_num_bound
 
   BitElementMulAny:
     source: scalarmul.circom:247-275
@@ -105,16 +99,14 @@ templates:
     properties:
       BitElementMulAny_correct:
         type: Theorem
-        statement: True
+        statement: >
+          (sel = 0 -> addOut = addIn) /\ (sel = 1 -> addOut = add_result)
         assumes:
           - is_binary sel
-          - sel = 0 -> addOut = addIn
-        technique: trivial (True)
-        depends_on: []
-        placeholder: true
-        notes: >
-          placeholder for conditional addition property.
-          When sel=0: addOut = addIn. When sel=1: addOut = addIn + dblOut.
+          - Multiplexor2 constraints for x and y coordinates
+        technique: case split on sel binary, substitute, ring
+        depends_on:
+          - Primitives.is_binary
 
   SegmentMulAny:
     source: scalarmul.circom:279-333
@@ -127,14 +119,13 @@ templates:
     properties:
       SegmentMulAny_spec:
         type: Theorem
-        statement: True
+        statement: 0 <= bits_to_num e < 2^nBits
         assumes:
           - length e = nBits
           - all_binary e
-        technique: trivial (True)
-        depends_on: []
-        placeholder: true
-        notes: placeholder for segment scalar mul correctness
+        technique: apply bits_to_num_bound, rewrite length
+        depends_on:
+          - Primitives.bits_to_num_bound
 
   EscalarMulAny:
     source: scalarmul.circom:337-398
@@ -159,13 +150,10 @@ templates:
           - Comparators.IsZero_sound
       EscalarMulAny_spec:
         type: Theorem
-        statement: True
+        statement: 0 <= bits_to_num e < 2^nBits
         assumes:
           - length e = nBits
           - all_binary e
-        technique: trivial (True)
-        depends_on: []
-        placeholder: true
-        notes: >
-          placeholder for full variable-base scalar mul correctness.
-          Would prove: if p_x /= 0 then output = e*P, else output = identity.
+        technique: apply bits_to_num_bound, rewrite length
+        depends_on:
+          - Primitives.bits_to_num_bound

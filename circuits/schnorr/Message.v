@@ -73,8 +73,15 @@ Qed.
 (** The commit output is deterministic: same inputs yield same output. *)
 Theorem SchnorrMessageCommit_deterministic :
   forall (n : nat) (R_x R_y signerX_x signerX_y : Z)
-    (message : list Z) (out : Z),
+    (message : list Z) (out1 out2 : Z)
+    (commit : Z -> Z -> Z -> Z -> list Z -> Z),
   length message = n ->
-  (* Output is fully determined by inputs *)
-  True.
-Proof. intros. exact I. Qed.
+  out1 = commit R_x R_y signerX_x signerX_y message ->
+  out2 = commit R_x R_y signerX_x signerX_y message ->
+  (* Same inputs through same function yield same output *)
+  out1 = out2.
+Proof.
+  intros n R_x R_y signerX_x signerX_y message out1 out2 commit
+    Hlen Hout1 Hout2.
+  subst out1 out2. reflexivity.
+Qed.

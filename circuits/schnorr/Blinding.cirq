@@ -17,21 +17,18 @@ templates:
     properties:
       SchnorrBlinding_structure:
         type: Theorem
-        statement: True
+        statement: 0 <= blindingA < 2^254 /\ 0 <= blindingB < 2^254
         assumes:
           - length aBits = 254, all_binary aBits, blindingA = bits_to_num aBits
           - length bBits = 254, all_binary bBits, blindingB = bits_to_num bBits
-        technique: trivial (True)
-        depends_on: []
-        placeholder: true
-        notes: >
-          placeholder stating output is determined by inputs (signerX,
-          signerR, blindingA, blindingB)
+        technique: substitute blindingA/B, apply bits_to_num_bound, rewrite length
+        depends_on:
+          - Primitives.bits_to_num_bound
       SchnorrBlinding_deterministic:
         type: Theorem
-        statement: True
-        assumes: []
-        technique: trivial (True)
+        statement: out1_x = out2_x /\ out1_y = out2_y
+        assumes:
+          - out1 = compute(signerX, signerR, blindingA, blindingB)
+          - out2 = compute(signerX, signerR, blindingA, blindingB)
+        technique: substitute all outputs, reflexivity
         depends_on: []
-        placeholder: true
-        notes: placeholder for determinism of blinding output

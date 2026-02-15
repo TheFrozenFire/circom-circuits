@@ -3,6 +3,12 @@ ast: hash.json
 proof: Ascon.v
 imports: [Primitives, Bitwise]
 
+definitions:
+  iterate:
+    type: Fixpoint
+    signature: "(f : A -> A) (n : nat) (x : A) -> A"
+    description: n-fold iteration of a function f starting from x
+
 templates:
   Ascon_Hash_256:
     source: hash.circom:7-40
@@ -76,22 +82,28 @@ templates:
           is_binary y3 /\ is_binary y4
         assumes:
           - is_binary x0..x4
-          - is_binary y0..y4
-        technique: direct from assumptions
-        depends_on: []
-        placeholder: true
-        notes: restates binary property of all S-box outputs
+          - S-box equations y0..y4 as xor_bit chains of inputs
+        technique: apply Ascon_Sbox_y0..y4_correct for each output
+        depends_on:
+          - Ascon_Sbox_y0_correct
+          - Ascon_Sbox_y1_correct
+          - Ascon_Sbox_y2_correct
+          - Ascon_Sbox_y3_correct
+          - Ascon_Sbox_y4_correct
       Ascon_ConstantAddition_spec:
         type: Theorem
-        statement: True
+        statement: all_binary S2_out
         assumes:
           - length S2_in = 64, length S2_out = 64, length constant = 8
+          - all_binary S2_in, all_binary constant
           - first 56 bits unchanged
           - last 8 bits XORed with constant
-        technique: trivial (True)
-        depends_on: []
-        placeholder: true
-        notes: placeholder for constant addition layer correctness
+        technique: >
+          Forall_forall + In_nth to get index k, case split on k < 56 vs >= 56.
+          First case: copied from binary S2_in. Second case: xor_bit_binary.
+        depends_on:
+          - Primitives.all_binary
+          - Primitives.xor_bit_binary
       Ascon_LinearDiffusion_Layer_spec:
         type: Theorem
         statement: all_binary out
@@ -121,21 +133,22 @@ templates:
           - Bitwise.xor_bit
       Ascon_Permutation_spec:
         type: Theorem
-        statement: True
-        assumes: [rnd > 0]
-        technique: trivial (True)
-        depends_on: []
-        placeholder: true
-        notes: >
-          placeholder for permutation correctness. Each round composes
-          ConstantAddition, Sbox, and LinearDiffusion layers.
+        statement: >
+          length (iterate round_fn rnd init) = 320 /\
+          all_binary (iterate round_fn rnd init)
+        assumes:
+          - rnd > 0
+          - length init = 320, all_binary init
+          - round_fn preserves length = 320 and all_binary
+        technique: induction on rnd, base case from init, step applies round_fn hypothesis to IH
+        depends_on:
+          - iterate (local Fixpoint)
       Ascon_Hash_256_spec:
         type: Theorem
-        statement: True
-        assumes: [nBlocks > 0]
-        technique: trivial (True)
-        depends_on: []
-        placeholder: true
-        notes: >
-          placeholder for full hash correctness. Output is deterministic
-          given input blocks and initial state constants.
+        statement: 0 <= bits_to_num out < 2^256
+        assumes:
+          - nBlocks > 0
+          - length out = 256, all_binary out
+        technique: apply bits_to_num_bound, rewrite length
+        depends_on:
+          - Primitives.bits_to_num_bound

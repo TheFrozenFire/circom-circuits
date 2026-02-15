@@ -26,16 +26,16 @@ templates:
     properties:
       sha256_padding_structure:
         type: Theorem
-        statement: True
+        statement: all_binary paddedIn
         assumes:
-          - length inp = nBits
+          - length inp = nBits, all_binary inp
           - correct padding layout (input copy, 1-bit, zeros, length encoding)
-        technique: trivial (True)
-        depends_on: []
-        placeholder: true
-        notes: >
-          placeholder for padding correctness. States that padding
-          is deterministic given input length.
+        technique: >
+          Forall_forall + In_nth to get index k, four cases:
+          k < nBits (from binary inp), k = nBits (is 1),
+          nBits < k < end-64 (is 0), last 64 (Z.b2z of testbit, destruct)
+        depends_on:
+          - Primitives.all_binary
       sha256_chain_step:
         type: Theorem
         statement: >

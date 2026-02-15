@@ -72,12 +72,15 @@ templates:
     properties:
       BabyPointAdd_spec:
         type: Theorem
-        statement: True
-        assumes: [delegates to BabyAdd]
-        technique: trivial
-        depends_on: []
-        placeholder: true
-        notes: array wrapper around BabyAdd
+        statement: >
+          (1 + d*tau) * outx = beta + gamma /\
+          (1 - d*tau) * outy = delta + a*beta - gamma /\
+          tau = x1*y2 * (y1*x2)
+        assumes:
+          - BabyAdd constraints (beta, gamma, delta, tau, two constraint equations)
+        technique: delegate to BabyAdd_spec
+        depends_on:
+          - BabyAdd_spec
 
   BabySuborderCheck:
     source: babyjub.circom:95-101

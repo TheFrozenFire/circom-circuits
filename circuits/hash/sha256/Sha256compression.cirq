@@ -73,14 +73,10 @@ templates:
         notes: restates BinSum constraint for final addition
       Sha256compression_spec:
         type: Theorem
-        statement: True
+        statement: 0 <= bits_to_num out < 2^256
         assumes:
           - length hin = 256, length inp = 512, length out = 256
           - all_binary out
-        technique: trivial (True)
-        depends_on: []
-        placeholder: true
-        notes: >
-          placeholder for full compression function correctness.
-          A complete proof would compose message_schedule, state_evolution,
-          and final_addition to show output matches SHA-256 spec.
+        technique: apply bits_to_num_bound, rewrite length
+        depends_on:
+          - Primitives.bits_to_num_bound

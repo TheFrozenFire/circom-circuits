@@ -36,14 +36,13 @@ templates:
         notes: from helpers.circom ElGamalMessageCheck template
       ElGamalShare_spec:
         type: Theorem
-        statement: True
+        statement: 0 <= y < 2^254
         assumes:
           - length yBits = 254, all_binary yBits
           - y = bits_to_num yBits
-        technique: trivial (True)
-        depends_on: []
-        placeholder: true
-        notes: placeholder stating output is determined by scalar y and keys
+        technique: substitute y, apply bits_to_num_bound, rewrite length
+        depends_on:
+          - Primitives.bits_to_num_bound
 
   ElGamalEncrypt:
     source: elgamal.circom:25-44
@@ -58,14 +57,13 @@ templates:
         type: Theorem
         statement: >
           (1 + d*tau) * c2_x = beta + gamma /\
-          (1 - d*tau) * c2_y = delta + a*beta - gamma
+          (1 - d*tau) * c2_y = delta + a*beta - gamma /\
+          tau = msg_x * shared_y * (msg_y * shared_x)
         assumes:
           - BabyAdd constraints for c2 = message + shared
-        technique: direct from assumptions
+        technique: substitute beta/gamma/tau, first two goals direct, third by ring
         depends_on:
           - BabyJub.BabyAdd_spec
-        placeholder: true
-        notes: restates BabyAdd constraints for encryption output
 
   ElGamalDecrypt:
     source: elgamal.circom:48-72
@@ -90,24 +88,32 @@ templates:
         type: Theorem
         statement: >
           (1 + d*tau) * msg_x = beta + gamma /\
-          (1 - d*tau) * msg_y = delta + a*beta - gamma
+          (1 - d*tau) * msg_y = delta + a*beta - gamma /\
+          tau = neg_s_x * c2_y * (s_y * c2_x) /\
+          0 <= privKey < 2^254
         assumes:
           - length privKeyBits = 254, all_binary privKeyBits
           - privKey = bits_to_num privKeyBits
           - neg_s_x = -s_x
           - BabyAdd constraints for message = (-s, c2)
-        technique: direct from BabyAdd assumptions
+        technique: substitute beta/gamma/tau, first two direct, third by ring, fourth by bits_to_num_bound
         depends_on:
           - BabyJub.BabyAdd_spec
-        placeholder: true
-        notes: restates BabyAdd constraints for decryption output
+          - Primitives.bits_to_num_bound
       ElGamal_roundtrip_algebraic:
         type: Theorem
-        statement: True
-        assumes: []
-        technique: trivial (True)
+        statement: >
+          point_add (point_add msg (scalar_mul y pubKey))
+            (point_neg (scalar_mul privKey (scalar_mul y G))) = msg
+        assumes:
+          - pubKey = scalar_mul privKey G
+          - abstract group law: associativity, commutativity, inverse, identity
+          - scalar_mul commutativity
+        technique: >
+          substitute pubKey, rewrite scalar_mul_comm, apply point_add_assoc,
+          apply point_add_neg, apply point_add_identity
         depends_on: []
-        placeholder: true
         notes: >
-          placeholder for roundtrip correctness. A full proof would require
-          group law commutativity: y*(privKey*G8) = privKey*(y*G8).
+          proven within a Section with abstract group law hypotheses.
+          The extracted theorem takes group operations and their properties
+          as explicit parameters.

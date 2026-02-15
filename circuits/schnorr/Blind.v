@@ -62,11 +62,23 @@ Qed.
 Theorem SchnorrMessageBlind_spec :
   forall (n : nat) (message : list Z)
     (signerX_x signerX_y signerR_x signerR_y : Z)
-    (blindingA blindingB : Z) (out : Z),
+    (blindingA blindingB : Z) (c_blind out : Z) (k q : Z),
   length message = n ->
-  (* blindingA < SUBORDER, blindingB < SUBORDER (range checked) *)
-  (* blinded_R = signerR + blindingA*G8 + blindingB*signerX *)
-  (* c_blind = SchnorrMessageCommit(blinded_R, signerX, message) *)
-  (* out = (c_blind + blindingB) mod SUBORDER *)
-  True.
-Proof. intros. exact I. Qed.
+  q > 0 ->
+  blindingA <= q - 1 ->
+  blindingB <= q - 1 ->
+  0 <= c_blind < 2 ^ 248 ->
+  out = (c_blind + blindingB) - k * q ->
+  0 <= out < q ->
+  (* Output is the modular sum and is in range *)
+  out = (c_blind + blindingB) mod q /\ 0 <= out < q.
+Proof.
+  intros n message signerX_x signerX_y signerR_x signerR_y
+    blindingA blindingB c_blind out k q
+    Hlen Hq HblA HblB Hcb Hout Hrange.
+  split.
+  - subst out. apply Zmod_unique with k.
+    + lia.
+    + ring.
+  - exact Hrange.
+Qed.

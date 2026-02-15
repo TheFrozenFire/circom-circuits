@@ -23,6 +23,7 @@ Theorem sha256_padding_structure :
   length inp = nBits ->
   nBlocks = ((nBits + 64) / 512 + 1)%nat ->
   length paddedIn = (nBlocks * 512)%nat ->
+  all_binary inp ->
   (* Input bits copied *)
   (forall k, (k < nBits)%nat -> nth k paddedIn 0 = nth k inp 0) ->
   (* 1-bit after input *)
@@ -33,9 +34,36 @@ Theorem sha256_padding_structure :
   (* Length encoding at the end *)
   (forall k, (k < 64)%nat ->
     nth (nBlocks * 512 - k - 1) paddedIn 0 = Z.b2z (Z.testbit (Z.of_nat nBits) (Z.of_nat k))) ->
-  (* Conclusion: padding is deterministic *)
-  True.
-Proof. intros. exact I. Qed.
+  (* Conclusion: padded input is binary *)
+  all_binary paddedIn.
+Proof.
+  intros nBits nBlocks inp paddedIn Hinp HnBlocks Hlen Hbin_inp
+    Hcopy Hone Hzero Hlength.
+  unfold all_binary. apply Forall_forall.
+  intros x Hin.
+  apply In_nth with (d := 0) in Hin.
+  destruct Hin as [k [Hk Hx]].
+  rewrite Hlen in Hk.
+  rewrite <- Hx.
+  destruct (Nat.lt_ge_cases k nBits) as [Hlt_nBits | Hge_nBits].
+  - (* k < nBits: copied from inp *)
+    rewrite Hcopy by lia.
+    unfold all_binary in Hbin_inp.
+    apply Forall_nth with (d := 0) (i := k) in Hbin_inp; [exact Hbin_inp | lia].
+  - destruct (Nat.eq_dec k nBits) as [Heq | Hne].
+    + (* k = nBits: the 1-bit *)
+      subst k. rewrite Hone. right. reflexivity.
+    + destruct (Nat.lt_ge_cases k (nBlocks * 512 - 64)) as [Hlt_end | Hge_end].
+      * (* nBits < k < end-64: zero padding *)
+        rewrite Hzero by lia. left. reflexivity.
+      * (* last 64 bits: length encoding via Z.b2z *)
+        assert (Hki : (nBlocks * 512 - 1 - k < 64)%nat) by lia.
+        assert (Hrev : k = (nBlocks * 512 - (nBlocks * 512 - 1 - k) - 1)%nat) by lia.
+        rewrite Hrev.
+        rewrite Hlength by lia.
+        destruct (Z.testbit (Z.of_nat nBits) (Z.of_nat (nBlocks * 512 - 1 - k)));
+          [right; reflexivity | left; reflexivity].
+Qed.
 
 (** ** Block chaining (sha256.circom:39-69)
     Block 0 uses H[0..7] as initial hash values.

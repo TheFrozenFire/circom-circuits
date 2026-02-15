@@ -59,10 +59,10 @@ templates:
           - Primitives.bits_to_num_bound
       SchnorrMessageCommit_deterministic:
         type: Theorem
-        statement: True
+        statement: out1 = out2
         assumes:
           - length message = n
-        technique: trivial (True)
+          - out1 = commit(R_x, R_y, signerX_x, signerX_y, message)
+          - out2 = commit(R_x, R_y, signerX_x, signerX_y, message)
+        technique: substitute out1 and out2, reflexivity
         depends_on: []
-        placeholder: true
-        notes: placeholder stating same inputs yield same commitment

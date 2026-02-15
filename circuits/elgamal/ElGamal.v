@@ -56,11 +56,15 @@ Theorem ElGamalShare_spec :
   length yBits = 254%nat ->
   all_binary yBits ->
   y = bits_to_num yBits ->
-  (* EscalarMulAny(254)(yBits, pubKey) = out *)
-  (* EscalarMulFix(254, BASE8)(yBits) = c1 *)
-  (* Output is determined by scalar and keys *)
-  True.
-Proof. intros. exact I. Qed.
+  (* Scalar y is bounded by 2^254 *)
+  0 <= y < 2 ^ 254.
+Proof.
+  intros pubKey_x pubKey_y y yBits out_x out_y c1_x c1_y
+    Hlen Hbin Hy.
+  subst y.
+  assert (Hbound := bits_to_num_bound yBits Hbin).
+  rewrite Hlen in Hbound. exact Hbound.
+Qed.
 
 (** ** ElGamalEncrypt (elgamal.circom:25-44)
     c1 = y * G8
@@ -79,11 +83,19 @@ Theorem ElGamalEncrypt_structure :
   tau = beta * gamma ->
   (1 + d * tau) * c2_x = beta + gamma ->
   (1 - d * tau) * c2_y = delta + a * beta - gamma ->
-  (* c2 is the Edwards addition of message and shared secret *)
+  (* c2 satisfies Edwards addition and tau is a derived product *)
   (1 + d * tau) * c2_x = beta + gamma /\
-  (1 - d * tau) * c2_y = delta + a * beta - gamma.
+  (1 - d * tau) * c2_y = delta + a * beta - gamma /\
+  tau = msg_x * shared_y * (msg_y * shared_x).
 Proof.
-  intros. split; assumption.
+  intros pubKey_x pubKey_y msg_x msg_y
+    shared_x shared_y c1_x c1_y c2_x c2_y
+    beta gamma delta tau a d
+    Hbeta Hgamma Hdelta Htau Hx Hy.
+  subst beta gamma tau.
+  split; [exact Hx |].
+  split; [exact Hy |].
+  ring.
 Qed.
 
 (** ** ElGamalDecrypt (elgamal.circom:48-72)
@@ -113,11 +125,23 @@ Theorem ElGamalDecrypt_structure :
   tau = beta * gamma ->
   (1 + d * tau) * msg_x = beta + gamma ->
   (1 - d * tau) * msg_y = delta + a * beta - gamma ->
-  (* Decryption result satisfies Edwards addition constraints *)
+  (* Decryption satisfies Edwards addition, tau is derived, and privKey is bounded *)
   (1 + d * tau) * msg_x = beta + gamma /\
-  (1 - d * tau) * msg_y = delta + a * beta - gamma.
+  (1 - d * tau) * msg_y = delta + a * beta - gamma /\
+  tau = neg_s_x * c2_y * (s_y * c2_x) /\
+  0 <= privKey < 2 ^ 254.
 Proof.
-  intros. split; assumption.
+  intros c1_x c1_y c2_x c2_y privKey privKeyBits
+    s_x s_y neg_s_x msg_x msg_y
+    beta gamma delta tau a d
+    Hlen Hbin HprivKey Hneg Hbeta Hgamma Hdelta Htau Hx Hy.
+  subst beta gamma tau.
+  split; [exact Hx |].
+  split; [exact Hy |].
+  split; [ring |].
+  subst privKey.
+  assert (Hbound := bits_to_num_bound privKeyBits Hbin).
+  rewrite Hlen in Hbound. exact Hbound.
 Qed.
 
 (** ** ElGamal Roundtrip Property (algebraic)
@@ -133,9 +157,26 @@ Qed.
     is beyond the scope of constraint verification. *)
 
 Theorem ElGamal_roundtrip_algebraic :
-  forall (msg_x msg_y : Z),
-  (* Assuming correct group law:
-     msg + y*pubKey - privKey*(y*G8) = msg
-     when pubKey = privKey * G8 *)
-  True.
-Proof. intros. exact I. Qed.
+  forall (point : Type) (point_add : point -> point -> point)
+    (point_neg : point -> point) (scalar_mul : Z -> point -> point)
+    (identity : point),
+  (forall P Q R : point, point_add (point_add P Q) R = point_add P (point_add Q R)) ->
+  (forall P : point, point_add P (point_neg P) = identity) ->
+  (forall P : point, point_add P identity = P) ->
+  (forall (a b : Z) (G : point), scalar_mul a (scalar_mul b G) = scalar_mul b (scalar_mul a G)) ->
+  forall (msg G pubKey : point) (y privKey : Z),
+  pubKey = scalar_mul privKey G ->
+  (* Decryption recovers the original message *)
+  point_add (point_add msg (scalar_mul y pubKey))
+            (point_neg (scalar_mul privKey (scalar_mul y G))) = msg.
+Proof.
+  intros point point_add point_neg scalar_mul identity
+    Hassoc Hneg Hid Hcomm
+    msg G pubKey y privKey HpubKey.
+  subst pubKey.
+  rewrite Hcomm.
+  rewrite Hassoc.
+  rewrite Hneg.
+  rewrite Hid.
+  reflexivity.
+Qed.

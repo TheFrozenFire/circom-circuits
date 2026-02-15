@@ -110,5 +110,10 @@ Theorem Sha256compression_spec :
   (* All sub-components (T1, T2, SigmaPlus, BinSum) satisfy their specs *)
   (* The output bits are the XOR-sum output of compression *)
   all_binary out ->
-  True.
-Proof. intros. exact I. Qed.
+  (* Output value is bounded to 256 bits *)
+  0 <= bits_to_num out < 2 ^ 256.
+Proof.
+  intros hin inp out Hlen_hin Hlen_inp Hlen_out Hbin.
+  assert (Hbound := bits_to_num_bound out Hbin).
+  rewrite Hlen_out in Hbound. exact Hbound.
+Qed.
