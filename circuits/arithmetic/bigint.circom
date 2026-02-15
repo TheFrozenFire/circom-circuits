@@ -39,7 +39,7 @@ template LongToShortNoEndCarry(n, k) {
     signal input in[k];
     signal output out[k];
 
-    signal carry[k];
+    signal carry[k - 1];
     component rc[k];
 
     out[0] <-- in[0] % (1 << n);
@@ -102,9 +102,9 @@ template BigSub(n, k) {
     signal input b[k];
     signal output out[k];
 
-    signal borrow[k];
+    signal borrow[k - 1];
     component rc[k];
-    component bc[k];
+    component bc[k - 1];
 
     borrow[0] <-- (a[0] < b[0]) ? 1 : 0;
     out[0] <== a[0] - b[0] + borrow[0] * (1 << n);
@@ -151,7 +151,7 @@ template BigMult(n, k) {
         }
     }
 
-    signal carry[2 * k];
+    signal carry[2 * k - 1];
     component rc[2 * k];
 
     out[0] <-- rawLimbs[0] % (1 << n);

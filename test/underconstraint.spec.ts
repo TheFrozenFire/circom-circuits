@@ -205,25 +205,6 @@ const circuits: Array<{ label: string; def: CircuitDef }> = [
     { label: "PolyUHF(4)", def: { path: "bridge/uhf.circom", template: "PolyUHF", params: [4] } },
 ];
 
-// --- Known over-allocations (not security bugs) ---
-// These signals are allocated in arrays but never used due to off-by-one in array sizing.
-// Pattern: carry/borrow arrays sized [k] or [2k] when only [k-1] or [2k-1] elements are needed.
-// The unused final element has no prover input and doesn't affect soundness.
-const KNOWN_OVER_ALLOCATIONS: Record<string, RegExp[]> = {
-    // LongToShortNoEndCarry: signal carry[k] but only carry[0..k-2] used
-    "LongToShortNoEndCarry(4,2)": [/\.carry\[1\]$/],
-    // BigSub: signal borrow[k] but only borrow[0..k-2] used
-    "BigSub(4,2)": [/\.borrow\[1\]$/],
-    // BigMult: signal carry[2*k] but only carry[0..2k-2] used
-    "BigMult(4,2)": [/\.carry\[3\]$/],
-    // BigMultModP contains BigMult, inherits its over-allocation
-    "BigMultModP(4,2)": [/BigMult.*\.carry\[3\]$/],
-    // BigModInv contains BigMultModP which contains BigMult
-    "BigModInv(4,2)": [/BigMult.*\.carry\[3\]$/],
-    // RSAMessageBlind contains BigMultModP which contains BigMult
-    "RSAMessageBlind(4,2,3)": [/BigMult.*\.carry\[3\]$/],
-};
-
 // --- Shared compilation cache ---
 
 type AnalysisResult = { details: R1CSDetails; symbols: SymbolMap };
@@ -246,15 +227,7 @@ describe("@slow Under-constraint detection", function () {
         for (const entry of circuits) {
             it(`${entry.label}: every non-input signal appears in >= 1 constraint`, async function () {
                 const { details, symbols } = await analyzeCircuit(entry);
-                let unconstrained = findUnconstrainedSignals(details, symbols);
-
-                // Filter known over-allocations (not security bugs — see KNOWN_OVER_ALLOCATIONS)
-                const patterns = KNOWN_OVER_ALLOCATIONS[entry.label];
-                if (patterns) {
-                    unconstrained = unconstrained.filter(
-                        sig => !patterns.some(pat => pat.test(sig))
-                    );
-                }
+                const unconstrained = findUnconstrainedSignals(details, symbols);
 
                 assert.deepEqual(
                     unconstrained,
