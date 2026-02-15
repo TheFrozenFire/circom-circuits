@@ -44,3 +44,8 @@ elgamal/ElGamal.v
 schnorr/Message.v
 schnorr/Blinding.v
 schnorr/Blind.v
+search/Commit.v
+search/PrivateSearch.v
+search/Dedup.v
+search/Quantize.v
+ascon/Ascon.v
