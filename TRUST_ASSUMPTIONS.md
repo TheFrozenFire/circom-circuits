@@ -8,7 +8,7 @@ The 49 Rocq proof files (~5,200 lines) verify **constraint soundness over the in
 
 Each proof hand-models the constraint semantics of a circom template and proves the corresponding soundness theorem. Soundness proofs have zero `Admitted` axioms; every soundness theorem is machine-checked.
 
-**Completeness proofs** additionally verify that the `<--` witness computation formulas actually produce values satisfying the `===` constraints, for valid inputs. 15 templates across Tiers 1-3 (bitify, arithmetic, fixed-point, vector, curve, hashing) have completeness proofs via `WitnessLemmas.v` shared infrastructure. Of these, 10 are fully proved and 5 (BigAdd, BigSub, LongToShort, CheckCarryToZero, BigMult carry propagation) have `Admitted` auxiliary lemmas for complex carry/borrow induction.
+**Completeness proofs** additionally verify that the `<--` witness computation formulas actually produce values satisfying the `===` constraints, for valid inputs. 15 templates across Tiers 1-3 (bitify, arithmetic, fixed-point, vector, curve, hashing) have fully machine-checked completeness proofs via `WitnessLemmas.v` shared infrastructure, with zero `Admitted` axioms.
 
 **Coverage spans the full circuit library:**
 
@@ -60,7 +60,7 @@ These are known gaps between what the proofs cover and full end-to-end verificat
 | Gap | Description | Mitigation | Issue |
 |---|---|---|---|
 | **Z vs F_p** | Proofs reason over unbounded integers, not the prime field F_p. Results hold only when intermediate values stay within the field modulus. | Bridged in `FieldBridge.v`. Key templates (Num2Bits, LessThan, BigAdd, BigSub, BigMult, CheckCarryToZero) have proven field-safety conditions showing when Z proofs apply in F_p. Templates without explicit field-safety theorems inherit safety from their components. | [#4][i4] |
-| **Witness generation** | The `<--` (assign-only) computations in circom are partially covered by completeness proofs. 10 templates have fully machine-checked completeness proofs (Num2BitsLE, TruncNumLE, BinSum, FixedPointMul/Div/DotProduct, VectorMean, BabySuborderAdd); 5 BigInt carry-propagation templates have `Admitted` auxiliary lemmas. Templates without completeness proofs rely on test coverage. | Completeness proofs + 1,036 tests exercise witness generation across all circuits. | [#2][i2] |
+| **Witness generation** | The `<--` (assign-only) computations in circom are covered by completeness proofs for 15 Tier 1-3 templates: Num2BitsLE, TruncNumLE, BinSum, FixedPointMul/Div/DotProduct, VectorMean, BabySuborderAdd, BigAdd, BigSub, BigMult, LongToShortNoEndCarry, and CheckCarryToZero. All are fully machine-checked with zero `Admitted` axioms. Templates without completeness proofs (Tier 4-5: field inversion, composite circuits) rely on test coverage. | Completeness proofs + 1,036 tests exercise witness generation across all circuits. | [#2][i2] |
 | **Under-constraint** | There is no automated check that every signal is fully constrained by `<==` or `===`. An under-constrained signal could allow a malicious prover to forge proofs. | Test coverage, manual audit, and circuit review. | [#3][i3] |
 | **Parameter correctness** | Curve constants (BabyJubjub base point, order), SHA-256 round constants, and Poseidon parameters are assumed correct. | Values are taken from published standards and reference implementations. | -- |
 | **Circuit composition** | Most proofs verify individual templates in isolation, not full application-level compositions of multiple templates. | Integration tests cover composed circuits. | -- |

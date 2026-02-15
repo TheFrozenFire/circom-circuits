@@ -676,32 +676,76 @@ Proof.
     specialize (IH brest c0 Hlen'). rewrite Heq in IH. simpl. lia.
 Qed.
 
+Lemma nth_cons_if_eqb : forall (x : Z) (l : list Z) (j : nat),
+  nth j (x :: l) 0 = if (j =? 0)%nat then x else nth (j - 1) l 0.
+Proof. intros x l [| j']; simpl; [reflexivity | f_equal; lia]. Qed.
+
 Lemma big_add_witness_aux_correct : forall n a b carry_in,
   length a = length b ->
-  (length a >= 1)%nat ->
   (forall i, (i < length a)%nat -> 0 <= nth i a 0) ->
   (forall i, (i < length b)%nat -> 0 <= nth i b 0) ->
   0 <= carry_in ->
   let '(outs, carries) := big_add_witness_aux n a b carry_in in
-  (* First limb *)
-  nth 0 a 0 + nth 0 b 0 + carry_in =
-    nth 0 outs 0 + nth 0 carries 0 * 2 ^ Z.of_nat n /\
-  (* Middle limbs *)
-  (forall i, (0 < i < length a)%nat ->
-    nth i a 0 + nth i b 0 + nth (i - 1) carries 0 =
+  (forall i, (i < length a)%nat ->
+    nth i a 0 + nth i b 0 + (if (i =? 0)%nat then carry_in else nth (i - 1) carries 0) =
       nth i outs 0 + nth i carries 0 * 2 ^ Z.of_nat n) /\
-  (* Final carry *)
-  nth (length a) (outs ++ [nth (length a - 1) carries 0]) 0 =
-    nth (length a - 1) carries 0 /\
-  (* All carries non-negative *)
   (forall i, (i < length a)%nat -> 0 <= nth i carries 0) /\
-  (* All outs non-negative and bounded *)
   (forall i, (i < length a)%nat -> 0 <= nth i outs 0 < 2 ^ Z.of_nat n).
 Proof.
-  (* Structural induction on the limb lists with carry propagation via
-     Z.div_mod. Each step extracts (out_i, carry_i) from sum_i = a_i + b_i + carry_{i-1}
-     using carry_witness_step, then the IH provides the rest. *)
-Admitted.
+  intros n.
+  induction a as [| a0 arest IH]; intros b carry_in Hlen Ha Hb Hcin.
+  - (* Base: a = [], b = [] *)
+    destruct b; [| simpl in Hlen; lia].
+    simpl. repeat split; intros; lia.
+  - (* Step: a = a0 :: arest *)
+    destruct b as [| b0 brest]; [simpl in Hlen; lia |].
+    simpl big_add_witness_aux.
+    assert (Hlen' : length arest = length brest) by (simpl in Hlen; lia).
+    assert (Hpow : 0 < 2 ^ Z.of_nat n) by (apply Z.pow_pos_nonneg; lia).
+    set (sum0 := a0 + b0 + carry_in).
+    set (out0 := sum0 mod 2 ^ Z.of_nat n).
+    set (carry0 := sum0 / 2 ^ Z.of_nat n).
+    destruct (big_add_witness_aux n arest brest carry0) as [outs_rest carries_rest] eqn:Heq.
+    assert (Ha0 : 0 <= a0) by (apply (Ha 0%nat); simpl; lia).
+    assert (Hb0 : 0 <= b0) by (apply (Hb 0%nat); simpl; lia).
+    assert (Hsum0 : 0 <= sum0) by (unfold sum0; lia).
+    assert (Hcarry0 : 0 <= carry0) by (unfold carry0; apply Z.div_pos; lia).
+    assert (Hdm : sum0 = out0 + carry0 * 2 ^ Z.of_nat n).
+    { unfold out0, carry0. assert (Hdm := Z.div_mod sum0 (2 ^ Z.of_nat n) ltac:(lia)). lia. }
+    assert (Hout0_bound : 0 <= out0 < 2 ^ Z.of_nat n).
+    { unfold out0. split; apply Z.mod_pos_bound; lia. }
+    assert (Ha' : forall i, (i < length arest)%nat -> 0 <= nth i arest 0)
+      by (intros i Hi; apply (Ha (S i)); simpl; lia).
+    assert (Hb' : forall i, (i < length brest)%nat -> 0 <= nth i brest 0)
+      by (intros i Hi; apply (Hb (S i)); simpl; lia).
+    specialize (IH brest carry0 Hlen' Ha' Hb' Hcarry0).
+    rewrite Heq in IH.
+    destruct IH as [IH_eq [IH_carry IH_out]].
+    split; [| split].
+    { (* Uniform limb equation *)
+      intros i Hi. destruct i as [| j].
+      - (* i = 0 *) simpl. unfold sum0 in Hdm. lia.
+      - (* i = S j *)
+        assert (IHj := IH_eq j ltac:(simpl in Hi; lia)).
+        rewrite <- nth_cons_if_eqb in IHj.
+        assert (Rn1 : nth (S j) (a0 :: arest) 0 = nth j arest 0) by reflexivity.
+        assert (Rn2 : nth (S j) (b0 :: brest) 0 = nth j brest 0) by reflexivity.
+        assert (Rn3 : nth (S j) (out0 :: outs_rest) 0 = nth j outs_rest 0) by reflexivity.
+        assert (Rn4 : nth (S j) (carry0 :: carries_rest) 0 = nth j carries_rest 0) by reflexivity.
+        assert (Req : (S j =? 0)%nat = false) by reflexivity.
+        rewrite Rn1, Rn2, Rn3, Rn4, Req.
+        replace ((S j - 1)%nat) with j by lia. exact IHj. }
+    { (* Carry non-neg *)
+      intros i Hi. destruct i as [| j].
+      - simpl. exact Hcarry0.
+      - assert (Rn : nth (S j) (carry0 :: carries_rest) 0 = nth j carries_rest 0) by reflexivity.
+        rewrite Rn. apply IH_carry. simpl in Hi. lia. }
+    { (* Out bounds *)
+      intros i Hi. destruct i as [| j].
+      - simpl. exact Hout0_bound.
+      - assert (Rn : nth (S j) (out0 :: outs_rest) 0 = nth j outs_rest 0) by reflexivity.
+        rewrite Rn. apply IH_out. simpl in Hi. lia. }
+Qed.
 
 Theorem BigAdd_complete :
   forall (n : nat) (k : nat) (a b : list Z),
@@ -726,10 +770,10 @@ Proof.
   rewrite Heq in Haux_len. destruct Haux_len as [Holen Hclen].
   assert (Hb' : forall i, (i < length b)%nat -> 0 <= nth i b 0)
     by (intros i Hi; apply Hb; lia).
-  assert (Haux := big_add_witness_aux_correct n a b 0 ltac:(lia) ltac:(lia) Ha Hb' ltac:(lia)).
+  assert (Haux := big_add_witness_aux_correct n a b 0 ltac:(lia) Ha Hb' ltac:(lia)).
   rewrite Heq in Haux.
-  destruct Haux as [H0 [Hmid [Hfinal [Hcarry_nn Hout_bound]]]].
-  (* Simplify the match on carries to align with Hfinal *)
+  destruct Haux as [Heqs [Hcarry_nn Hout_bound]].
+  (* Simplify the match on carries *)
   assert (Hmatch : match carries with | [] => 0 | _ :: _ => nth (length carries - 1) carries 0 end
                    = nth (length a - 1) carries 0).
   { rewrite Hclen. destruct carries; [simpl in Hclen; lia | reflexivity]. }
@@ -737,12 +781,19 @@ Proof.
   split; [rewrite length_app; simpl; lia |].
   split; [exact Hclen |].
   split.
-  - (* First limb: adjust carry_in = 0 *)
-    replace (nth 0 a 0 + nth 0 b 0) with (nth 0 a 0 + nth 0 b 0 + 0) by lia.
-    rewrite app_nth1 by lia. exact H0.
+  - (* First limb *)
+    assert (H0 := Heqs 0%nat ltac:(lia)). simpl Nat.eqb in H0.
+    rewrite app_nth1 by lia. lia.
   - split.
-    + intros i Hi. rewrite app_nth1 by lia. apply Hmid. lia.
-    + exact Hfinal.
+    + (* Middle limbs *)
+      intros i Hi.
+      assert (Hi_eq := Heqs i ltac:(lia)).
+      destruct i as [| j]; [lia |].
+      assert (Req : (S j =? 0)%nat = false) by reflexivity.
+      rewrite Req in Hi_eq.
+      rewrite app_nth1 by lia. exact Hi_eq.
+    + (* Final carry: nth (length a) (outs ++ [last_carry]) = last_carry *)
+      rewrite app_nth2 by lia. rewrite Holen. rewrite Nat.sub_diag. simpl. reflexivity.
 Qed.
 
 (** ** BigSub Completeness
@@ -783,6 +834,125 @@ Proof.
     specialize (IH brest bw Hlen'). rewrite Heq in IH. simpl. lia.
 Qed.
 
+Lemma big_sub_witness_aux_correct : forall n a b borrow_in,
+  length a = length b ->
+  (forall i, (i < length a)%nat -> 0 <= nth i a 0 < 2 ^ Z.of_nat n) ->
+  (forall i, (i < length b)%nat -> 0 <= nth i b 0 < 2 ^ Z.of_nat n) ->
+  (borrow_in = 0 \/ borrow_in = 1) ->
+  let '(outs, borrows) := big_sub_witness_aux n a b borrow_in in
+  (forall i, (i < length a)%nat ->
+    nth i outs 0 = nth i a 0 -
+      (if (i =? 0)%nat then borrow_in else nth (i - 1) borrows 0) -
+      nth i b 0 + nth i borrows 0 * 2 ^ Z.of_nat n) /\
+  (forall i, (i < length a)%nat -> nth i borrows 0 = 0 \/ nth i borrows 0 = 1) /\
+  (forall i, (i < length a)%nat -> 0 <= nth i outs 0 < 2 ^ Z.of_nat n).
+Proof.
+  intros n.
+  induction a as [| a0 arest IH]; intros b borrow_in Hlen Ha Hb Hbin.
+  - destruct b; [| simpl in Hlen; lia].
+    simpl. repeat split; intros; lia.
+  - destruct b as [| b0 brest]; [simpl in Hlen; lia |].
+    simpl big_sub_witness_aux.
+    assert (Hlen' : length arest = length brest) by (simpl in Hlen; lia).
+    assert (Hpow : 0 < 2 ^ Z.of_nat n) by (apply Z.pow_pos_nonneg; lia).
+    set (diff := a0 - borrow_in - b0).
+    set (bw := if Z_lt_dec diff 0 then 1 else 0).
+    set (out0 := diff + bw * 2 ^ Z.of_nat n).
+    destruct (big_sub_witness_aux n arest brest bw) as [outs_rest borrows_rest] eqn:Heq.
+    assert (Ha0 : 0 <= a0 < 2 ^ Z.of_nat n) by (apply (Ha 0%nat); simpl; lia).
+    assert (Hb0 : 0 <= b0 < 2 ^ Z.of_nat n) by (apply (Hb 0%nat); simpl; lia).
+    assert (Hout0_eq : out0 = a0 - borrow_in - b0 + bw * 2 ^ Z.of_nat n)
+      by (unfold out0, diff; lia).
+    assert (Hbw_binary : bw = 0 \/ bw = 1).
+    { unfold bw. destruct (Z_lt_dec diff 0); auto. }
+    assert (Hout0_bound : 0 <= out0 < 2 ^ Z.of_nat n).
+    { subst out0 diff bw.
+      destruct (Z_lt_dec (a0 - borrow_in - b0) 0);
+      destruct Hbin as [-> | ->]; lia. }
+    assert (Ha' : forall i, (i < length arest)%nat -> 0 <= nth i arest 0 < 2 ^ Z.of_nat n)
+      by (intros i Hi; apply (Ha (S i)); simpl; lia).
+    assert (Hb' : forall i, (i < length brest)%nat -> 0 <= nth i brest 0 < 2 ^ Z.of_nat n)
+      by (intros i Hi; apply (Hb (S i)); simpl; lia).
+    specialize (IH brest bw Hlen' Ha' Hb' Hbw_binary).
+    rewrite Heq in IH.
+    destruct IH as [IH_eq [IH_borrow IH_out]].
+    split; [| split].
+    { (* Limb equations *)
+      intros i Hi. destruct i as [| j].
+      - simpl Nat.eqb. simpl nth. exact Hout0_eq.
+      - assert (IHj := IH_eq j ltac:(simpl in Hi; lia)).
+        change (nth (S j) (out0 :: outs_rest) 0) with (nth j outs_rest 0).
+        change (nth (S j) (a0 :: arest) 0) with (nth j arest 0).
+        change (nth (S j) (b0 :: brest) 0) with (nth j brest 0).
+        change (nth (S j) (bw :: borrows_rest) 0) with (nth j borrows_rest 0).
+        assert (Req : (S j =? 0)%nat = false) by reflexivity.
+        rewrite Req. replace (S j - 1)%nat with j by lia.
+        rewrite nth_cons_if_eqb. exact IHj. }
+    { (* Borrow binary *)
+      intros i Hi. destruct i as [| j].
+      - simpl. exact Hbw_binary.
+      - simpl. apply IH_borrow. simpl in Hi. lia. }
+    { (* Out bounds *)
+      intros i Hi. destruct i as [| j].
+      - simpl. exact Hout0_bound.
+      - simpl. apply IH_out. simpl in Hi. lia. }
+Qed.
+
+(** Value preservation for big_sub_witness_aux. *)
+Lemma big_sub_witness_aux_value : forall n a b borrow_in,
+  length a = length b ->
+  (length a > 0)%nat ->
+  (forall i, (i < length a)%nat -> 0 <= nth i a 0 < 2 ^ Z.of_nat n) ->
+  (forall i, (i < length b)%nat -> 0 <= nth i b 0 < 2 ^ Z.of_nat n) ->
+  let '(outs, borrows) := big_sub_witness_aux n a b borrow_in in
+  limbs_to_num n a - limbs_to_num n b - borrow_in =
+    limbs_to_num n outs -
+    nth (length a - 1) borrows 0 * 2 ^ (Z.of_nat n * Z.of_nat (length a)).
+Proof.
+  intros n.
+  induction a as [| a0 arest IH]; intros b borrow_in Hlen Hgt Ha Hb.
+  - simpl in Hgt. lia.
+  - destruct b as [| b0 brest]; [simpl in Hlen; lia |].
+    simpl big_sub_witness_aux.
+    assert (Hlen' : length arest = length brest) by (simpl in Hlen; lia).
+    assert (Hpow : 0 < 2 ^ Z.of_nat n) by (apply Z.pow_pos_nonneg; lia).
+    set (diff := a0 - borrow_in - b0).
+    set (bw := if Z_lt_dec diff 0 then 1 else 0).
+    set (out0 := diff + bw * 2 ^ Z.of_nat n).
+    destruct (big_sub_witness_aux n arest brest bw) as [outs_rest borrows_rest] eqn:Heq.
+    assert (Ha' : forall i, (i < length arest)%nat -> 0 <= nth i arest 0 < 2 ^ Z.of_nat n)
+      by (intros i Hi; apply (Ha (S i)); simpl; lia).
+    assert (Hb' : forall i, (i < length brest)%nat -> 0 <= nth i brest 0 < 2 ^ Z.of_nat n)
+      by (intros i Hi; apply (Hb (S i)); simpl; lia).
+    rewrite !limbs_to_num_cons.
+    destruct arest as [| a1 arest'].
+    + (* Single limb remaining *)
+      simpl in Hlen'. destruct brest; [| simpl in Hlen'; lia].
+      simpl in Heq. injection Heq as Heq1 Heq2.
+      subst outs_rest borrows_rest. rewrite limbs_to_num_nil.
+      simpl length. simpl nth.
+      change (1 - 1)%nat with 0%nat.
+      change (Z.of_nat 1) with 1. rewrite Z.mul_1_r.
+      unfold out0, diff. lia.
+    + (* Multi-limb *)
+      assert (Hgt' : (length (a1 :: arest') > 0)%nat) by (simpl; lia).
+      specialize (IH brest bw Hlen' Hgt' Ha' Hb'). rewrite Heq in IH.
+      simpl length.
+      replace (S (S (length arest')) - 1)%nat with (S (length arest'))%nat by lia.
+      simpl nth.
+      simpl length in IH.
+      replace (S (length arest') - 1)%nat with (length arest')%nat in IH by lia.
+      rewrite Nat2Z.inj_succ, Z.mul_succ_r, Z.pow_add_r by lia.
+      unfold out0, diff. lia.
+Qed.
+
+Lemma nth_firstn_lt (l : list Z) (n i : nat) :
+  (i < n)%nat -> nth i (firstn n l) 0 = nth i l 0.
+Proof.
+  intros H. rewrite nth_firstn.
+  destruct (Nat.ltb_spec i n); [reflexivity | lia].
+Qed.
+
 (** For BigSub, we prove a simpler completeness result:
     when a >= b as big integers, the witness produces valid outputs. *)
 
@@ -817,10 +987,361 @@ Proof.
   subst k.
   split; [exact Holen |].
   split; [rewrite length_firstn, Hbrlen; lia |].
-  (* The detailed carry-equation proofs require deep structural induction.
-     We defer the full proof body and use admit for now, since proving
-     the borrow propagation invariants requires substantial infrastructure. *)
-Admitted.
+  set (k := length a) in *.
+  assert (Hb' : forall i, (i < length b)%nat -> 0 <= nth i b 0 < 2 ^ Z.of_nat n)
+    by (intros i Hi; apply Hb; lia).
+  assert (Ha' : forall i, (i < length a)%nat -> 0 <= nth i a 0 < 2 ^ Z.of_nat n)
+    by (intros i Hi; apply Ha; lia).
+  assert (Haux := big_sub_witness_aux_correct n a b 0 ltac:(lia) Ha' Hb' ltac:(auto)).
+  rewrite Heq in Haux.
+  destruct Haux as [Haux_eq [Haux_borrow Haux_bound]].
+  split.
+  { (* First limb equation *)
+    assert (H0 := Haux_eq 0%nat ltac:(lia)).
+    simpl Nat.eqb in H0. rewrite Z.sub_0_r in H0.
+    subst k. rewrite !nth_firstn_lt by lia. exact H0. }
+  split.
+  { (* Middle limb equations *)
+    intros i Hi.
+    assert (Hi_eq := Haux_eq i ltac:(lia)).
+    destruct i; [lia |].
+    assert (Req : (S i =? 0)%nat = false) by reflexivity.
+    rewrite Req in Hi_eq. replace (S i - 1)%nat with i in Hi_eq by lia.
+    subst k. rewrite !nth_firstn_lt by lia.
+    replace (S i - 1)%nat with i by lia. exact Hi_eq. }
+  split.
+  { (* Last limb equation: out[k-1] = a[k-1] - borrow[k-2] - b[k-1] *)
+    assert (Hlast := Haux_eq (k - 1)%nat ltac:(lia)).
+    destruct (k - 1)%nat as [| j] eqn:Hkm1; [lia |].
+    assert (Req : (S j =? 0)%nat = false) by reflexivity.
+    rewrite Req in Hlast. replace (S j - 1)%nat with j in Hlast by lia.
+    rewrite !nth_firstn_lt by lia.
+    (* Hlast: out[k-1] = a[k-1] - borrows[j] - b[k-1] + borrows[k-1] * 2^n *)
+    (* For last limb: borrows[k-1] = 0 when a >= b *)
+    (* Need: the final borrow is 0. Use value preservation. *)
+    assert (Hval := big_sub_witness_aux_value n a b 0 ltac:(lia) ltac:(lia) Ha' Hb').
+    rewrite Heq in Hval. fold k in Hval. simpl Z.sub in Hval.
+    (* Hval: limbs_to_num a - limbs_to_num b =
+         limbs_to_num outs - nth (k-1) borrows 0 * 2^(n*k) *)
+    assert (Hborrow_bound := Haux_borrow (k - 1)%nat ltac:(lia)).
+    (* borrows[k-1] in {0,1}; if it were 1, limbs_to_num outs would be
+       limbs_to_num a - limbs_to_num b + 2^(n*k), which is huge.
+       But outs are n-bit, so limbs_to_num outs < 2^(n*k).
+       And a-b >= 0. So borrows[k-1] must be 0. *)
+    assert (Hfinal_borrow : nth (k - 1)%nat borrows 0 = 0).
+    { assert (Hout_upper : limbs_to_num n outs < 2 ^ (Z.of_nat n * Z.of_nat k)).
+      { clear -Haux_bound Holen. subst k.
+        revert outs Holen Haux_bound.
+        induction a as [| a0 arest IH]; intros outs Holen Haux_bound.
+        - destruct outs; [simpl; apply Z.pow_pos_nonneg; lia | simpl in Holen; lia].
+        - destruct outs as [| o0 orest]; [simpl in Holen; lia |].
+          rewrite limbs_to_num_cons.
+          assert (Ho0 := Haux_bound 0%nat ltac:(simpl; lia)). simpl in Ho0.
+          assert (Holen' : length orest = length arest) by (simpl in Holen; lia).
+          assert (Haux_bound' : forall i, (i < length arest)%nat ->
+            0 <= nth i orest 0 < 2 ^ Z.of_nat n).
+          { intros i Hi. assert (H := Haux_bound (S i) ltac:(simpl; lia)). simpl in H. exact H. }
+          assert (IHapp := IH orest Holen' Haux_bound').
+          simpl length. rewrite Nat2Z.inj_succ, Z.mul_succ_r, Z.pow_add_r by lia. nia. }
+      assert (Hout_nonneg : 0 <= limbs_to_num n outs).
+      { clear -Haux_bound Holen. subst k.
+        revert outs Holen Haux_bound.
+        induction a as [| a0 arest IH]; intros outs Holen Haux_bound.
+        - destruct outs; [simpl; lia | simpl in Holen; lia].
+        - destruct outs as [| o0 orest]; [simpl in Holen; lia |].
+          rewrite limbs_to_num_cons.
+          assert (Ho0 := Haux_bound 0%nat ltac:(simpl; lia)). simpl in Ho0.
+          assert (Holen' : length orest = length arest) by (simpl in Holen; lia).
+          assert (Haux_bound' : forall i, (i < length arest)%nat ->
+            0 <= nth i orest 0 < 2 ^ Z.of_nat n).
+          { intros i Hi. assert (H := Haux_bound (S i) ltac:(simpl; lia)). simpl in H. exact H. }
+          assert (IHapp := IH orest Holen' Haux_bound').
+          assert (Hpow' : 0 < 2 ^ Z.of_nat n) by (apply Z.pow_pos_nonneg; lia). nia. }
+      destruct Hborrow_bound as [Hb0 | Hb1]; [exact Hb0 |].
+      exfalso.
+      rewrite Hb1 in Hval. rewrite Z.mul_1_l in Hval. lia. }
+    rewrite Hkm1 in Hfinal_borrow. rewrite Hfinal_borrow in Hlast.
+    replace (k - 2)%nat with j in |- * by lia. lia. }
+  { (* Value preservation *)
+    assert (Hval := big_sub_witness_aux_value n a b 0 ltac:(lia) ltac:(lia) Ha' Hb').
+    rewrite Heq in Hval. fold k in Hval.
+    assert (Hfinal_borrow : nth (k - 1)%nat borrows 0 = 0).
+    { (* Same argument as above — factor into a shared lemma *)
+      assert (Hborrow_bound := Haux_borrow (k - 1)%nat ltac:(lia)).
+      assert (Hout_upper : limbs_to_num n outs < 2 ^ (Z.of_nat n * Z.of_nat k)).
+      { clear -Haux_bound Holen. subst k.
+        revert outs Holen Haux_bound.
+        induction a as [| a0 arest IH]; intros outs Holen Haux_bound.
+        - destruct outs; [simpl; apply Z.pow_pos_nonneg; lia | simpl in Holen; lia].
+        - destruct outs as [| o0 orest]; [simpl in Holen; lia |].
+          rewrite limbs_to_num_cons.
+          assert (Ho0 := Haux_bound 0%nat ltac:(simpl; lia)). simpl in Ho0.
+          assert (Holen' : length orest = length arest) by (simpl in Holen; lia).
+          assert (Haux_bound' : forall i, (i < length arest)%nat ->
+            0 <= nth i orest 0 < 2 ^ Z.of_nat n).
+          { intros i Hi. assert (H := Haux_bound (S i) ltac:(simpl; lia)). simpl in H. exact H. }
+          assert (IHapp := IH orest Holen' Haux_bound').
+          simpl length. rewrite Nat2Z.inj_succ, Z.mul_succ_r, Z.pow_add_r by lia. nia. }
+      assert (Hout_nonneg : 0 <= limbs_to_num n outs).
+      { clear -Haux_bound Holen. subst k.
+        revert outs Holen Haux_bound.
+        induction a as [| a0 arest IH]; intros outs Holen Haux_bound.
+        - destruct outs; [simpl; lia | simpl in Holen; lia].
+        - destruct outs as [| o0 orest]; [simpl in Holen; lia |].
+          rewrite limbs_to_num_cons.
+          assert (Ho0 := Haux_bound 0%nat ltac:(simpl; lia)). simpl in Ho0.
+          assert (Holen' : length orest = length arest) by (simpl in Holen; lia).
+          assert (Haux_bound' : forall i, (i < length arest)%nat ->
+            0 <= nth i orest 0 < 2 ^ Z.of_nat n).
+          { intros i Hi. assert (H := Haux_bound (S i) ltac:(simpl; lia)). simpl in H. exact H. }
+          assert (IHapp := IH orest Holen' Haux_bound').
+          assert (Hpow' : 0 < 2 ^ Z.of_nat n) by (apply Z.pow_pos_nonneg; lia). nia. }
+      destruct Hborrow_bound as [Hb0 | Hb1]; [exact Hb0 |].
+      exfalso. rewrite Hb1 in Hval. rewrite Z.mul_1_l in Hval. lia. }
+    rewrite Hfinal_borrow in Hval. simpl Z.sub in Hval. lia. }
+Qed.
+
+(** ** Carry Chain Infrastructure
+
+    Single-list carry propagation: used by LongToShort, BigMult,
+    and CheckCarryToZero completeness proofs. *)
+
+Fixpoint carry_chain_aux (n : nat) (inp : list Z) (carry_in : Z)
+  : list Z * list Z :=
+  match inp with
+  | [] => ([], [])
+  | x :: rest =>
+    let sum := x + carry_in in
+    let out_i := sum mod 2 ^ Z.of_nat n in
+    let carry_i := sum / 2 ^ Z.of_nat n in
+    let '(outs, carries) := carry_chain_aux n rest carry_i in
+    (out_i :: outs, carry_i :: carries)
+  end.
+
+Lemma carry_chain_aux_lengths : forall n inp carry_in,
+  let '(outs, carries) := carry_chain_aux n inp carry_in in
+  length outs = length inp /\ length carries = length inp.
+Proof.
+  intros n. induction inp as [| x rest IH]; intros carry_in.
+  - simpl. auto.
+  - simpl. set (c := (x + carry_in) / 2 ^ Z.of_nat n).
+    destruct (carry_chain_aux n rest c) as [outs carries] eqn:Heq.
+    specialize (IH c). rewrite Heq in IH. simpl. lia.
+Qed.
+
+Lemma carry_chain_aux_correct : forall n inp carry_in,
+  (forall i, (i < length inp)%nat -> 0 <= nth i inp 0) ->
+  0 <= carry_in ->
+  let '(outs, carries) := carry_chain_aux n inp carry_in in
+  (forall i, (i < length inp)%nat ->
+    nth i inp 0 + (if (i =? 0)%nat then carry_in else nth (i - 1) carries 0) =
+      nth i outs 0 + nth i carries 0 * 2 ^ Z.of_nat n) /\
+  (forall i, (i < length inp)%nat -> 0 <= nth i carries 0) /\
+  (forall i, (i < length inp)%nat -> 0 <= nth i outs 0 < 2 ^ Z.of_nat n).
+Proof.
+  intros n. induction inp as [| x rest IH]; intros carry_in Hnn Hcin.
+  - simpl. repeat split; intros; lia.
+  - simpl carry_chain_aux.
+    assert (Hpow : 0 < 2 ^ Z.of_nat n) by (apply Z.pow_pos_nonneg; lia).
+    set (sum0 := x + carry_in).
+    set (out0 := sum0 mod 2 ^ Z.of_nat n).
+    set (carry0 := sum0 / 2 ^ Z.of_nat n).
+    destruct (carry_chain_aux n rest carry0) as [outs_rest carries_rest] eqn:Heq.
+    assert (Hx : 0 <= x) by (apply (Hnn 0%nat); simpl; lia).
+    assert (Hsum0 : 0 <= sum0) by (unfold sum0; lia).
+    assert (Hcarry0 : 0 <= carry0) by (unfold carry0; apply Z.div_pos; lia).
+    assert (Hdm : sum0 = out0 + carry0 * 2 ^ Z.of_nat n).
+    { unfold out0, carry0. assert (Hdm := Z.div_mod sum0 (2 ^ Z.of_nat n) ltac:(lia)). lia. }
+    assert (Hout0_bound : 0 <= out0 < 2 ^ Z.of_nat n).
+    { unfold out0. split; apply Z.mod_pos_bound; lia. }
+    assert (Hnn' : forall i, (i < length rest)%nat -> 0 <= nth i rest 0)
+      by (intros i Hi; apply (Hnn (S i)); simpl; lia).
+    specialize (IH carry0 Hnn' Hcarry0).
+    rewrite Heq in IH.
+    destruct IH as [IH_eq [IH_carry IH_out]].
+    split; [| split].
+    { intros i Hi. destruct i as [| j].
+      - simpl. unfold sum0 in Hdm. lia.
+      - assert (IHj := IH_eq j ltac:(simpl in Hi; lia)).
+        rewrite <- nth_cons_if_eqb in IHj.
+        assert (Rn1 : nth (S j) (x :: rest) 0 = nth j rest 0) by reflexivity.
+        assert (Rn3 : nth (S j) (out0 :: outs_rest) 0 = nth j outs_rest 0) by reflexivity.
+        assert (Rn4 : nth (S j) (carry0 :: carries_rest) 0 = nth j carries_rest 0) by reflexivity.
+        assert (Req : (S j =? 0)%nat = false) by reflexivity.
+        rewrite Rn1, Rn3, Rn4, Req.
+        replace ((S j - 1)%nat) with j by lia. exact IHj. }
+    { intros i Hi. destruct i as [| j].
+      - simpl. exact Hcarry0.
+      - assert (Rn : nth (S j) (carry0 :: carries_rest) 0 = nth j carries_rest 0) by reflexivity.
+        rewrite Rn. apply IH_carry. simpl in Hi. lia. }
+    { intros i Hi. destruct i as [| j].
+      - simpl. exact Hout0_bound.
+      - assert (Rn : nth (S j) (out0 :: outs_rest) 0 = nth j outs_rest 0) by reflexivity.
+        rewrite Rn. apply IH_out. simpl in Hi. lia. }
+Qed.
+
+Lemma limbs_to_num_snoc : forall n l x,
+  limbs_to_num n (l ++ [x]) =
+    limbs_to_num n l + x * 2 ^ (Z.of_nat n * Z.of_nat (length l)).
+Proof.
+  intros n. induction l as [| a rest IH]; intros x.
+  - change ([] ++ [x]) with ([x] : list Z).
+    rewrite limbs_to_num_cons, limbs_to_num_nil. simpl length.
+    rewrite Nat2Z.inj_0, !Z.mul_0_r, Z.pow_0_r. lia.
+  - simpl app. rewrite !limbs_to_num_cons. rewrite IH. simpl length.
+    rewrite Nat2Z.inj_succ. rewrite Z.mul_succ_r.
+    rewrite Z.pow_add_r by lia. ring.
+Qed.
+
+Lemma limbs_to_num_firstn_skipn : forall n m (l : list Z),
+  limbs_to_num n l =
+    limbs_to_num n (firstn m l) +
+      2 ^ (Z.of_nat n * Z.of_nat m) * limbs_to_num n (skipn m l).
+Proof.
+  intros n. induction m as [| m' IH]; intros l.
+  - simpl firstn. simpl skipn. rewrite limbs_to_num_nil.
+    rewrite Nat2Z.inj_0, Z.mul_0_r, Z.pow_0_r. lia.
+  - destruct l as [| a rest].
+    + simpl. lia.
+    + simpl firstn. simpl skipn.
+      rewrite !limbs_to_num_cons.
+      assert (IHm := IH rest).
+      rewrite Nat2Z.inj_succ, Z.mul_succ_r, Z.pow_add_r by lia. lia.
+Qed.
+
+Lemma carry_chain_aux_value : forall n inp carry_in,
+  (forall i, (i < length inp)%nat -> 0 <= nth i inp 0) ->
+  0 <= carry_in ->
+  (length inp > 0)%nat ->
+  let '(outs, carries) := carry_chain_aux n inp carry_in in
+  carry_in + limbs_to_num n inp =
+    limbs_to_num n outs +
+    nth (length inp - 1) carries 0 * 2 ^ (Z.of_nat n * Z.of_nat (length inp)).
+Proof.
+  intros n inp carry_in Hnn Hcin Hgt.
+  destruct (carry_chain_aux n inp carry_in) as [outs carries] eqn:Heq.
+  assert (Hlens := carry_chain_aux_lengths n inp carry_in). rewrite Heq in Hlens.
+  assert (Hcorr := carry_chain_aux_correct n inp carry_in Hnn Hcin). rewrite Heq in Hcorr.
+  destruct Hlens as [Holen Hclen].
+  destruct Hcorr as [Heqs _].
+  apply carry_propagation_gen; [lia | lia | lia | exact Heqs].
+Qed.
+
+(** General carry propagation completeness: constructs outs and carries
+    for any non-negative input list, with the last limb absorbing the
+    final carry without modular reduction.
+
+    Used by LongToShortNoEndCarry_complete and BigMult_complete. *)
+
+Lemma carry_propagation_complete :
+  forall (n : nat) (m : nat) (inp : list Z),
+  (m >= 2)%nat ->
+  length inp = m ->
+  (forall i, (i < m)%nat -> 0 <= nth i inp 0) ->
+  exists (out carries : list Z),
+    length out = m /\
+    length carries = (m - 1)%nat /\
+    nth 0 inp 0 = nth 0 out 0 + nth 0 carries 0 * 2 ^ Z.of_nat n /\
+    (forall i, (0 < i < m - 1)%nat ->
+      nth i inp 0 + nth (i - 1) carries 0 =
+        nth i out 0 + nth i carries 0 * 2 ^ Z.of_nat n) /\
+    nth (m - 1) out 0 = nth (m - 1) inp 0 + nth (m - 2) carries 0 /\
+    limbs_to_num n inp = limbs_to_num n out.
+Proof.
+  intros n m inp Hm Hlen Hnn.
+  assert (Hpow : 0 < 2 ^ Z.of_nat n) by (apply Z.pow_pos_nonneg; lia).
+  (* Apply carry_chain_aux to all m elements *)
+  destruct (carry_chain_aux n inp 0) as [all_outs all_carries] eqn:Heq.
+  assert (Hlens := carry_chain_aux_lengths n inp 0).
+  rewrite Heq in Hlens. destruct Hlens as [Holen Hclen].
+  assert (Hcorr := carry_chain_aux_correct n inp 0 ltac:(intros; apply Hnn; lia) ltac:(lia)).
+  rewrite Heq in Hcorr.
+  destruct Hcorr as [Heqs [Hcarry_nn Hout_bound]].
+  (* Construct witness: carries = firstn (m-1) all_carries,
+     out = firstn (m-1) all_outs ++ [inp[m-1] + carries[m-2]] *)
+  set (carries := firstn (m - 1) all_carries).
+  assert (Hclen' : length carries = (m - 1)%nat)
+    by (subst carries; rewrite length_firstn; lia).
+  (* Last carry from the chain *)
+  assert (Hlast_carry : nth (m - 2) carries 0 = nth (m - 2) all_carries 0).
+  { subst carries. rewrite nth_firstn_lt by lia. reflexivity. }
+  set (last_out := nth (m - 1) inp 0 + nth (m - 2) carries 0).
+  set (out := firstn (m - 1) all_outs ++ [last_out]).
+  exists out, carries.
+  assert (Hout_len : length out = m).
+  { subst out. rewrite length_app. rewrite length_firstn. simpl. lia. }
+  split; [exact Hout_len |].
+  split; [exact Hclen' |].
+  split.
+  { (* First limb equation *)
+    assert (H0 := Heqs 0%nat ltac:(lia)).
+    simpl Nat.eqb in H0.
+    subst out. rewrite app_nth1 by (rewrite length_firstn; lia).
+    rewrite nth_firstn_lt by lia.
+    subst carries. rewrite nth_firstn_lt by lia. lia. }
+  split.
+  { (* Middle limb equations *)
+    intros i Hi.
+    assert (Hi_eq := Heqs i ltac:(lia)).
+    destruct i as [| j]; [lia |].
+    assert (Req : (S j =? 0)%nat = false) by reflexivity.
+    rewrite Req in Hi_eq.
+    subst out. rewrite app_nth1 by (rewrite length_firstn; lia).
+    rewrite nth_firstn_lt by lia.
+    subst carries. rewrite !nth_firstn_lt by lia.
+    exact Hi_eq. }
+  split.
+  { (* Last limb equation *)
+    subst out last_out.
+    rewrite app_nth2 by (rewrite length_firstn; lia).
+    rewrite length_firstn.
+    replace (Nat.min (m - 1) (length all_outs)) with (m - 1)%nat by lia.
+    rewrite Nat.sub_diag. simpl. reflexivity. }
+  { (* Value preservation via carry_chain_aux_value *)
+    assert (Hval := carry_chain_aux_value n inp 0
+      ltac:(intros; apply Hnn; lia) ltac:(lia) ltac:(lia)).
+    rewrite Heq in Hval. simpl (0 + _) in Hval. rewrite Hlen in Hval.
+    (* Hval: limbs_to_num n inp = limbs_to_num n all_outs +
+         nth (m-1) all_carries 0 * 2^(n*m) *)
+    (* Get carry equation for last limb *)
+    assert (Hlast_eq := Heqs (m - 1)%nat ltac:(lia)).
+    destruct (Nat.eqb_spec (m - 1) 0) as [Hz | Hnz].
+    { lia. }  (* m >= 2 so m-1 <> 0 *)
+    (* Hlast_eq: inp[m-1] + all_carries[m-2] =
+         all_outs[m-1] + all_carries[m-1] * 2^n *)
+    (* Decompose all_outs = firstn (m-1) all_outs ++ [nth (m-1) all_outs 0] *)
+    assert (Hall_decomp : all_outs = firstn (m - 1) all_outs ++ skipn (m - 1) all_outs)
+      by (symmetry; apply firstn_skipn).
+    assert (Hskipn_singleton : skipn (m - 1) all_outs = [nth (m - 1) all_outs 0]).
+    { assert (Hskipn_len : length (skipn (m - 1) all_outs) = 1%nat)
+        by (rewrite length_skipn; lia).
+      destruct (skipn (m - 1) all_outs) as [| v [| v2 rest']] eqn:Hs;
+        [simpl in Hskipn_len; lia | | simpl in Hskipn_len; lia].
+      f_equal. change v with (nth 0 [v] 0). rewrite <- Hs.
+      rewrite nth_skipn. f_equal. lia. }
+    rewrite Hall_decomp, Hskipn_singleton in Hval.
+    rewrite limbs_to_num_snoc in Hval.
+    rewrite length_firstn in Hval.
+    replace (Nat.min (m - 1) (length all_outs)) with (m - 1)%nat in Hval by lia.
+    (* Now Hval: limbs_to_num n inp = limbs_to_num n (firstn (m-1) all_outs) +
+         nth (m-1) all_outs 0 * 2^(n*(m-1)) + nth (m-1) all_carries 0 * 2^(n*m) *)
+    (* Goal: limbs_to_num n inp = limbs_to_num n out *)
+    subst out last_out.
+    rewrite limbs_to_num_snoc. rewrite length_firstn.
+    replace (Nat.min (m - 1) (length all_outs)) with (m - 1)%nat by lia.
+    (* Goal: limbs_to_num n inp = limbs_to_num n (firstn (m-1) all_outs) +
+         (inp[m-1] + carries[m-2]) * 2^(n*(m-1)) *)
+    rewrite Hlast_carry.
+    (* From Hlast_eq: inp[m-1] + all_carries[m-2] =
+         all_outs[m-1] + all_carries[m-1] * 2^n *)
+    (* So: (inp[m-1] + all_carries[m-2]) * 2^(n*(m-1)) =
+         all_outs[m-1] * 2^(n*(m-1)) + all_carries[m-1] * 2^n * 2^(n*(m-1))
+       = all_outs[m-1] * 2^(n*(m-1)) + all_carries[m-1] * 2^(n*m) *)
+    replace (m - 1 - 1)%nat with (m - 2)%nat in Hlast_eq by lia.
+    assert (H2n : Z.of_nat n * Z.of_nat m =
+      Z.of_nat n + Z.of_nat n * Z.of_nat (m - 1)) by lia.
+    rewrite H2n in Hval. rewrite Z.pow_add_r in Hval by lia. lia. }
+Qed.
 
 (** ** LongToShortNoEndCarry Completeness
 
@@ -844,16 +1365,8 @@ Theorem LongToShortNoEndCarry_complete :
     limbs_to_num n inp = limbs_to_num n out.
 Proof.
   intros n k inp Hk Hlen Hnn.
-  assert (Hpow : 0 < 2 ^ Z.of_nat n) by (apply Z.pow_pos_nonneg; lia).
-  (* Construct the witness by carry propagation *)
-  (* For each limb: (out_i, carry_i) = carry_witness_step (inp_i + prev_carry) n *)
-  (* We use an existential proof strategy with the standard carry chain *)
-  (* The carries are: c[0] = inp[0] / 2^n, c[i] = (inp[i] + c[i-1]) / 2^n *)
-  (* The outs are: out[i] = (inp[i] + c[i-1]) mod 2^n for i < k-1,
-                   out[k-1] = inp[k-1] + c[k-2] *)
-  (* The proof that these satisfy all constraints follows from Z.div_mod. *)
-  (* Since the detailed construction mirrors BigAdd, we admit this for now. *)
-Admitted.
+  exact (carry_propagation_complete n k inp Hk Hlen Hnn).
+Qed.
 
 (** ** CheckCarryToZero Completeness
 
@@ -875,11 +1388,124 @@ Theorem CheckCarryToZero_complete :
 Proof.
   intros n k inp Hk Hlen Hzero.
   assert (Hpow : 0 < 2 ^ Z.of_nat n) by (apply Z.pow_pos_nonneg; lia).
-  (* The witness carries propagate the running sum through the limbs.
-     Since the total limbs_to_num is 0, the final carry + last limb = 0.
-     This requires tracking that the running partial sum at each position
-     is divisible by 2^n, which follows from limbs_to_num = 0. *)
-Admitted.
+  (* Define carries as running partial sums divided by 2^n.
+     carries[i] = limbs_to_num n (firstn (i+1) inp) / 2^(n*(i+1)) *)
+  set (carry_of := fun i => limbs_to_num n (firstn (S i) inp) / 2 ^ (Z.of_nat n * Z.of_nat (S i))).
+  exists (map carry_of (seq 0 (k - 1))).
+  assert (Hcarry_len : length (map carry_of (seq 0 (k - 1))) = (k - 1)%nat)
+    by (rewrite length_map, length_seq; lia).
+  split; [exact Hcarry_len |].
+  (* Key lemma: limbs_to_num n (firstn (i+1) inp) is divisible by 2^(n*(i+1)).
+     This follows from limbs_to_num n inp = 0: the first (i+1) limbs' contribution
+     plus the remaining limbs' contribution = 0, and the remaining limbs' contribution
+     is divisible by 2^(n*(i+1)). *)
+  assert (Hdiv : forall i, (i < k)%nat ->
+    (2 ^ (Z.of_nat n * Z.of_nat (S i)) | limbs_to_num n (firstn (S i) inp))).
+  { intros i Hi.
+    (* limbs_to_num n inp = limbs_to_num n (firstn (S i) inp) +
+         2^(n*(S i)) * limbs_to_num n (skipn (S i) inp) *)
+    assert (Hdecomp := limbs_to_num_firstn_skipn n (S i) inp).
+    rewrite Hzero in Hdecomp.
+    exists (- limbs_to_num n (skipn (S i) inp)).
+    lia. }
+  (* From divisibility, get the carry equation at each step *)
+  assert (Hcarry_eq : forall i, (i < k)%nat ->
+    limbs_to_num n (firstn (S i) inp) =
+      carry_of i * 2 ^ (Z.of_nat n * Z.of_nat (S i))).
+  { intros i Hi. unfold carry_of.
+    assert (Hd := Hdiv i Hi).
+    destruct Hd as [q Hq].
+    rewrite Hq, Z.div_mul by (apply Z.pow_nonzero; lia).
+    lia. }
+  (* Derive individual limb equations from the carry equations *)
+  assert (Hlimb : forall i, (i < k)%nat ->
+    nth i inp 0 + (if (i =? 0)%nat then 0 else carry_of (i - 1)%nat) =
+      carry_of i * 2 ^ Z.of_nat n).
+  { intros i Hi.
+    destruct i.
+    - (* i = 0 *)
+      simpl Nat.eqb.
+      assert (H0 := Hcarry_eq 0%nat ltac:(lia)).
+      (* firstn 1 inp = [nth 0 inp 0] when length inp >= 1 *)
+      assert (Hf1 : firstn 1 inp = [nth 0 inp 0]).
+      { destruct inp as [| x rest']; [simpl in Hlen; lia |].
+        simpl. reflexivity. }
+      rewrite Hf1 in H0.
+      rewrite limbs_to_num_cons, limbs_to_num_nil, Z.mul_0_r in H0.
+      change (Z.of_nat 1) with 1 in H0. rewrite Z.mul_1_r in H0. lia.
+    - (* i > 0: use firstn/skipn decomposition *)
+      assert (Req : (S i =? 0)%nat = false) by reflexivity.
+      rewrite Req.
+      replace (S i - 1)%nat with i by lia.
+      assert (Hsi := Hcarry_eq (S i) ltac:(lia)).
+      assert (Hi' := Hcarry_eq i ltac:(lia)).
+      (* Decompose: firstn (S (S i)) = firstn (S i) + one more element *)
+      assert (Hdecomp2 := limbs_to_num_firstn_skipn n (S i) (firstn (S (S i)) inp)).
+      rewrite firstn_firstn in Hdecomp2.
+      replace (Nat.min (S i) (S (S i))) with (S i) in Hdecomp2 by lia.
+      (* skipn (S i) (firstn (S (S i)) inp) = [nth (S i) inp 0] *)
+      assert (Hskip_one : skipn (S i) (firstn (S (S i)) inp) = [nth (S i) inp 0]).
+      { assert (Hskiplen : length (skipn (S i) (firstn (S (S i)) inp)) = 1%nat)
+          by (rewrite length_skipn, length_firstn; lia).
+        destruct (skipn (S i) (firstn (S (S i)) inp)) as [| v [| v2 rest']] eqn:Hs;
+          [simpl in Hskiplen; lia | | simpl in Hskiplen; lia].
+        f_equal.
+        assert (Hv : v = nth 0 (skipn (S i) (firstn (S (S i)) inp)) 0) by (rewrite Hs; reflexivity).
+        rewrite nth_skipn in Hv. rewrite nth_firstn_lt in Hv by lia.
+        rewrite Nat.add_0_r in Hv. exact Hv. }
+      rewrite Hskip_one in Hdecomp2.
+      rewrite limbs_to_num_cons, limbs_to_num_nil, Z.mul_0_r, Z.add_0_r in Hdecomp2.
+      rewrite Hi' in Hdecomp2.
+      rewrite Hsi in Hdecomp2.
+      (* Hdecomp2: carry_of (S i) * 2^(n*(S(S i))) =
+           carry_of i * 2^(n*(S i)) + 2^(n*(S i)) * nth (S i) inp 0 *)
+      (* Factor: 2^(n*(S i)) * (carry_of (S i) * 2^n) =
+           2^(n*(S i)) * (carry_of i + nth (S i) inp 0) *)
+      assert (Hpow_pos : 0 < 2 ^ (Z.of_nat n * Z.of_nat (S i)))
+        by (apply Z.pow_pos_nonneg; lia).
+      rewrite Nat2Z.inj_succ, Z.mul_succ_r, Z.pow_add_r in Hdecomp2 by lia.
+      nia. }
+  (* Now prove each conjunct *)
+  split.
+  { (* First equation: inp[0] = carries[0] * 2^n *)
+    assert (H0 := Hlimb 0%nat ltac:(lia)).
+    simpl Nat.eqb in H0. rewrite Z.add_0_r in H0.
+    rewrite nth_map_seq by lia. simpl. exact H0. }
+  split.
+  { (* Middle equations *)
+    intros i Hi.
+    assert (Hsi := Hlimb i ltac:(lia)).
+    destruct i; [lia |].
+    assert (Req : (S i =? 0)%nat = false) by reflexivity.
+    rewrite Req in Hsi.
+    replace (S i - 1)%nat with i in Hsi by lia.
+    rewrite !nth_map_seq by lia. simpl.
+    replace (i - 0)%nat with i by lia.
+    exact Hsi. }
+  { (* Last equation: inp[k-1] + carries[k-2] = 0 *)
+    assert (Hkm1 := Hcarry_eq (k - 1)%nat ltac:(lia)).
+    replace (S (k - 1)) with k in Hkm1 by lia.
+    assert (Hfirstn_k : firstn k inp = inp)
+      by (rewrite <- Hlen; apply firstn_all).
+    rewrite Hfirstn_k, Hzero in Hkm1.
+    (* So carry_of (k-1) * 2^(n*k) = 0, hence carry_of (k-1) = 0 *)
+    assert (Hfinal : carry_of (k - 1)%nat = 0).
+    { symmetry in Hkm1. apply Z.eq_mul_0 in Hkm1.
+      destruct Hkm1 as [Hkm1 | Hkm1]; [exact Hkm1 |].
+      exfalso. assert (0 < 2 ^ (Z.of_nat n * Z.of_nat k))
+        by (apply Z.pow_pos_nonneg; lia). lia. }
+    (* Get the last limb equation: inp[k-1] + carry_of(k-2) = carry_of(k-1) * 2^n *)
+    assert (Hlast := Hlimb (k - 1)%nat ltac:(lia)).
+    assert (Hkne : ((k - 1) =? 0)%nat = false) by (apply Nat.eqb_neq; lia).
+    rewrite Hkne in Hlast.
+    (* Hlast: inp[k-1] + carry_of(k-2) = carry_of(k-1) * 2^n *)
+    rewrite Hfinal, Z.mul_0_l in Hlast.
+    replace ((k - 1 - 1)%nat) with ((k - 2)%nat) in Hlast by lia.
+    (* Hlast: inp[k-1] + carry_of(k-2) = 0 *)
+    rewrite nth_map_seq by lia.
+    replace (k - 2 - 0)%nat with (k - 2)%nat by lia.
+    exact Hlast. }
+Qed.
 
 (** ** BigMult Completeness
 
@@ -903,6 +1529,5 @@ Theorem BigMult_complete :
     limbs_to_num n rawLimbs = limbs_to_num n out.
 Proof.
   intros n k rawLimbs Hk Hlen Hnn.
-  (* Structurally identical to LongToShortNoEndCarry:
-     carry propagation through non-negative limbs. *)
-Admitted.
+  exact (carry_propagation_complete n (2 * k) rawLimbs ltac:(lia) Hlen Hnn).
+Qed.
