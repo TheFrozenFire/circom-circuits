@@ -21,10 +21,10 @@ Theorem Edwards2Montgomery_spec :
   forall (x y u v : Z),
   u * (1 - y) = 1 + y ->
   v * x = u ->
-  (* The constraints encode the standard conversion formulas *)
-  u * (1 - y) = 1 + y /\ v * x = u.
+  (* Composed constraint eliminating u *)
+  v * x * (1 - y) = 1 + y.
 Proof.
-  intros x y u v Hu Hv. split; assumption.
+  intros x y u v Hu Hv. subst u. lia.
 Qed.
 
 (** When y /= 1 and x /= 0, the conversion is well-defined. *)
@@ -47,9 +47,10 @@ Theorem Montgomery2Edwards_spec :
   forall (u v x y : Z),
   x * v = u ->
   y * (u + 1) = u - 1 ->
-  x * v = u /\ y * (u + 1) = u - 1.
+  (* Composed constraint eliminating u *)
+  y * (x * v + 1) = x * v - 1.
 Proof.
-  intros u v x y Hx Hy. split; assumption.
+  intros u v x y Hx Hy. subst u. lia.
 Qed.
 
 (** ** MontgomeryAdd (montgomery.circom:33-51)
@@ -65,12 +66,10 @@ Theorem MontgomeryAdd_spec :
   lambda * (x2 - x1) = y2 - y1 ->
   x3 = B * lambda * lambda - A - x1 - x2 ->
   y3 = lambda * (x1 - x3) - y1 ->
-  (* The constraints encode the standard addition formulas *)
-  lambda * (x2 - x1) = y2 - y1 /\
-  x3 = B * lambda * lambda - A - x1 - x2 /\
-  y3 = lambda * (x1 - x3) - y1.
+  (* Substitute x3 into y3 equation *)
+  y3 = lambda * (x1 - (B * lambda * lambda - A - x1 - x2)) - y1.
 Proof.
-  intros. repeat split; assumption.
+  intros. subst x3. lia.
 Qed.
 
 (** ** MontgomeryDouble (montgomery.circom:57-77)
@@ -86,10 +85,9 @@ Theorem MontgomeryDouble_spec :
   lambda * (2 * B * y1) = 3 * x1_2 + 2 * A * x1 + 1 ->
   x3 = B * lambda * lambda - A - 2 * x1 ->
   y3 = lambda * (x1 - x3) - y1 ->
-  x1_2 = x1 * x1 /\
-  lambda * (2 * B * y1) = 3 * x1_2 + 2 * A * x1 + 1 /\
-  x3 = B * lambda * lambda - A - 2 * x1 /\
-  y3 = lambda * (x1 - x3) - y1.
+  (* Substitute x1_2 and x3 *)
+  lambda * (2 * B * y1) = 3 * x1 * x1 + 2 * A * x1 + 1 /\
+  y3 = lambda * (x1 - (B * lambda * lambda - A - 2 * x1)) - y1.
 Proof.
-  intros. repeat split; assumption.
+  intros. subst x1_2 x3. split; lia.
 Qed.

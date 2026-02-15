@@ -34,7 +34,6 @@ Theorem PrivateSearch_sound :
     (pathIndices siblings : list Z)
     (distBits maxDistBits : list Z),
   length query = n -> length document = n ->
-  (* VectorCommit(document) = docHash — deterministic *)
   (* Merkle inclusion *)
   length pathIndices = dbDepth ->
   all_binary pathIndices ->
@@ -48,17 +47,20 @@ Theorem PrivateSearch_sound :
   length maxDistBits = bits ->
   all_binary maxDistBits ->
   maxDistSq = bits_to_num maxDistBits ->
-  0 <= distSq < 2 ^ Z.of_nat bits ->
-  0 <= maxDistSq < 2 ^ Z.of_nat bits ->
   distSq < maxDistSq ->
-  (* Conclusions *)
-  computedRoot = merkleRoot /\ distSq < maxDistSq.
+  (* Conclusions with derived bounds *)
+  computedRoot = merkleRoot /\ distSq < maxDistSq /\
+  0 <= distSq < 2 ^ Z.of_nat bits /\
+  0 <= maxDistSq < 2 ^ Z.of_nat bits.
 Proof.
   intros n dbDepth bits query document
     docHash computedRoot merkleRoot distSq maxDistSq
     pathIndices siblings distBits maxDistBits
     Hqlen Hdlen HpLen HpBin HsLen Hroot
-    Hbits HdBlen HdBbin HdBval HmBlen HmBbin HmBval
-    HdRange HmRange Hlt.
-  split; assumption.
+    Hbits HdBlen HdBbin HdBval HmBlen HmBbin HmBval Hlt.
+  assert (HdBound := bits_to_num_bound distBits HdBbin).
+  rewrite HdBlen in HdBound. rewrite <- HdBval in HdBound.
+  assert (HmBound := bits_to_num_bound maxDistBits HmBbin).
+  rewrite HmBlen in HmBound. rewrite <- HmBval in HmBound.
+  repeat split; (assumption || lia).
 Qed.

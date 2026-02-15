@@ -24,10 +24,3 @@ templates:
           but unused in the proof. The theorem only proves out >= all elements,
           not that out is itself an element. Max_ge_all proves the same thing
           without the unused assumption.
-      Max_ge_all:
-        type: Theorem
-        statement: forall i, nth i inputs 0 <= out
-        assumes:
-          - forall i < length inputs, out >= nth i inputs 0
-        technique: specialize universal bound assumption, lia
-        depends_on: []

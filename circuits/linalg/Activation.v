@@ -88,7 +88,12 @@ Theorem ReLUVector_spec :
   (forall i, (i < n)%nat ->
     (nth i inp 0 >= 0 -> nth i out 0 = nth i inp 0) /\
     (nth i inp 0 < 0 -> nth i out 0 = 0)) ->
-  forall i, (i < n)%nat ->
-    (nth i inp 0 >= 0 -> nth i out 0 = nth i inp 0) /\
-    (nth i inp 0 < 0 -> nth i out 0 = 0).
-Proof. intros. apply H1. assumption. Qed.
+  (* All ReLU outputs are non-negative *)
+  forall i, (i < n)%nat -> nth i out 0 >= 0.
+Proof.
+  intros n inp out Hinlen Houtlen Hrelu i Hi.
+  specialize (Hrelu i Hi). destruct Hrelu as [Hpos Hneg].
+  destruct (Z_ge_lt_dec (nth i inp 0) 0) as [Hge | Hlt].
+  - rewrite Hpos by lia. lia.
+  - rewrite Hneg by lia. lia.
+Qed.

@@ -36,16 +36,24 @@ Theorem BabyCompress_layout :
   (forall i, (i < 254)%nat -> nth i out 0 = nth i yBits 0) ->
   nth 254 out 0 = 0 ->
   nth 255 out 0 = nth 0 xBits 0 ->
-  (* y bits are correctly placed *)
-  (forall i, (i < 254)%nat -> nth i out 0 = nth i yBits 0) /\
-  (* Padding bit is zero *)
-  nth 254 out 0 = 0 /\
-  (* Sign bit is LSB of x *)
-  nth 255 out 0 = nth 0 xBits 0.
+  (* All output bits are binary *)
+  all_binary out.
 Proof.
   intros x y xBits yBits out HxLen HyLen HxBin HyBin Hx Hy
     HoutLen Hybits Hpad Hsign.
-  repeat split; assumption.
+  unfold all_binary. apply Forall_nth.
+  intros i d Hi. rewrite nth_indep with (d' := 0) by lia.
+  rewrite HoutLen in Hi.
+  destruct (Nat.lt_ge_cases i 254) as [Hlt254 | Hge254].
+  - (* i < 254: from yBits *)
+    rewrite Hybits by exact Hlt254.
+    eapply Forall_nth; [exact HyBin | lia].
+  - destruct (Nat.eq_dec i 254) as [Heq254 | Hne254].
+    + (* i = 254: padding = 0 *)
+      subst i. rewrite Hpad. left. reflexivity.
+    + (* i = 255: from xBits[0] *)
+      assert (i = 255)%nat by lia. subst i.
+      rewrite Hsign. eapply Forall_nth; [exact HxBin | lia].
 Qed.
 
 (** The sign bit is binary. *)

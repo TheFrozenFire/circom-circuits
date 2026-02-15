@@ -16,8 +16,12 @@ Open Scope Z_scope.
 
 Theorem CalculateTotal_spec : forall (inputs : list Z) (out : Z),
   out = list_sum inputs ->
-  out = list_sum inputs.
-Proof. intros. assumption. Qed.
+  out = list_sum inputs /\ (Forall (fun x => 0 <= x) inputs -> 0 <= out).
+Proof.
+  intros inputs out H. split.
+  - exact H.
+  - intro Hnn. subst out. apply list_sum_nonneg. exact Hnn.
+Qed.
 
 (** ** CalculateProduct (aggregate.circom:16-28)
     Constraints:
@@ -29,5 +33,9 @@ Proof. intros. assumption. Qed.
 
 Theorem CalculateProduct_spec : forall (inputs : list Z) (out : Z),
   out = list_product inputs ->
-  out = list_product inputs.
-Proof. intros. assumption. Qed.
+  out = list_product inputs /\ (Forall (fun x => 0 <= x) inputs -> 0 <= out).
+Proof.
+  intros inputs out H. split.
+  - exact H.
+  - intro Hnn. subst out. apply list_product_nonneg. exact Hnn.
+Qed.

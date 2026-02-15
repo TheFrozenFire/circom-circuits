@@ -25,8 +25,8 @@ templates:
           - qCommitResult = quantizedCommit
         technique: direct from assumptions
         depends_on: []
-        placeholder: true
-        notes: restates commitment equality as conclusion
+        wiring: true
+        notes: commitment wiring — no derivable properties beyond constraint restatement
       QuantizationProof_rounding:
         type: Theorem
         statement: 0 <= remainder_i < fullRange

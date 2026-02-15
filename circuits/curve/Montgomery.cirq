@@ -15,14 +15,12 @@ templates:
     properties:
       Edwards2Montgomery_spec:
         type: Theorem
-        statement: u * (1 - y) = 1 + y /\ v * x = u
+        statement: v * x * (1 - y) = 1 + y
         assumes:
           - u * (1 - y) = 1 + y
           - v * x = u
-        technique: direct from assumptions
+        technique: substitute u (= v*x) into first constraint, lia
         depends_on: []
-        placeholder: true
-        notes: restates constraints as conclusion
       Edwards2Montgomery_welldefined:
         type: Theorem
         statement: (1 - y) /= 0 /\ x /= 0
@@ -42,14 +40,12 @@ templates:
     properties:
       Montgomery2Edwards_spec:
         type: Theorem
-        statement: x * v = u /\ y * (u + 1) = u - 1
+        statement: y * (x * v + 1) = x * v - 1
         assumes:
           - x * v = u
           - y * (u + 1) = u - 1
-        technique: direct from assumptions
+        technique: substitute u (= x*v) into second constraint, lia
         depends_on: []
-        placeholder: true
-        notes: restates constraints as conclusion
 
   MontgomeryAdd:
     source: montgomery.circom:33-51
@@ -61,18 +57,13 @@ templates:
     properties:
       MontgomeryAdd_spec:
         type: Theorem
-        statement: >
-          lambda * (x2 - x1) = y2 - y1 /\
-          x3 = B * lambda^2 - A - x1 - x2 /\
-          y3 = lambda * (x1 - x3) - y1
+        statement: y3 = lambda * (x1 - (B * lambda^2 - A - x1 - x2)) - y1
         assumes:
           - lambda * (x2 - x1) = y2 - y1
           - x3 = B * lambda * lambda - A - x1 - x2
           - y3 = lambda * (x1 - x3) - y1
-        technique: direct from assumptions
+        technique: substitute x3 into y3 equation, lia
         depends_on: []
-        placeholder: true
-        notes: restates addition law constraints as conclusion
 
   MontgomeryDouble:
     source: montgomery.circom:57-77
@@ -86,16 +77,12 @@ templates:
       MontgomeryDouble_spec:
         type: Theorem
         statement: >
-          x1_2 = x1^2 /\
-          lambda * (2*B*y1) = 3*x1_2 + 2*A*x1 + 1 /\
-          x3 = B*lambda^2 - A - 2*x1 /\
-          y3 = lambda*(x1 - x3) - y1
+          lambda * (2*B*y1) = 3*x1^2 + 2*A*x1 + 1 /\
+          y3 = lambda * (x1 - (B*lambda^2 - A - 2*x1)) - y1
         assumes:
           - x1_2 = x1 * x1
           - lambda * (2 * B * y1) = 3 * x1_2 + 2 * A * x1 + 1
           - x3 = B * lambda * lambda - A - 2 * x1
           - y3 = lambda * (x1 - x3) - y1
-        technique: direct from assumptions
+        technique: substitute x1_2 and x3, lia
         depends_on: []
-        placeholder: true
-        notes: restates doubling law constraints as conclusion

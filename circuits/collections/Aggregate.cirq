@@ -12,12 +12,12 @@ templates:
     properties:
       CalculateTotal_spec:
         type: Theorem
-        statement: out = list_sum inputs
+        statement: out = list_sum inputs /\ (Forall (fun x => 0 <= x) inputs -> 0 <= out)
         assumes: [out = list_sum inputs]
-        technique: direct from assumption
-        depends_on: [Primitives.list_sum]
-        placeholder: true
-        notes: restates linear constraint as conclusion
+        technique: first conjunct direct, second via list_sum_nonneg after subst
+        depends_on:
+          - Primitives.list_sum
+          - Primitives.list_sum_nonneg
 
   CalculateProduct:
     source: aggregate.circom:16-28
@@ -28,9 +28,9 @@ templates:
     properties:
       CalculateProduct_spec:
         type: Theorem
-        statement: out = list_product inputs
+        statement: out = list_product inputs /\ (Forall (fun x => 0 <= x) inputs -> 0 <= out)
         assumes: [out = list_product inputs]
-        technique: direct from assumption
-        depends_on: [Primitives.list_product]
-        placeholder: true
-        notes: restates product constraint as conclusion
+        technique: first conjunct direct, second via list_product_nonneg after subst
+        depends_on:
+          - Primitives.list_product
+          - Primitives.list_product_nonneg

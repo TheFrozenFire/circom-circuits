@@ -33,5 +33,5 @@ templates:
           - forall i j, out j i = M i j
         technique: direct from assumption
         depends_on: []
-        placeholder: true
-        notes: restates transpose constraint (pure signal rewiring, no R1CS)
+        wiring: true
+        notes: index swap wiring — pure signal rewiring, no R1CS

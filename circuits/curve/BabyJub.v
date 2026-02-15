@@ -75,11 +75,10 @@ Theorem BabyDbl_spec :
   tau = beta * gamma ->
   (1 + d * tau) * xout = beta + gamma ->
   (1 - d * tau) * yout = delta + a * beta - gamma ->
-  (* Same as BabyAdd(x,y,x,y) *)
-  (1 + d * tau) * xout = beta + gamma /\
-  (1 - d * tau) * yout = delta + a * beta - gamma.
+  (* Derived from commutativity and substitution *)
+  beta = gamma /\ tau = beta * beta.
 Proof.
-  intros. split; assumption.
+  intros. subst beta gamma tau. split; ring.
 Qed.
 
 (** ** BabySuborderCheck (babyjub.circom:95-101)

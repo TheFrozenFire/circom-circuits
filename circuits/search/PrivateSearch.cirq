@@ -19,12 +19,15 @@ templates:
     properties:
       PrivateSearch_sound:
         type: Theorem
-        statement: computedRoot = merkleRoot /\ distSq < maxDistSq
+        statement: >
+          computedRoot = merkleRoot /\ distSq < maxDistSq /\
+          0 <= distSq < 2^bits /\ 0 <= maxDistSq < 2^bits
         assumes:
           - length query = n, length document = n
           - Merkle path: length pathIndices = dbDepth, all_binary pathIndices
           - computedRoot = merkleRoot
-          - LessThan range constraints on distSq and maxDistSq
+          - bit decompositions: distBits/maxDistBits with all_binary and length = bits
           - distSq < maxDistSq
-        technique: split; both direct from assumptions
-        depends_on: []
+        technique: first two from assumptions, bounds derived via bits_to_num_bound
+        depends_on:
+          - Primitives.bits_to_num_bound

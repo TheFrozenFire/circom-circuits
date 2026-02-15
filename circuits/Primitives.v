@@ -164,6 +164,16 @@ Proof.
   apply binary_constraint. apply Hbin. exact Hi.
 Qed.
 
+(** Any index into an all-binary list is binary (handles out-of-bounds via nth_overflow → 0). *)
+Lemma all_binary_nth_any : forall bits i,
+  all_binary bits -> is_binary (nth i bits 0).
+Proof.
+  intros bits i Hall.
+  destruct (Nat.lt_ge_cases i (length bits)) as [Hlt | Hge].
+  - eapply Forall_nth; [exact Hall | exact Hlt].
+  - rewrite nth_overflow by lia. left. reflexivity.
+Qed.
+
 (** skipn preserves all_binary. *)
 Lemma all_binary_skipn : forall bits k,
   all_binary bits -> all_binary (skipn k bits).
@@ -216,6 +226,16 @@ Lemma list_sum_cons : forall x rest,
   list_sum (x :: rest) = x + list_sum rest.
 Proof. intros. reflexivity. Qed.
 
+(** list_sum of non-negative values is non-negative. *)
+Lemma list_sum_nonneg : forall l,
+  Forall (fun x => 0 <= x) l -> 0 <= list_sum l.
+Proof.
+  induction l as [| x rest IH].
+  - intros _. simpl. lia.
+  - intro Hall. inversion_clear Hall.
+    rewrite list_sum_cons. assert (0 <= list_sum rest) by (apply IH; assumption). lia.
+Qed.
+
 (** list_sum of binary values is non-negative. *)
 Lemma list_sum_nonneg_binary : forall l,
   Forall is_binary l -> 0 <= list_sum l.
@@ -254,6 +274,17 @@ Fixpoint list_product (l : list Z) : Z :=
   | [] => 1
   | x :: rest => x * list_product rest
   end.
+
+(** list_product of non-negative values is non-negative. *)
+Lemma list_product_nonneg : forall l,
+  Forall (fun x => 0 <= x) l -> 0 <= list_product l.
+Proof.
+  induction l as [| x rest IH].
+  - intros _. simpl. lia.
+  - intro Hall. inversion_clear Hall. simpl.
+    assert (0 <= list_product rest) by (apply IH; assumption).
+    apply Z.mul_nonneg_nonneg; assumption.
+Qed.
 
 (** An AND-chain of binary values equals 1 iff all values are 1. *)
 Lemma binary_and_chain : forall (eqs : list Z),

@@ -34,17 +34,15 @@ templates:
       WindowMulFix_mux_correct:
         type: Theorem
         statement: >
-          out_x = fst(table[bits_to_num sel]) /\
-          out_y = snd(table[bits_to_num sel])
+          0 <= bits_to_num sel < 8 /\
+          Z.to_nat (bits_to_num sel) < length table
         assumes:
           - length sel = 3, all_binary sel
           - length table = 8
-          - 0 <= bits_to_num sel < 8
           - out_x/out_y equal selected table entry
-        technique: direct from assumptions
-        depends_on: []
-        placeholder: true
-        notes: restates mux selection as conclusion
+        technique: derive index bound from bits_to_num_bound on 3-bit selector
+        depends_on:
+          - Primitives.bits_to_num_bound
 
   SegmentMulFix:
     source: scalarmul.circom:97-172

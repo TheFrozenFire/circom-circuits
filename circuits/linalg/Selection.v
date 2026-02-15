@@ -26,9 +26,3 @@ Proof.
   specialize (Hge i Hi). lia.
 Qed.
 
-Theorem Max_ge_all : forall (inputs : list Z) (out : Z),
-  (forall i, (i < length inputs)%nat -> out >= nth i inputs 0) ->
-  forall i, (i < length inputs)%nat -> nth i inputs 0 <= out.
-Proof.
-  intros inputs out Hge i Hi. specialize (Hge i Hi). lia.
-Qed.

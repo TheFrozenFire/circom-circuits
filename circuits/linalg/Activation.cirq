@@ -43,12 +43,9 @@ templates:
     properties:
       ReLUVector_spec:
         type: Theorem
-        statement: >
-          forall i < n, (inp[i] >= 0 -> out[i] = inp[i]) /\ (inp[i] < 0 -> out[i] = 0)
+        statement: forall i < n, nth i out 0 >= 0
         assumes:
           - length inp = n, length out = n
           - per-element ReLU correctness
-        technique: direct from per-element assumption
+        technique: case split on sign of inp[i], apply positive or zero branch
         depends_on: [ReLU_correct]
-        placeholder: true
-        notes: restates per-element ReLU correctness as conclusion

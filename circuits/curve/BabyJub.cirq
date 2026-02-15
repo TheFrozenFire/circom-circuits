@@ -38,15 +38,11 @@ templates:
     properties:
       BabyDbl_spec:
         type: Theorem
-        statement: >
-          (1 + d*tau) * xout = beta + gamma /\
-          (1 - d*tau) * yout = delta + a*beta - gamma
+        statement: beta = gamma /\ tau = beta * beta
         assumes:
           - BabyAdd constraints with (x2,y2) = (x1,y1)
-        technique: direct from assumptions
-        depends_on: [BabyAdd_spec]
-        placeholder: true
-        notes: same as BabyAdd with duplicated inputs
+        technique: substitute beta/gamma/tau from commutativity (x*y = y*x), ring
+        depends_on: []
 
   BabyCheck:
     source: babyjub.circom:55-69

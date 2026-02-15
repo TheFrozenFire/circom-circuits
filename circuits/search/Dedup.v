@@ -42,15 +42,15 @@ Theorem PrivateDedup_sound :
   0 <= minDistSq ->
   0 <= distSq ->
   minDistSq < distSq ->
-  (* Conclusions *)
+  (* Conclusions — derive positive gap *)
   docHash = documentCommit /\
   computedRoot = merkleRoot /\
-  minDistSq < distSq.
+  0 < distSq - minDistSq.
 Proof.
   intros n dbDepth bits document candidate
     docHash documentCommit candHash computedRoot merkleRoot
     distSq minDistSq pathIndices siblings
     Hdlen Hclen HdocCommit HpLen HpBin HsLen Hroot
     HminRange HdistRange Hlt.
-  repeat split; assumption.
+  repeat split; (assumption || lia).
 Qed.

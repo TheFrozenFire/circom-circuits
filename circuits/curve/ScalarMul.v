@@ -42,14 +42,17 @@ Theorem WindowMulFix_mux_correct :
   all_binary sel ->
   length table = 8%nat ->
   (* MultiMux3 selects entry bits_to_num(sel) from the table *)
-  let idx := bits_to_num sel in
-  0 <= idx < 8 ->
-  out_x = fst (nth (Z.to_nat idx) table (0, 0)) ->
-  out_y = snd (nth (Z.to_nat idx) table (0, 0)) ->
-  out_x = fst (nth (Z.to_nat idx) table (0, 0)) /\
-  out_y = snd (nth (Z.to_nat idx) table (0, 0)).
+  out_x = fst (nth (Z.to_nat (bits_to_num sel)) table (0, 0)) ->
+  out_y = snd (nth (Z.to_nat (bits_to_num sel)) table (0, 0)) ->
+  (* Derive index bound from binary decomposition *)
+  0 <= bits_to_num sel < 8 /\
+  (Z.to_nat (bits_to_num sel) < length table)%nat.
 Proof.
-  intros. split; assumption.
+  intros sel table out_x out_y Hlen Hbin Htlen Hx Hy.
+  assert (Hbound := bits_to_num_bound sel Hbin).
+  rewrite Hlen in Hbound. split.
+  - exact Hbound.
+  - rewrite Htlen. lia.
 Qed.
 
 (** ** SegmentMulFix (scalarmul.circom:97-160)

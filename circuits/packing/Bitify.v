@@ -72,10 +72,13 @@ Qed.
     No binary enforcement — the caller is responsible for ensuring inputs are binary. *)
 
 Theorem Bits2Num_spec : forall (inp : list Z) (out : Z),
+  all_binary inp ->
   out = bits_to_num inp ->
-  out = bits_to_num inp.
+  out = bits_to_num inp /\ 0 <= out < 2 ^ Z.of_nat (length inp).
 Proof.
-  intros inp out H. exact H.
+  intros inp out Hall Hout.
+  split; [exact Hout |].
+  subst out. apply bits_to_num_bound. exact Hall.
 Qed.
 
 (** When inputs are known binary, Bits2Num output matches the expected value

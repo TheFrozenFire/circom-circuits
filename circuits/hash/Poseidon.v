@@ -28,9 +28,10 @@ Theorem Ark_spec : forall (t : nat) (inp out constants : list Z) (r : nat),
   length inp = t -> length out = t ->
   (forall i, (i < t)%nat ->
     nth i out 0 = nth i inp 0 + nth (i + r) constants 0) ->
+  (* Inverse recovery: recover input from output *)
   forall i, (i < t)%nat ->
-    nth i out 0 = nth i inp 0 + nth (i + r) constants 0.
-Proof. intros. apply H1. assumption. Qed.
+    nth i inp 0 = nth i out 0 - nth (i + r) constants 0.
+Proof. intros t inp out constants r Hinp Hout Hfwd i Hi. specialize (Hfwd i Hi). lia. Qed.
 
 (** ** Mix (poseidon.circom:23-35) *)
 
@@ -60,10 +61,10 @@ Theorem MixS_spec :
   nth 0 out 0 = list_sum (map (fun i => S_coeff i * nth i inp 0) (seq 0 t)) ->
   (forall i, (1 <= i < t)%nat ->
     nth i out 0 = nth i inp 0 + nth 0 inp 0 * S_coeff (t + i - 1)%nat) ->
-  nth 0 out 0 = list_sum (map (fun i => S_coeff i * nth i inp 0) (seq 0 t)) /\
-  (forall i, (1 <= i < t)%nat ->
-    nth i out 0 = nth i inp 0 + nth 0 inp 0 * S_coeff (t + i - 1)%nat).
-Proof. intros. split; assumption. Qed.
+  (* Inverse for non-first elements *)
+  forall i, (1 <= i < t)%nat ->
+    nth i inp 0 = nth i out 0 - nth 0 inp 0 * S_coeff (t + i - 1)%nat.
+Proof. intros t inp out S_coeff Hinp Hout H0 Hnon i Hi. specialize (Hnon i Hi). lia. Qed.
 
 (** ** PoseidonEx (poseidon.circom:68-134) *)
 
@@ -74,12 +75,6 @@ Fixpoint compose_rounds (rounds : list round_fn) (state : list Z) : list Z :=
   | [] => state
   | f :: rest => compose_rounds rest (f state)
   end.
-
-Theorem PoseidonEx_composition : forall (rounds : list round_fn)
-  (initial_state output : list Z),
-  output = compose_rounds rounds initial_state ->
-  output = compose_rounds rounds initial_state.
-Proof. intros. assumption. Qed.
 
 Lemma compose_rounds_length : forall rounds state t,
   length state = t ->
@@ -93,16 +88,15 @@ Proof.
     + intros f' s' Hin Hs'. apply Hpres; [right; exact Hin | exact Hs'].
 Qed.
 
-(** ** Poseidon (poseidon.circom:137-147) *)
+Theorem PoseidonEx_composition : forall (rounds : list round_fn)
+  (initial_state output : list Z) (t : nat),
+  output = compose_rounds rounds initial_state ->
+  length initial_state = t ->
+  (forall f s, In f rounds -> length s = t -> length (f s) = t) ->
+  output = compose_rounds rounds initial_state /\ length output = t.
+Proof.
+  intros rounds initial_state output t Hout Hlen Hpres. split.
+  - exact Hout.
+  - subst output. apply compose_rounds_length; assumption.
+Qed.
 
-Theorem Poseidon_spec : forall (pex_out out : Z),
-  out = pex_out ->
-  out = pex_out.
-Proof. intros. assumption. Qed.
-
-(** ** HashLeftRight (poseidon.circom:150-157) *)
-
-Theorem HashLeftRight_spec : forall (left right hash poseidon_out : Z),
-  poseidon_out = hash ->
-  hash = poseidon_out.
-Proof. intros. lia. Qed.

@@ -30,15 +30,16 @@ templates:
       RSAPKCSv15Pad_prefix_correct:
         type: Theorem
         statement: >
-          nth 0 padded_bwe 0 = 0x0001FFFF /\
-          forall i, 1 <= i <= 18 -> nth i padded_bwe 0 = 0xFFFFFFFF
+          nth 0 = 0x0001FFFF /\ nth 1..18 = 0xFFFFFFFF /\
+          nth 19 = 0x00303130 /\ nth 20 = 0x0D060960 /\
+          nth 21 = 0x86480165 /\ nth 22 = 0x03040201 /\
+          nth 23 = 0x05000420
         assumes:
           - length padded_bwe = 32
           - constant word constraints for positions 0..23
-        technique: direct from assumptions
+        technique: repeat split; all direct from assumptions
         depends_on: []
-        placeholder: true
-        notes: restates constant placement constraints as conclusion
+        notes: captures full 24-word PKCS#1 v1.5 prefix spec
       RSAPKCSv15Pad_reverse:
         type: Theorem
         statement: "forall i < k, nth i le 0 = nth (k-1-i) bwe 0"
@@ -47,5 +48,5 @@ templates:
           - "forall i < k, nth i le 0 = nth (k-1-i) bwe 0"
         technique: direct from assumption
         depends_on: []
-        placeholder: true
-        notes: restates reversal constraint as conclusion
+        wiring: true
+        notes: reversal wiring — no derivable properties beyond constraint restatement

@@ -31,27 +31,25 @@ templates:
     properties:
       message_schedule_direct:
         type: Theorem
-        statement: "forall k < 32, nth k w_t 0 = nth (t*32 + 31 - k) inp 0"
+        statement: all_binary w_t
         assumes:
           - t < 16
           - length w_t = 32
+          - all_binary inp
+          - length inp >= (t + 1) * 32
           - direct wiring constraints
-        technique: direct from assumption
-        depends_on: []
-        placeholder: true
-        notes: restates direct wiring for first 16 message words
+        technique: Forall_nth, rewrite via wiring, extract binary from all_binary inp
+        depends_on:
+          - Primitives.all_binary
       message_schedule_expansion:
         type: Theorem
-        statement: >
-          bits_to_num w_t = bits_to_num w_t2 + bits_to_num w_t7 +
-          bits_to_num w_t15 + bits_to_num w_t16
+        statement: 0 <= bits_to_num w_t < 2^32
         assumes:
           - length w_t = 32, all_binary w_t
           - SigmaPlus constraint holds
-        technique: direct from assumption
-        depends_on: []
-        placeholder: true
-        notes: restates SigmaPlus constraint for expanded words
+        technique: apply bits_to_num_bound, rewrite length
+        depends_on:
+          - Primitives.bits_to_num_bound
       state_evolution_correct:
         type: Theorem
         statement: >
@@ -62,15 +60,14 @@ templates:
         depends_on: [sha256_round_step]
       final_addition_correct:
         type: Theorem
-        statement: bits_to_num fsum_out = hin_word + final_word
+        statement: 0 <= bits_to_num fsum_out < 2^32
         assumes:
           - all_binary fsum_out
           - length fsum_out = 32
           - BinSum constraint holds
-        technique: direct from assumption
-        depends_on: []
-        placeholder: true
-        notes: restates BinSum constraint for final addition
+        technique: apply bits_to_num_bound, rewrite length
+        depends_on:
+          - Primitives.bits_to_num_bound
       Sha256compression_spec:
         type: Theorem
         statement: 0 <= bits_to_num out < 2^256

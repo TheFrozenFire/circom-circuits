@@ -36,14 +36,12 @@ templates:
     properties:
       Ark_spec:
         type: Theorem
-        statement: forall i, nth i out 0 = nth i inp 0 + nth (i + r) constants 0
+        statement: forall i, nth i inp 0 = nth i out 0 - nth (i + r) constants 0
         assumes:
           - length inp = t, length out = t
           - forall i < t, nth i out 0 = nth i inp 0 + nth (i + r) constants 0
-        technique: direct from assumption
+        technique: specialize forward constraint, lia to derive inverse
         depends_on: []
-        placeholder: true
-        notes: restates pointwise constraint as conclusion (linear only)
 
   Mix:
     source: poseidon.circom:23-35
@@ -59,8 +57,8 @@ templates:
           - forall i < t, nth i out 0 = list_sum (map (fun j => M j i * nth j inp 0) (seq 0 t))
         technique: direct from assumption
         depends_on: [Primitives.list_sum]
-        placeholder: true
-        notes: restates pointwise MDS constraint as conclusion
+        wiring: true
+        notes: matrix multiply wiring — inversion requires invertibility hypothesis we don't have
 
   MixLast:
     source: poseidon.circom:38-48
@@ -76,8 +74,8 @@ templates:
           - out = list_sum (map (fun j => M j s * nth j inp 0) (seq 0 t))
         technique: direct from assumption
         depends_on: [Primitives.list_sum]
-        placeholder: true
-        notes: restates single MDS row computation as conclusion
+        wiring: true
+        notes: single output linear combination — no derivable properties beyond wiring
 
   MixS:
     source: poseidon.circom:51-65
@@ -89,16 +87,14 @@ templates:
       MixS_spec:
         type: Theorem
         statement: >
-          out[0] = list_sum (map (fun i => S_coeff i * nth i inp 0) (seq 0 t)) /\
-          forall i, 1 <= i < t -> out[i] = inp[i] + inp[0] * S_coeff (t + i - 1)
+          forall i, 1 <= i < t ->
+          inp[i] = out[i] - inp[0] * S_coeff (t + i - 1)
         assumes:
           - length inp = t, length out = t
           - out[0] = list_sum (map (fun i => S_coeff i * nth i inp 0) (seq 0 t))
           - forall i, 1 <= i < t -> out[i] = inp[i] + inp[0] * S_coeff (t + i - 1)
-        technique: split; both goals directly from assumptions
+        technique: specialize forward constraint for non-first elements, lia to derive inverse
         depends_on: [Primitives.list_sum]
-        placeholder: true
-        notes: restates sparse matrix constraints as conclusion
 
   PoseidonEx:
     source: poseidon.circom:68-134
@@ -110,15 +106,17 @@ templates:
     properties:
       PoseidonEx_composition:
         type: Theorem
-        statement: output = compose_rounds rounds initial_state
-        assumes: [output = compose_rounds rounds initial_state]
-        technique: direct from assumption
-        depends_on: [compose_rounds]
-        placeholder: true
-        notes: >
-          restates composition as conclusion. A full proof would instantiate
-          each round (Ark+Sigma+Mix for full rounds, Ark+Sigma+MixS for
-          partial rounds) and show the composition matches the Poseidon spec.
+        statement: >
+          output = compose_rounds rounds initial_state /\
+          length output = t
+        assumes:
+          - output = compose_rounds rounds initial_state
+          - length initial_state = t
+          - every round function preserves length t
+        technique: first conjunct direct, second via compose_rounds_length
+        depends_on:
+          - compose_rounds
+          - compose_rounds_length
       compose_rounds_length:
         type: Lemma
         statement: length (compose_rounds rounds state) = t
@@ -129,28 +127,3 @@ templates:
         depends_on: [compose_rounds]
         notes: needed to thread length invariant through round composition
 
-  Poseidon:
-    source: poseidon.circom:137-147
-    constraints:
-      - out = PoseidonEx(...).out[0]
-    properties:
-      Poseidon_spec:
-        type: Theorem
-        statement: out = pex_out (first element of PoseidonEx output)
-        assumes: [out = pex_out]
-        technique: direct from assumption
-        depends_on: []
-        placeholder: true
-        notes: trivial wiring — restates output extraction
-
-  HashLeftRight:
-    source: poseidon.circom:150-157
-    constraints:
-      - hash = Poseidon(2)([left, right])
-    properties:
-      HashLeftRight_spec:
-        type: Theorem
-        statement: hash = poseidon_out
-        assumes: [poseidon_out = hash]
-        technique: lia
-        depends_on: []

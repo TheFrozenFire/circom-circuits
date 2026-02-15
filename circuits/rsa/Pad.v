@@ -42,7 +42,7 @@ Proof.
   intros n Hn. rewrite Hp1len in Hn. apply Hpad. exact Hn.
 Qed.
 
-(** The constant padding words are correctly placed. *)
+(** The constant padding words are correctly placed — full 24-word prefix. *)
 Theorem RSAPKCSv15Pad_prefix_correct :
   forall (padded_bwe : list Z),
   length padded_bwe = 32%nat ->
@@ -53,10 +53,15 @@ Theorem RSAPKCSv15Pad_prefix_correct :
   nth 21 padded_bwe 0 = 0x86480165 ->
   nth 22 padded_bwe 0 = 0x03040201 ->
   nth 23 padded_bwe 0 = 0x05000420 ->
-  (* First 24 words match PKCS#1 v1.5 format *)
+  (* Full PKCS#1 v1.5 prefix spec *)
   nth 0 padded_bwe 0 = 0x0001FFFF /\
-  (forall i, (1 <= i <= 18)%nat -> nth i padded_bwe 0 = 0xFFFFFFFF).
-Proof. intros. split; assumption. Qed.
+  (forall i, (1 <= i <= 18)%nat -> nth i padded_bwe 0 = 0xFFFFFFFF) /\
+  nth 19 padded_bwe 0 = 0x00303130 /\
+  nth 20 padded_bwe 0 = 0x0D060960 /\
+  nth 21 padded_bwe 0 = 0x86480165 /\
+  nth 22 padded_bwe 0 = 0x03040201 /\
+  nth 23 padded_bwe 0 = 0x05000420.
+Proof. intros. repeat split; assumption. Qed.
 
 (** The reversal produces correct little-endian order. *)
 Theorem RSAPKCSv15Pad_reverse :

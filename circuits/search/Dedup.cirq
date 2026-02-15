@@ -23,7 +23,7 @@ templates:
         statement: >
           docHash = documentCommit /\
           computedRoot = merkleRoot /\
-          minDistSq < distSq
+          0 < distSq - minDistSq
         assumes:
           - length document = n, length candidate = n
           - docHash = documentCommit
@@ -31,5 +31,5 @@ templates:
           - computedRoot = merkleRoot
           - 0 <= minDistSq, 0 <= distSq
           - minDistSq < distSq
-        technique: repeat split; all direct from assumptions
+        technique: first two direct, third derives positive gap via lia
         depends_on: []

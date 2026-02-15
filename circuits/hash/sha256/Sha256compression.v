@@ -25,9 +25,19 @@ Theorem message_schedule_direct :
   forall (t : nat) (inp w_t : list Z),
   (t < 16)%nat ->
   length w_t = 32%nat ->
+  all_binary inp ->
+  (length inp >= (t + 1) * 32)%nat ->
   (forall k, (k < 32)%nat -> nth k w_t 0 = nth (t * 32 + 31 - k) inp 0) ->
-  forall k, (k < 32)%nat -> nth k w_t 0 = nth (t * 32 + 31 - k) inp 0.
-Proof. intros. apply H1. assumption. Qed.
+  (* The direct schedule word is all binary *)
+  all_binary w_t.
+Proof.
+  intros t inp w_t Ht Hwlen Hinpbin Hinplen Hwire.
+  unfold all_binary. apply Forall_nth.
+  intros i d Hi. rewrite Hwlen in Hi.
+  rewrite nth_indep with (d' := 0) by lia.
+  rewrite Hwire by lia.
+  eapply Forall_nth; [exact Hinpbin | lia].
+Qed.
 
 Theorem message_schedule_expansion :
   forall (w_t2 w_t7 w_t15 w_t16 w_t : list Z),
@@ -37,10 +47,13 @@ Theorem message_schedule_expansion :
   bits_to_num w_t =
     bits_to_num w_t2 + bits_to_num w_t7 +
     bits_to_num w_t15 + bits_to_num w_t16 ->
-  bits_to_num w_t =
-    bits_to_num w_t2 + bits_to_num w_t7 +
-    bits_to_num w_t15 + bits_to_num w_t16.
-Proof. intros. assumption. Qed.
+  (* Range bound on the expanded word *)
+  0 <= bits_to_num w_t < 2 ^ 32.
+Proof.
+  intros w_t2 w_t7 w_t15 w_t16 w_t Hlen Hbin Hsum.
+  assert (Hbound := bits_to_num_bound w_t Hbin).
+  rewrite Hlen in Hbound. exact Hbound.
+Qed.
 
 (** ** State evolution (sha256compression.circom:80-112)
 
@@ -88,8 +101,13 @@ Theorem final_addition_correct :
   all_binary fsum_out ->
   length fsum_out = 32%nat ->
   bits_to_num fsum_out = hin_word + final_word ->
-  bits_to_num fsum_out = hin_word + final_word.
-Proof. intros. assumption. Qed.
+  (* Range bound on the final addition output *)
+  0 <= bits_to_num fsum_out < 2 ^ 32.
+Proof.
+  intros hin_word final_word fsum_out Hbin Hlen Hsum.
+  assert (Hbound := bits_to_num_bound fsum_out Hbin).
+  rewrite Hlen in Hbound. exact Hbound.
+Qed.
 
 (** ** Full compression function
 
