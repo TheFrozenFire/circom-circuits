@@ -30,3 +30,9 @@ linalg/Similarity.v
 linalg/Orthogonal.v
 rsa/Pad.v
 rsa/Blind.v
+hash/sha256/Sigma.v
+hash/sha256/SigmaPlus.v
+hash/sha256/T1.v
+hash/sha256/T2.v
+hash/sha256/Sha256compression.v
+hash/sha256/Sha256.v
