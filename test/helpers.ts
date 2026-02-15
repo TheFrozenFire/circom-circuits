@@ -1,5 +1,5 @@
-import { Build, SnarkJSSetup } from "@frozenfire/circom-build";
-import { Witness, SymbolReader } from "@frozenfire/circom-witness";
+import { Build, SnarkJSSetup, type R1CSDetails } from "@frozenfire/circom-build";
+import { Witness, SymbolReader, type SymbolMap } from "@frozenfire/circom-witness";
 import { readFile } from "fs/promises";
 
 export type CircuitDef = {
@@ -50,6 +50,40 @@ export async function compile_and_count(def: CircuitDef): Promise<number> {
         const setup = new SnarkJSSetup(command.paths.r1cs);
         const details = await setup.r1cs_details;
         return details.nConstraints;
+    })();
+
+    return Promise.race([compile, timeout]);
+}
+
+/**
+ * Compile a circuit and return its R1CS details + symbol map for analysis.
+ * Rejects if compilation exceeds COMPILE_TIMEOUT_MS.
+ */
+export async function compile_and_analyze(def: CircuitDef): Promise<{
+    details: R1CSDetails;
+    symbols: SymbolMap;
+}> {
+    const build = new Build(
+        def.path,
+        def.template,
+        def.params ?? [],
+        "2.2.2",
+        def.publicInputs ?? []
+    );
+
+    const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(
+            `compile_and_analyze timed out after ${COMPILE_TIMEOUT_MS}ms: ${def.template}(${(def.params ?? []).join(",")})`
+        )), COMPILE_TIMEOUT_MS)
+    );
+
+    const compile = (async () => {
+        const { command } = await build.compile();
+        const setup = new SnarkJSSetup(command.paths.r1cs);
+        const details = await setup.r1cs_details;
+        const symContent = await readFile(command.paths.sym, "utf-8");
+        const symbols = new SymbolReader(symContent).readSymbolMap();
+        return { details, symbols };
     })();
 
     return Promise.race([compile, timeout]);
