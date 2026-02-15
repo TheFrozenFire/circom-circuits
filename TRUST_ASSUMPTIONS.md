@@ -57,7 +57,7 @@ These are known gaps between what the proofs cover and full end-to-end verificat
 
 | Gap | Description | Mitigation | Issue |
 |---|---|---|---|
-| **Z vs F_p** | Proofs reason over unbounded integers, not the prime field F_p. Results hold only when intermediate values stay within the field modulus. | Circuits in this library use values well within 2^253 in a ~2^254 field, making overflow implausible for normal inputs. | [#4][i4] |
+| **Z vs F_p** | Proofs reason over unbounded integers, not the prime field F_p. Results hold only when intermediate values stay within the field modulus. | Bridged in `FieldBridge.v`. Key templates (Num2Bits, LessThan, BigAdd, BigSub, BigMult, CheckCarryToZero) have proven field-safety conditions showing when Z proofs apply in F_p. Templates without explicit field-safety theorems inherit safety from their components. | [#4][i4] |
 | **Witness generation** | The `<--` (assign-only) computations in circom are not covered by the proofs. A bug in witness generation causes proof generation to fail, not unsoundness. | 1,036 tests exercise witness generation across all circuits. | [#2][i2] |
 | **Under-constraint** | There is no automated check that every signal is fully constrained by `<==` or `===`. An under-constrained signal could allow a malicious prover to forge proofs. | Test coverage, manual audit, and circuit review. | [#3][i3] |
 | **Parameter correctness** | Curve constants (BabyJubjub base point, order), SHA-256 round constants, and Poseidon parameters are assumed correct. | Values are taken from published standards and reference implementations. | -- |
@@ -71,7 +71,7 @@ These are known gaps between what the proofs cover and full end-to-end verificat
 
 **The biggest practical risk is under-constraint** ([#3][i3]). If a signal lacks a constraining equation, a malicious prover can set it to any value and still produce a valid proof. The proofs verify that the constraints *that exist* are correct, but cannot detect missing constraints.
 
-**The Z-vs-F_p gap is low risk for typical use** ([#4][i4]). It matters most for multi-limb arithmetic circuits where intermediate sums approach the field modulus. For the vast majority of circuits in this library (comparators, hashing, curve operations with standard-size inputs), values stay far below the ~2^254 modulus.
+**The Z-vs-F_p gap is bridged for key templates** ([#4][i4]). `FieldBridge.v` provides the BN128 scalar field prime and bridging lemmas, and key templates (Num2Bits, LessThan, BigAdd, BigSub, BigMult, CheckCarryToZero) have proven field-safety theorems showing that under standard parameter constraints (e.g., n <= 253 for bit widths), all intermediate constraint values stay below p, so the Z proofs apply unchanged in F_p.
 
 ## References
 

@@ -4,6 +4,7 @@ From Stdlib Require Import Lia.
 Import ListNotations.
 
 Require Import Primitives.
+Require Import FieldBridge.
 
 Open Scope Z_scope.
 
@@ -145,4 +146,28 @@ Proof.
   assert (isEq = 1) by lia.
   assert (Hiso := IsZero_sound (b - a) isEq inv HisEq Hprod).
   lia.
+Qed.
+
+(** ** Field Safety for LessThan
+
+    When n <= 252, inputs a, b in [0, 2^n), the intermediate value
+    a + 2^n - b is in [1, 2^(n+1) - 1], which is a subset of [0, p_field)
+    since 2^(n+1) <= 2^253 < p. The Z proof applies in F_p. *)
+
+Theorem LessThan_field_safe : forall n : nat, (0 < n)%nat -> (n <= 252)%nat ->
+  forall a b : Z, 0 <= a < 2 ^ Z.of_nat n -> 0 <= b < 2 ^ Z.of_nat n ->
+  in_field a /\ in_field b /\ in_field (a + 2 ^ Z.of_nat n - b).
+Proof.
+  intros n Hn Hn252 a b Ha Hb.
+  assert (Hpow_n : 2 ^ Z.of_nat n < p_field)
+    by (apply pow2_lt_p_field; lia).
+  assert (Hpow_sn : 2 ^ Z.of_nat (S n) < p_field)
+    by (apply pow2_lt_p_field; lia).
+  split; [| split].
+  - apply in_field_of_bound with (n := n); [exact Ha | lia].
+  - apply in_field_of_bound with (n := n); [exact Hb | lia].
+  - unfold in_field.
+    rewrite Nat2Z.inj_succ in Hpow_sn.
+    rewrite Z.pow_succ_r in Hpow_sn by lia.
+    lia.
 Qed.

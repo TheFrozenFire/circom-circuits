@@ -1,6 +1,7 @@
 -R . ""
 
 Primitives.v
+FieldBridge.v
 core/Comparators.v
 core/Bitwise.v
 core/Mux.v

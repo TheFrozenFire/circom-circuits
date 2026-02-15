@@ -4,6 +4,7 @@ From Stdlib Require Import Lia.
 Import ListNotations.
 
 Require Import Primitives.
+Require Import FieldBridge.
 
 Open Scope Z_scope.
 
@@ -125,4 +126,36 @@ Proof.
   - subst out.
     apply bits_to_num_firstn_bound; [exact Hall | exact HnOut].
   - exact Hout.
+Qed.
+
+(** ** Field Safety for Num2Bits
+
+    When n <= 253, all constraint values in Num2Bits are in [0, p_field),
+    so the Z proof applies unchanged in F_p.
+
+    Constraint values are:
+    - Binary products: b*(b-1) = 0 for each bit (trivially in field)
+    - Input decomposition: inp = bits_to_num bits, where inp < 2^n <= 2^253 < p *)
+
+Theorem Num2Bits_field_safe : forall (out : list Z) (inp : Z),
+  (length out <= 253)%nat ->
+  (forall i, (i < length out)%nat ->
+    nth i out 0 * (nth i out 0 - 1) = 0) ->
+  inp = bits_to_num out ->
+  in_field inp /\
+  (forall i, (i < length out)%nat -> in_field (nth i out 0)) /\
+  (forall i, (i < length out)%nat ->
+    in_field (nth i out 0 * (nth i out 0 - 1))).
+Proof.
+  intros out inp Hn Hbin Hsum.
+  assert (Hcorr := Num2Bits_correct out inp Hbin Hsum).
+  destruct Hcorr as [Hall Hrange].
+  split; [| split].
+  - apply in_field_of_bound with (n := length out); [exact Hrange | exact Hn].
+  - intros i Hi.
+    assert (Hbi := all_binary_nth_any out i Hall).
+    apply in_field_binary. exact Hbi.
+  - intros i Hi.
+    specialize (Hbin i Hi). rewrite Hbin.
+    exact in_field_0.
 Qed.

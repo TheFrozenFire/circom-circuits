@@ -4,6 +4,7 @@ From Stdlib Require Import Lia.
 Import ListNotations.
 
 Require Import Primitives.
+Require Import FieldBridge.
 
 Open Scope Z_scope.
 
@@ -488,4 +489,142 @@ Proof.
   intros k eq_vals out Hk Hlen Hbin Hout.
   subst out.
   apply binary_and_chain. assumption.
+Qed.
+
+(** ** Field Safety Theorems *)
+
+(** *** BigAdd: For n <= 252, all constraint values are in [0, p_field).
+
+    Max constraint value: a[i] + b[i] + carry <= 2*(2^n - 1) + 1 < 2^(n+1) <= 2^253 < p.
+    Outputs: out[i] < 2^n < p. Carries are binary (in {0,1}). *)
+
+Theorem BigAdd_field_safe :
+  forall (n : nat) (k : nat),
+  (n <= 252)%nat -> (k >= 1)%nat ->
+  forall (a b : list Z),
+  length a = k -> length b = k ->
+  (forall i, (i < k)%nat -> 0 <= nth i a 0 < 2 ^ Z.of_nat n) ->
+  (forall i, (i < k)%nat -> 0 <= nth i b 0 < 2 ^ Z.of_nat n) ->
+  (forall i, (i < k)%nat -> in_field (nth i a 0)) /\
+  (forall i, (i < k)%nat -> in_field (nth i b 0)) /\
+  (forall i carry, (i < k)%nat -> 0 <= carry <= 1 ->
+    in_field (nth i a 0 + nth i b 0 + carry)).
+Proof.
+  intros n k Hn Hk a b Halen Hblen Ha Hb.
+  assert (Hpow : 2 ^ Z.of_nat n < p_field)
+    by (apply pow2_lt_p_field; lia).
+  assert (Hpow_sn : 2 ^ Z.of_nat (S n) < p_field)
+    by (apply pow2_lt_p_field; lia).
+  split; [| split].
+  - intros i Hi. unfold in_field. specialize (Ha i Hi). lia.
+  - intros i Hi. unfold in_field. specialize (Hb i Hi). lia.
+  - intros i carry Hi Hc. unfold in_field.
+    specialize (Ha i Hi). specialize (Hb i Hi).
+    rewrite Nat2Z.inj_succ in Hpow_sn.
+    rewrite Z.pow_succ_r in Hpow_sn by lia.
+    split; lia.
+Qed.
+
+(** *** BigSub: For n <= 252, all constraint values are in [0, p_field).
+
+    Constraint: out[i] = a[i] - borrow_prev - b[i] + borrow[i] * 2^n.
+    When borrow restores positivity, the expression is in [0, 2^(n+1)).
+    The output out[i] is range-checked to [0, 2^n) by Num2Bits, so we state
+    field safety for the range-checked outputs and for the constraint equation's
+    right-hand side given that out[i] is already known non-negative. *)
+
+Theorem BigSub_field_safe :
+  forall (n : nat) (k : nat),
+  (n <= 252)%nat -> (k >= 2)%nat ->
+  forall (a b : list Z),
+  length a = k -> length b = k ->
+  (forall i, (i < k)%nat -> 0 <= nth i a 0 < 2 ^ Z.of_nat n) ->
+  (forall i, (i < k)%nat -> 0 <= nth i b 0 < 2 ^ Z.of_nat n) ->
+  (forall i, (i < k)%nat -> in_field (nth i a 0)) /\
+  (forall i, (i < k)%nat -> in_field (nth i b 0)) /\
+  (forall i out_i borrow, (i < k)%nat ->
+    0 <= borrow <= 1 -> 0 <= out_i < 2 ^ Z.of_nat n ->
+    in_field out_i /\ in_field (out_i + borrow * 2 ^ Z.of_nat n)).
+Proof.
+  intros n k Hn Hk a b Halen Hblen Ha Hb.
+  assert (Hpow : 2 ^ Z.of_nat n < p_field)
+    by (apply pow2_lt_p_field; lia).
+  assert (Hpow_sn : 2 ^ Z.of_nat (S n) < p_field)
+    by (apply pow2_lt_p_field; lia).
+  split; [| split].
+  - intros i Hi. unfold in_field. specialize (Ha i Hi). lia.
+  - intros i Hi. unfold in_field. specialize (Hb i Hi). lia.
+  - intros i out_i borrow Hi Hbw Hout. split.
+    + unfold in_field. lia.
+    + unfold in_field.
+      rewrite Nat2Z.inj_succ in Hpow_sn.
+      rewrite Z.pow_succ_r in Hpow_sn by lia.
+      split.
+      * apply Z.add_nonneg_nonneg; [lia |].
+        apply Z.mul_nonneg_nonneg; lia.
+      * nia.
+Qed.
+
+(** *** BigMult: Sufficient condition 2 * k * 2^(2*n) < p_field ensures
+    all intermediate values (products, rawLimb sums, carry propagation) are in [0, p).
+
+    - Product constraints: a[i]*b[j] < 2^(2n) < p
+    - RawLimb sums: rawLimbs[l] <= k * 2^(2n)
+    - Carry propagation: rawLimbs[l] + carry[l-1] < 2*k * 2^(2n) < p *)
+
+Theorem BigMult_field_safe :
+  forall (n : nat) (k : nat),
+  (k >= 1)%nat ->
+  2 * Z.of_nat k * 2 ^ (2 * Z.of_nat n) < p_field ->
+  (forall (a b : list Z),
+    length a = k -> length b = k ->
+    (forall i, (i < k)%nat -> 0 <= nth i a 0 < 2 ^ Z.of_nat n) ->
+    (forall i, (i < k)%nat -> 0 <= nth i b 0 < 2 ^ Z.of_nat n) ->
+    (forall i j, (i < k)%nat -> (j < k)%nat ->
+      in_field (nth i a 0 * nth j b 0))).
+Proof.
+  intros n k Hk Hbound a b Halen Hblen Ha Hb i j Hi Hj.
+  unfold in_field.
+  specialize (Ha i Hi). specialize (Hb j Hj).
+  split.
+  - apply Z.mul_nonneg_nonneg; lia.
+  - assert (nth i a 0 * nth j b 0 < 2 ^ Z.of_nat n * 2 ^ Z.of_nat n) by nia.
+    rewrite <- Z.pow_add_r in H by lia.
+    replace (Z.of_nat n + Z.of_nat n) with (2 * Z.of_nat n) in H by lia.
+    assert (2 ^ (2 * Z.of_nat n) <= 2 * Z.of_nat k * 2 ^ (2 * Z.of_nat n)).
+    { assert (1 <= 2 * Z.of_nat k) by lia. nia. }
+    lia.
+Qed.
+
+(** *** CheckCarryToZero: For n + m + 1 <= 253, all constraint values
+    are in [0, p_field).
+
+    - Carry range-check value: carry + carry_bias in [0, 2^(m+1)), so < p
+    - |carry * 2^n| <= 2^(n+m) < p, so the absolute value fits in the field *)
+
+Theorem CheckCarryToZero_field_safe :
+  forall (n m : nat),
+  (n + m + 1 <= 253)%nat ->
+  (forall carry_shifted,
+    0 <= carry_shifted < 2 ^ Z.of_nat (m + 1) ->
+    in_field carry_shifted) /\
+  (forall carry,
+    0 <= carry <= 2 ^ Z.of_nat m ->
+    in_field (carry * 2 ^ Z.of_nat n)).
+Proof.
+  intros n m Hnm.
+  assert (Hpow_m1 : 2 ^ Z.of_nat (m + 1) < p_field)
+    by (apply pow2_lt_p_field; lia).
+  assert (Hpow_nm : 2 ^ Z.of_nat (n + m) < p_field)
+    by (apply pow2_lt_p_field; lia).
+  assert (H2n : 0 < 2 ^ Z.of_nat n) by (apply Z.pow_pos_nonneg; lia).
+  split.
+  - intros carry_shifted Hc.
+    apply in_field_of_bound with (n := (m + 1)%nat); [exact Hc | lia].
+  - intros carry Hc. unfold in_field. split.
+    + apply Z.mul_nonneg_nonneg; lia.
+    + assert (carry * 2 ^ Z.of_nat n <= 2 ^ Z.of_nat m * 2 ^ Z.of_nat n) by nia.
+      rewrite <- Z.pow_add_r in H by lia.
+      replace (Z.of_nat m + Z.of_nat n) with (Z.of_nat (n + m)) in H by lia.
+      lia.
 Qed.
