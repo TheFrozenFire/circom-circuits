@@ -152,13 +152,22 @@ export function discoverTestFiles(): string[] {
 
 export function extractTestedTemplates(testPath: string): string[] {
     const content = readFileSync(testPath, "utf-8");
-    const pattern = /describe_circuit\(\s*["']([^"']+)["']/g;
     const names: string[] = [];
+
+    // Extract describe_circuit display names (e.g., "PolyUHF (n=4)")
+    const namePattern = /describe_circuit\(\s*["']([^"']+)["']/g;
     let match: RegExpExecArray | null;
-    while ((match = pattern.exec(content)) !== null) {
+    while ((match = namePattern.exec(content)) !== null) {
         names.push(match[1]);
     }
-    return names;
+
+    // Extract template: values from circuit definitions (e.g., template: "AND")
+    const tplPattern = /template:\s*["'](\w+)["']/g;
+    while ((match = tplPattern.exec(content)) !== null) {
+        names.push(match[1]);
+    }
+
+    return [...new Set(names)];
 }
 
 export function discoverCircomFiles(): string[] {
