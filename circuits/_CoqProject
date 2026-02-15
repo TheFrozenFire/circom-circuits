@@ -40,3 +40,7 @@ curve/Montgomery.v
 curve/BabyJub.v
 curve/Compress.v
 curve/ScalarMul.v
+elgamal/ElGamal.v
+schnorr/Message.v
+schnorr/Blinding.v
+schnorr/Blind.v
