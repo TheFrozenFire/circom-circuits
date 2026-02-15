@@ -1,7 +1,9 @@
 -R . ""
+-arg -native-compiler -arg no
 
 Primitives.v
 FieldBridge.v
+CurveParams.v
 core/Comparators.v
 core/Bitwise.v
 core/Mux.v

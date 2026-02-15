@@ -4,6 +4,7 @@ From Stdlib Require Import Lia.
 Import ListNotations.
 
 Require Import Primitives.
+Require Import CurveParams.
 Require Import curve.BabyJub.
 Require Import curve.Montgomery.
 Require Import core.Comparators.
@@ -162,4 +163,18 @@ Proof.
   intros nBits e p_x p_y Hlen Hbin.
   assert (Hbound := bits_to_num_bound e Hbin).
   rewrite Hlen in Hbound. exact Hbound.
+Qed.
+
+(** ** Scalar Multiplication On-Curve with Bounded Scalar
+
+    Combines the scalar bound from bit decomposition with
+    the group-theoretic closure axiom from CurveParams. *)
+
+Theorem scalar_mul_on_curve_bounded :
+  forall (e : list Z) (base : point),
+  all_binary e -> on_curve base ->
+  on_curve (scalar_mul (bits_to_num e) base).
+Proof.
+  intros e base Hbin Hbase.
+  apply scalar_mul_on_curve. exact Hbase.
 Qed.

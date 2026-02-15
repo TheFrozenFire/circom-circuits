@@ -4,6 +4,7 @@ From Stdlib Require Import Lia.
 Import ListNotations.
 
 Require Import Primitives.
+Require Import CurveParams.
 Require Import packing.Bitify.
 Require Import curve.BabyJub.
 Require Import curve.ScalarMul.
@@ -153,8 +154,8 @@ Qed.
                       = msg + y*(privKey*G8) - privKey*(y*G8)
                       = msg  (by commutativity of scalar multiplication)
 
-    We state this as an axiom since proving group law commutativity
-    is beyond the scope of constraint verification. *)
+    The algebraic version below is parametric over any group.
+    ElGamal_roundtrip_concrete instantiates it with BabyJubjub. *)
 
 Theorem ElGamal_roundtrip_algebraic :
   forall (point : Type) (point_add : point -> point -> point)
@@ -179,4 +180,35 @@ Proof.
   rewrite Hneg.
   rewrite Hid.
   reflexivity.
+Qed.
+
+(** ** Concrete Roundtrip with BabyJubjub
+
+    Instantiates the algebraic roundtrip with the BabyJubjub group
+    operations and axioms from CurveParams.
+
+    Note: we prove this directly rather than via ElGamal_roundtrip_algebraic
+    because our axioms have on_curve preconditions, while the algebraic
+    version requires unconditional group laws (forall P Q R). *)
+
+Theorem ElGamal_roundtrip_concrete :
+  forall (msg G : point), on_curve msg -> on_curve G ->
+  forall (y privKey : Z),
+  baby_add (baby_add msg (scalar_mul y (scalar_mul privKey G)))
+           (baby_neg (scalar_mul privKey (scalar_mul y G))) = msg.
+Proof.
+  intros msg G Hmsg HG y privKey.
+  (* scalar_mul y (scalar_mul privKey G) = scalar_mul (y * privKey) G *)
+  rewrite scalar_mul_compat by exact HG.
+  (* scalar_mul privKey (scalar_mul y G) = scalar_mul (privKey * y) G *)
+  rewrite scalar_mul_compat by exact HG.
+  (* y * privKey = privKey * y *)
+  replace (privKey * y) with (y * privKey) by ring.
+  (* Now both scalar_mul terms are identical *)
+  rewrite baby_add_assoc.
+  2: exact Hmsg.
+  2: apply scalar_mul_on_curve; exact HG.
+  2: apply baby_neg_on_curve; apply scalar_mul_on_curve; exact HG.
+  rewrite baby_add_inverse_r by (apply scalar_mul_on_curve; exact HG).
+  apply baby_add_identity_r. exact Hmsg.
 Qed.

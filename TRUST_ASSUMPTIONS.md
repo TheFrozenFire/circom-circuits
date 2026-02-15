@@ -49,7 +49,7 @@ These are standard cryptographic hardness assumptions that the *protocols* (not 
 | **ElGamal IND-CPA security** | ElGamal encryption | DDH assumption on BabyJubjub |
 | **Schnorr unforgeability** | Schnorr signatures | DL assumption + random oracle model |
 | **RSA assumption** | RSA blinding | Factoring hardness |
-| **BabyJubjub group law** | Curve arithmetic, scalar multiplication | Mathematically provable but not yet mechanized ([#5][i5]) |
+| **BabyJubjub group law** | Curve arithmetic, scalar multiplication | Axiomatized in `CurveParams.v`. 11 axioms state closure, associativity, commutativity, identity, inverse, scalar multiplication properties, and the connection between the Edwards addition formula and the abstract group operation. These are standard properties of twisted Edwards curves with the BabyJubjub parameters (a=168700, d=168696), verified in published literature but not machine-checked. ([#5][i5]) |
 
 ## Trust Assumptions Adjacent to the Proofs (Verification Gaps)
 

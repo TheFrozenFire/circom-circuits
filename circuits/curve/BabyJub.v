@@ -4,6 +4,8 @@ From Stdlib Require Import Lia.
 Import ListNotations.
 
 Require Import Primitives.
+Require Import FieldBridge.
+Require Import CurveParams.
 Require Import packing.Bitify.
 Require Import core.Comparators.
 
@@ -147,4 +149,60 @@ Proof.
     Hbeta Hgamma Hdelta Htau Hx Hy.
   exact (BabyAdd_spec x1 y1 x2 y2 outx outy beta gamma delta tau a d
     Hbeta Hgamma Hdelta Htau Hx Hy).
+Qed.
+
+(** ** BabyAdd Connects to Group Operation
+
+    If the BabyAdd constraints are satisfied with the BabyJubjub parameters
+    (a=168700, d=168696), and both input points are on the curve,
+    then the output equals the abstract group operation baby_add.
+
+    The nonzero-denominator preconditions (1 + d*tau <> 0, 1 - d*tau <> 0)
+    are guaranteed by the BabyJubjub curve parameters for all on-curve points.
+    They are required here because we work in Z, not F_p, so we need
+    explicit cancellation. *)
+
+Theorem BabyAdd_is_group_op :
+  forall (x1 y1 x2 y2 xout yout : Z),
+  on_curve (mkPoint x1 y1) -> on_curve (mkPoint x2 y2) ->
+  let tau := x1 * y2 * (y1 * x2) in
+  1 + babyjub_d * tau <> 0 ->
+  1 - babyjub_d * tau <> 0 ->
+  (1 + babyjub_d * tau) * xout = x1 * y2 + y1 * x2 ->
+  (1 - babyjub_d * tau) * yout =
+    (-babyjub_a * x1 + y1) * (x2 + y2) + babyjub_a * (x1 * y2) - y1 * x2 ->
+  mkPoint xout yout = baby_add (mkPoint x1 y1) (mkPoint x2 y2).
+Proof.
+  intros x1 y1 x2 y2 xout yout Hcurve1 Hcurve2 tau
+    Hne_plus Hne_minus Hx_eq Hy_eq.
+  assert (Hformula := baby_add_formula (mkPoint x1 y1) (mkPoint x2 y2)
+    Hcurve1 Hcurve2).
+  simpl px in Hformula. simpl py in Hformula.
+  destruct Hformula as [Hfx Hfy].
+  set (R := baby_add (mkPoint x1 y1) (mkPoint x2 y2)).
+  fold R in Hfx, Hfy.
+  assert (Hxeq : xout = px R).
+  { apply (Z.mul_reg_l _ _ (1 + babyjub_d * tau) Hne_plus).
+    rewrite Hx_eq. symmetry. exact Hfx. }
+  assert (Hyeq : yout = py R).
+  { apply (Z.mul_reg_l _ _ (1 - babyjub_d * tau) Hne_minus).
+    rewrite Hy_eq. symmetry. exact Hfy. }
+  rewrite Hxeq, Hyeq. destruct R; reflexivity.
+Qed.
+
+(** ** Suborder Arithmetic Field Safety
+
+    Values in the suborder range are also valid field elements,
+    and their sum stays in the field. *)
+
+Theorem BabySuborderAdd_field_safe :
+  forall a b, in_suborder a -> in_suborder b ->
+  in_field a /\ in_field b /\ in_field (a + b).
+Proof.
+  intros a b Ha Hb. split; [| split].
+  - apply in_suborder_in_field. exact Ha.
+  - apply in_suborder_in_field. exact Hb.
+  - unfold in_field, in_suborder in *.
+    assert (H2q : 2 * q_suborder < p_field) by exact two_q_suborder_lt_p.
+    lia.
 Qed.
