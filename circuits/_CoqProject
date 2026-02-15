@@ -39,3 +39,4 @@ hash/sha256/Sha256.v
 curve/Montgomery.v
 curve/BabyJub.v
 curve/Compress.v
+curve/ScalarMul.v
