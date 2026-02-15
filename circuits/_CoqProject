@@ -3,6 +3,7 @@
 
 Primitives.v
 FieldBridge.v
+WitnessLemmas.v
 CurveParams.v
 core/Comparators.v
 core/Bitwise.v

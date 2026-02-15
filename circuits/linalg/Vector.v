@@ -4,6 +4,7 @@ From Stdlib Require Import Lia.
 Import ListNotations.
 
 Require Import Primitives.
+Require Import WitnessLemmas.
 
 Open Scope Z_scope.
 
@@ -60,4 +61,18 @@ Proof.
   split.
   - apply Zdiv_unique with r; lia.
   - apply Zmod_unique with q; lia.
+Qed.
+
+(** ** VectorMean Completeness
+    Witness: q[j] <-- s[j] \ k; r[j] <-- s[j] % k.
+    Per-element division. *)
+
+Theorem VectorMean_complete : forall (k s : Z),
+  k > 0 -> 0 <= s ->
+  let q := s / k in
+  let r := s mod k in
+  s = q * k + r /\ 0 <= r < k.
+Proof.
+  intros k s Hk Hs q r. subst q r.
+  apply div_mod_constraint; lia.
 Qed.

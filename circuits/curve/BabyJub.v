@@ -5,6 +5,7 @@ Import ListNotations.
 
 Require Import Primitives.
 Require Import FieldBridge.
+Require Import WitnessLemmas.
 Require Import CurveParams.
 Require Import packing.Bitify.
 Require Import core.Comparators.
@@ -205,4 +206,20 @@ Proof.
   - unfold in_field, in_suborder in *.
     assert (H2q : 2 * q_suborder < p_field) by exact two_q_suborder_lt_p.
     lia.
+Qed.
+
+(** ** BabySuborderAdd Completeness
+    Witness: k <-- sum \ q. Constraint: out = sum - k*q, 0 <= out < q. *)
+
+Theorem BabySuborderAdd_complete :
+  forall (a b : Z) (q : Z),
+  q > 0 -> 0 <= a + b ->
+  let sum := a + b in
+  let k := sum / q in
+  let out := sum mod q in
+  out = sum - k * q /\ 0 <= out < q.
+Proof.
+  intros a b q Hq Hsum sum k out. subst sum k out.
+  assert (Hdm := div_mod_constraint (a + b) q Hsum ltac:(lia)).
+  lia.
 Qed.

@@ -5,6 +5,7 @@ Import ListNotations.
 
 Require Import Primitives.
 Require Import FieldBridge.
+Require Import WitnessLemmas.
 
 Open Scope Z_scope.
 
@@ -158,4 +159,50 @@ Proof.
   - intros i Hi.
     specialize (Hbin i Hi). rewrite Hbin.
     exact in_field_0.
+Qed.
+
+(** * Completeness Proofs for Witness Computation *)
+
+(** ** Num2BitsLE Completeness
+    The witness `out[i] <-- (in >> i) & 1` produces values satisfying
+    all constraints: binary, sum reconstruction, and correct length. *)
+
+Theorem Num2BitsLE_complete : forall (n : nat) (inp : Z),
+  0 <= inp < 2 ^ Z.of_nat n ->
+  let out := num2bits_witness inp n in
+  (forall i, (i < n)%nat -> nth i out 0 * (nth i out 0 - 1) = 0) /\
+  inp = bits_to_num out /\
+  length out = n.
+Proof.
+  intros n inp Hrange out. subst out.
+  split; [| split].
+  - intros i Hi. apply num2bits_witness_binary_constraint; lia.
+  - symmetry. apply bits_to_num_testbit. exact Hrange.
+  - apply num2bits_witness_length.
+Qed.
+
+(** ** TruncNumLE Completeness
+    The witness is the same as Num2BitsLE (full bit decomposition),
+    with the output being bits_to_num of the first nOut bits. *)
+
+Theorem TruncNumLE_complete : forall (nIn nOut : nat) (inp : Z),
+  (nOut <= nIn)%nat ->
+  0 <= inp < 2 ^ Z.of_nat nIn ->
+  let bits := num2bits_witness inp nIn in
+  let out := bits_to_num (firstn nOut bits) in
+  (forall i, (i < nIn)%nat -> nth i bits 0 * (nth i bits 0 - 1) = 0) /\
+  inp = bits_to_num bits /\
+  out = bits_to_num (firstn nOut bits) /\
+  0 <= out < 2 ^ Z.of_nat nOut.
+Proof.
+  intros nIn nOut inp HnOut Hrange bits out.
+  subst bits out.
+  assert (Hcomp := Num2BitsLE_complete nIn inp Hrange).
+  destruct Hcomp as [Hbin [Hsum Hlen]].
+  split; [exact Hbin |].
+  split; [exact Hsum |].
+  split; [reflexivity |].
+  apply bits_to_num_firstn_bound.
+  - apply num2bits_witness_all_binary. lia.
+  - rewrite num2bits_witness_length. exact HnOut.
 Qed.
