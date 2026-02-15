@@ -23,3 +23,10 @@ collections/Aggregate.v
 collections/Ordered.v
 collections/Selector.v
 bridge/Uhf.v
+packing/Pack.v
+collections/Contains.v
+linalg/Activation.v
+linalg/Similarity.v
+linalg/Orthogonal.v
+rsa/Pad.v
+rsa/Blind.v
