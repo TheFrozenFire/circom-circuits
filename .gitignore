@@ -16,3 +16,4 @@ dist/
 .Makefile.d
 Makefile
 Makefile.conf
+.coq-native/
