@@ -205,3 +205,79 @@ Proof.
   apply binary_constraint.
   apply Z_testbit_binary. lia.
 Qed.
+
+(** ** Limb Decomposition: num_to_limbs *)
+
+(** Extract k n-bit limbs from a number (little-endian).
+    Inverse of limbs_to_num: num_to_limbs v n k = [v mod 2^n; (v/2^n) mod 2^n; ...] *)
+Definition num_to_limbs (v : Z) (n k : nat) : list Z :=
+  map (fun i => (v / 2 ^ (Z.of_nat n * Z.of_nat i)) mod 2 ^ Z.of_nat n) (seq 0 k).
+
+Lemma num_to_limbs_length : forall v n k,
+  length (num_to_limbs v n k) = k.
+Proof.
+  intros. unfold num_to_limbs. rewrite length_map, length_seq. reflexivity.
+Qed.
+
+Lemma num_to_limbs_nth : forall v n k i,
+  (i < k)%nat ->
+  nth i (num_to_limbs v n k) 0 =
+    (v / 2 ^ (Z.of_nat n * Z.of_nat i)) mod 2 ^ Z.of_nat n.
+Proof.
+  intros v n k i Hi.
+  unfold num_to_limbs.
+  rewrite nth_map_seq by lia. f_equal.
+Qed.
+
+Lemma num_to_limbs_range : forall v n k i,
+  0 <= v -> (i < k)%nat ->
+  0 <= nth i (num_to_limbs v n k) 0 < 2 ^ Z.of_nat n.
+Proof.
+  intros v n k i Hv Hi.
+  rewrite num_to_limbs_nth by lia.
+  apply Z.mod_pos_bound. apply Z.pow_pos_nonneg; lia.
+Qed.
+
+(** Decomposition: num_to_limbs (S k) = first limb :: num_to_limbs of shifted value. *)
+Lemma num_to_limbs_cons : forall v n k,
+  num_to_limbs v n (S k) =
+    (v mod 2 ^ Z.of_nat n) :: num_to_limbs (v / 2 ^ Z.of_nat n) n k.
+Proof.
+  intros v n k.
+  unfold num_to_limbs. simpl seq. rewrite map_cons.
+  f_equal.
+  - f_equal. rewrite Z.mul_0_r, Z.pow_0_r, Z.div_1_r. reflexivity.
+  - apply nth_ext with (d := 0) (d' := 0).
+    + rewrite !length_map, !length_seq. reflexivity.
+    + intros i Hi.
+      rewrite length_map, length_seq in Hi.
+      rewrite !nth_map_seq by lia.
+      replace (0 + i)%nat with i by lia.
+      replace (1 + i)%nat with (S i) by lia.
+      rewrite Nat2Z.inj_succ, Z.mul_succ_r.
+      rewrite Z.pow_add_r by lia.
+      rewrite Z.mul_comm.
+      rewrite <- Zdiv_Zdiv by (apply Z.lt_le_incl; apply Z.pow_pos_nonneg; lia).
+      reflexivity.
+Qed.
+
+(** Core correctness: limbs_to_num (num_to_limbs v n k) = v when 0 <= v < 2^(n*k). *)
+Theorem num_to_limbs_correct : forall (k : nat) (v : Z) (n : nat),
+  0 <= v < 2 ^ (Z.of_nat n * Z.of_nat k) ->
+  limbs_to_num n (num_to_limbs v n k) = v.
+Proof.
+  induction k as [| k' IH]; intros v n Hrange.
+  - simpl in Hrange. rewrite Z.mul_0_r in Hrange.
+    assert (v = 0) by lia. subst. reflexivity.
+  - rewrite num_to_limbs_cons, limbs_to_num_cons.
+    assert (Hpow : 0 < 2 ^ Z.of_nat n) by (apply Z.pow_pos_nonneg; lia).
+    rewrite IH.
+    + (* v mod 2^n + 2^n * (v / 2^n) = v *)
+      assert (Hdm := Z.div_mod v (2 ^ Z.of_nat n) ltac:(lia)). lia.
+    + (* 0 <= v / 2^n < 2^(n*k') *)
+      split.
+      * apply Z.div_pos; lia.
+      * apply Z.div_lt_upper_bound; [lia |].
+        rewrite Nat2Z.inj_succ, Z.mul_succ_r in Hrange.
+        rewrite Z.pow_add_r in Hrange by lia. lia.
+Qed.

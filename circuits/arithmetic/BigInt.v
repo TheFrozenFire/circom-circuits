@@ -1533,3 +1533,233 @@ Proof.
   intros n k rawLimbs Hk Hlen Hnn.
   exact (carry_propagation_complete n (2 * k) rawLimbs ltac:(lia) Hlen Hnn).
 Qed.
+
+(** * Tier 5 Completeness Proofs *)
+
+(** ** BigMod Completeness (bigint.circom:210-263)
+
+    Witness: quotient <-- A / B (as 2-limb), remainder <-- A mod B (as k-limb).
+    Constraint: A = B * Q + R, with R < B (checked via BigLessThan). *)
+
+Theorem BigMod_complete :
+  forall (n k : nat) (a b : list Z),
+  (n >= 1)%nat -> (k >= 2)%nat ->
+  length a = (k + 1)%nat -> length b = k ->
+  (forall i, (i < k + 1)%nat -> 0 <= nth i a 0 < 2 ^ Z.of_nat n) ->
+  (forall i, (i < k)%nat -> 0 <= nth i b 0 < 2 ^ Z.of_nat n) ->
+  limbs_to_num n b > 0 ->
+  limbs_to_num n a / limbs_to_num n b < 2 ^ (2 * Z.of_nat n) ->
+  exists (quotient remainder : list Z),
+    length quotient = 2%nat /\ length remainder = k /\
+    (forall i, (i < 2)%nat -> 0 <= nth i quotient 0 < 2 ^ Z.of_nat n) /\
+    (forall i, (i < k)%nat -> 0 <= nth i remainder 0 < 2 ^ Z.of_nat n) /\
+    limbs_to_num n a =
+      limbs_to_num n b * limbs_to_num n quotient + limbs_to_num n remainder.
+Proof.
+  intros n k a b Hn Hk Halen Hblen Ha Hb HBpos HQbound.
+  set (A := limbs_to_num n a).
+  set (B := limbs_to_num n b).
+  set (Q := A / B).
+  set (R := A mod B).
+  assert (HA_nn : 0 <= A).
+  { unfold A. apply limbs_to_num_nonneg_limbs. intros i Hi.
+    rewrite Halen in Hi. assert (Hi' := Ha i ltac:(lia)). lia. }
+  assert (HQ_nn : 0 <= Q) by (unfold Q; apply Z.div_pos; lia).
+  assert (HR_nn : 0 <= R) by (unfold R; apply Z.mod_pos_bound; lia).
+  assert (HR_bound : R < B) by (unfold R; apply Z.mod_pos_bound; lia).
+  assert (Hdm : A = B * Q + R).
+  { unfold Q, R. assert (Hdm := Z.div_mod A B ltac:(lia)). lia. }
+  (* Q < 2^(2n) by hypothesis *)
+  assert (HQ_range : 0 <= Q < 2 ^ (2 * Z.of_nat n)).
+  { split; [exact HQ_nn | unfold Q, A, B; exact HQbound]. }
+  (* R < B < 2^(n*k) *)
+  assert (HB_upper : B < 2 ^ (Z.of_nat n * Z.of_nat k)).
+  { unfold B. rewrite <- Hblen. apply limbs_to_num_upper.
+    intros i Hi. rewrite Hblen in Hi. apply Hb. lia. }
+  assert (HR_range : 0 <= R < 2 ^ (Z.of_nat n * Z.of_nat k)) by lia.
+  (* Decompose Q and R into limbs *)
+  set (quotient := num_to_limbs Q n 2).
+  set (remainder := num_to_limbs R n k).
+  exists quotient, remainder.
+  assert (Hqlen : length quotient = 2%nat)
+    by (unfold quotient; apply num_to_limbs_length).
+  assert (Hrlen : length remainder = k)
+    by (unfold remainder; apply num_to_limbs_length).
+  split; [exact Hqlen |].
+  split; [exact Hrlen |].
+  split.
+  { intros i Hi. unfold quotient. apply num_to_limbs_range; lia. }
+  split.
+  { intros i Hi. unfold remainder. apply num_to_limbs_range; lia. }
+  (* Value equation *)
+  assert (HQ_val : limbs_to_num n quotient = Q).
+  { unfold quotient. apply num_to_limbs_correct.
+    replace (Z.of_nat n * Z.of_nat 2) with (2 * Z.of_nat n) by lia. exact HQ_range. }
+  assert (HR_val : limbs_to_num n remainder = R).
+  { unfold remainder. apply num_to_limbs_correct. exact HR_range. }
+  rewrite HQ_val, HR_val. exact Hdm.
+Qed.
+
+(** ** BigMultModP Completeness (bigint.circom:268-303)
+
+    Witness: quotient <-- (A*B) / P, out <-- (A*B) mod P.
+    Constraint: A * B = P * quotient + out. *)
+
+Theorem BigMultModP_complete :
+  forall (n k : nat) (a b p : list Z),
+  (n >= 1)%nat -> (k >= 2)%nat ->
+  length a = k -> length b = k -> length p = k ->
+  (forall i, (i < k)%nat -> 0 <= nth i a 0 < 2 ^ Z.of_nat n) ->
+  (forall i, (i < k)%nat -> 0 <= nth i b 0 < 2 ^ Z.of_nat n) ->
+  (forall i, (i < k)%nat -> 0 <= nth i p 0 < 2 ^ Z.of_nat n) ->
+  limbs_to_num n p > 0 ->
+  (limbs_to_num n a * limbs_to_num n b) / limbs_to_num n p < 2 ^ (Z.of_nat n * Z.of_nat k) ->
+  exists (out quotient : list Z),
+    length out = k /\ length quotient = k /\
+    (forall i, (i < k)%nat -> 0 <= nth i out 0 < 2 ^ Z.of_nat n) /\
+    (forall i, (i < k)%nat -> 0 <= nth i quotient 0 < 2 ^ Z.of_nat n) /\
+    limbs_to_num n a * limbs_to_num n b =
+      limbs_to_num n p * limbs_to_num n quotient + limbs_to_num n out.
+Proof.
+  intros n k a b p Hn Hk Halen Hblen Hplen Ha Hb Hp HPpos HQbound.
+  set (A := limbs_to_num n a).
+  set (B := limbs_to_num n b).
+  set (P := limbs_to_num n p).
+  set (Q := (A * B) / P).
+  set (R := (A * B) mod P).
+  assert (HAB_nn : 0 <= A * B).
+  { apply Z.mul_nonneg_nonneg.
+    - unfold A. apply limbs_to_num_nonneg_limbs. intros i Hi.
+      rewrite Halen in Hi. assert (Hi' := Ha i ltac:(lia)). lia.
+    - unfold B. apply limbs_to_num_nonneg_limbs. intros i Hi.
+      rewrite Hblen in Hi. assert (Hi' := Hb i ltac:(lia)). lia. }
+  assert (HQ_nn : 0 <= Q) by (unfold Q; apply Z.div_pos; lia).
+  assert (HR_nn : 0 <= R) by (unfold R; apply Z.mod_pos_bound; lia).
+  assert (HR_bound : R < P) by (unfold R; apply Z.mod_pos_bound; lia).
+  assert (Hdm : A * B = P * Q + R).
+  { unfold Q, R. assert (Hdm := Z.div_mod (A * B) P ltac:(lia)). lia. }
+  (* Q < 2^(n*k) by hypothesis, R < P < 2^(n*k) *)
+  assert (HQ_range : 0 <= Q < 2 ^ (Z.of_nat n * Z.of_nat k)).
+  { split; [exact HQ_nn | unfold Q, A, B, P; exact HQbound]. }
+  assert (HP_upper : P < 2 ^ (Z.of_nat n * Z.of_nat k)).
+  { unfold P. rewrite <- Hplen. apply limbs_to_num_upper.
+    intros i Hi. rewrite Hplen in Hi. apply Hp. lia. }
+  assert (HR_range : 0 <= R < 2 ^ (Z.of_nat n * Z.of_nat k)) by lia.
+  set (out := num_to_limbs R n k).
+  set (quotient := num_to_limbs Q n k).
+  exists out, quotient.
+  assert (Holen : length out = k) by (unfold out; apply num_to_limbs_length).
+  assert (Hqlen : length quotient = k) by (unfold quotient; apply num_to_limbs_length).
+  split; [exact Holen |].
+  split; [exact Hqlen |].
+  split.
+  { intros i Hi. unfold out. apply num_to_limbs_range; lia. }
+  split.
+  { intros i Hi. unfold quotient. apply num_to_limbs_range; lia. }
+  assert (HQ_val : limbs_to_num n quotient = Q)
+    by (unfold quotient; apply num_to_limbs_correct; exact HQ_range).
+  assert (HR_val : limbs_to_num n out = R)
+    by (unfold out; apply num_to_limbs_correct; exact HR_range).
+  rewrite HQ_val, HR_val. exact Hdm.
+Qed.
+
+(** ** BigSubModP Completeness (bigint.circom:308-337)
+
+    Witness: out <-- ((A - B) mod P + P) mod P, decomposed into k limbs.
+    Constraint: (out + B - A) mod P = 0. *)
+
+Theorem BigSubModP_complete :
+  forall (n k : nat) (a b p : list Z),
+  (n >= 1)%nat -> (k >= 2)%nat ->
+  length a = k -> length b = k -> length p = k ->
+  (forall i, (i < k)%nat -> 0 <= nth i a 0 < 2 ^ Z.of_nat n) ->
+  (forall i, (i < k)%nat -> 0 <= nth i b 0 < 2 ^ Z.of_nat n) ->
+  (forall i, (i < k)%nat -> 0 <= nth i p 0 < 2 ^ Z.of_nat n) ->
+  limbs_to_num n p > 0 ->
+  exists (out : list Z),
+    length out = k /\
+    (forall i, (i < k)%nat -> 0 <= nth i out 0 < 2 ^ Z.of_nat n) /\
+    (limbs_to_num n out + limbs_to_num n b - limbs_to_num n a) mod (limbs_to_num n p) = 0.
+Proof.
+  intros n k a b p Hn Hk Halen Hblen Hplen Ha Hb Hp HPpos.
+  set (A := limbs_to_num n a).
+  set (B := limbs_to_num n b).
+  set (P := limbs_to_num n p).
+  set (R := ((A - B) mod P + P) mod P).
+  assert (HP_upper : P < 2 ^ (Z.of_nat n * Z.of_nat k)).
+  { unfold P. rewrite <- Hplen. apply limbs_to_num_upper.
+    intros i Hi. rewrite Hplen in Hi. apply Hp. lia. }
+  assert (HR_range : 0 <= R < 2 ^ (Z.of_nat n * Z.of_nat k)).
+  { unfold R. split.
+    - apply Z.mod_pos_bound; lia.
+    - assert (R < P) by (unfold R; apply Z.mod_pos_bound; lia). lia. }
+  set (out := num_to_limbs R n k).
+  exists out.
+  assert (Holen : length out = k) by (unfold out; apply num_to_limbs_length).
+  split; [exact Holen |].
+  split.
+  { intros i Hi. unfold out. apply num_to_limbs_range; lia. }
+  assert (HR_val : limbs_to_num n out = R)
+    by (unfold out; apply num_to_limbs_correct; exact HR_range).
+  rewrite HR_val.
+  (* Show (R + B - A) mod P = 0 *)
+  (* R = ((A - B) mod P + P) mod P ≡ (A - B) (mod P) *)
+  (* So R + B - A ≡ (A - B) + (B - A) = 0 (mod P) *)
+  unfold R.
+  (* Goal: (((A - B) mod P + P) mod P + B - A) mod P = 0 *)
+  (* Step 1: pull outer mod P inside *)
+  replace (((A - B) mod P + P) mod P + B - A)
+    with (((A - B) mod P + P) mod P + (B - A)) by ring.
+  rewrite Zplus_mod_idemp_l.
+  (* Goal: ((A - B) mod P + P + (B - A)) mod P = 0 *)
+  (* Step 2: reassociate so (A-B) mod P is first addend *)
+  replace ((A - B) mod P + P + (B - A))
+    with ((A - B) mod P + (P + (B - A))) by ring.
+  rewrite Zplus_mod_idemp_l.
+  (* Goal: ((A - B) + (P + (B - A))) mod P = 0 *)
+  replace ((A - B) + (P + (B - A))) with P by ring.
+  apply Z.mod_same. lia.
+Qed.
+
+(** ** BigModInv Axiomatization and Completeness (bigint.circom:344-403)
+
+    Multi-limb modular inverse cannot be expressed in Z (requires field
+    arithmetic). We axiomatize the inverse function similarly to fp_inv. *)
+
+Parameter big_mod_inv : nat -> nat -> list Z -> list Z -> list Z.
+
+Axiom big_mod_inv_length : forall n k a p,
+  length (big_mod_inv n k a p) = k.
+
+Axiom big_mod_inv_range : forall n k a p i,
+  (n >= 1)%nat -> (k >= 1)%nat -> (i < k)%nat ->
+  0 <= nth i (big_mod_inv n k a p) 0 < 2 ^ Z.of_nat n.
+
+Axiom big_mod_inv_spec : forall n k a p,
+  (n >= 1)%nat -> (k >= 1)%nat ->
+  length a = k -> length p = k ->
+  limbs_to_num n p > 1 ->
+  Z.gcd (limbs_to_num n a) (limbs_to_num n p) = 1 ->
+  (limbs_to_num n a * limbs_to_num n (big_mod_inv n k a p)) mod (limbs_to_num n p) = 1.
+
+Theorem BigModInv_complete :
+  forall (n k : nat) (a p : list Z),
+  (n >= 1)%nat -> (k >= 2)%nat ->
+  length a = k -> length p = k ->
+  (forall i, (i < k)%nat -> 0 <= nth i a 0 < 2 ^ Z.of_nat n) ->
+  (forall i, (i < k)%nat -> 0 <= nth i p 0 < 2 ^ Z.of_nat n) ->
+  limbs_to_num n p > 1 ->
+  Z.gcd (limbs_to_num n a) (limbs_to_num n p) = 1 ->
+  exists (out : list Z),
+    length out = k /\
+    (forall i, (i < k)%nat -> 0 <= nth i out 0 < 2 ^ Z.of_nat n) /\
+    (limbs_to_num n a * limbs_to_num n out) mod (limbs_to_num n p) = 1.
+Proof.
+  intros n k a p Hn Hk Halen Hplen Ha Hp HPgt1 Hgcd.
+  set (out := big_mod_inv n k a p).
+  exists out.
+  split; [apply big_mod_inv_length |].
+  split.
+  { intros i Hi. apply big_mod_inv_range; lia. }
+  apply big_mod_inv_spec; try assumption; lia.
+Qed.

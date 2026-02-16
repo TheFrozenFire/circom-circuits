@@ -5,6 +5,7 @@ Import ListNotations.
 
 Require Import Primitives.
 Require Import FieldBridge.
+Require Import WitnessLemmas.
 
 Open Scope Z_scope.
 
@@ -228,6 +229,42 @@ Qed.
     When n <= 252, inputs a, b in [0, 2^n), the intermediate value
     a + 2^n - b is in [1, 2^(n+1) - 1], which is a subset of [0, p_field)
     since 2^(n+1) <= 2^253 < p. The Z proof applies in F_p. *)
+
+(** ** LessThan Completeness
+    Witness: bits <-- Num2Bits(n+1)(a + 2^n - b), out <-- 1 - bits[n] *)
+
+Theorem LessThan_complete : forall (n : nat) (a b : Z),
+  (0 < n)%nat -> 0 <= a < 2 ^ Z.of_nat n -> 0 <= b < 2 ^ Z.of_nat n ->
+  exists (bits : list Z) (out : Z),
+    length bits = (S n) /\ all_binary bits /\
+    bits_to_num bits = a + 2 ^ Z.of_nat n - b /\
+    out = 1 - nth n bits 0 /\
+    (a < b <-> out = 1).
+Proof.
+  intros n a b Hn Ha Hb.
+  set (v := a + 2 ^ Z.of_nat n - b).
+  assert (Hpow : 0 < 2 ^ Z.of_nat n) by (apply Z.pow_pos_nonneg; lia).
+  assert (Hv_pos : 0 < v) by (unfold v; lia).
+  assert (Hv_upper : v < 2 ^ Z.of_nat (S n)).
+  { unfold v. rewrite Nat2Z.inj_succ, Z.pow_succ_r by lia. lia. }
+  assert (Hv_range : 0 <= v < 2 ^ Z.of_nat (S n)) by lia.
+  set (bits := num2bits_witness v (S n)).
+  set (out := 1 - nth n bits 0).
+  exists bits, out.
+  assert (Hlen : length bits = S n)
+    by (unfold bits; apply num2bits_witness_length).
+  assert (Hbin : all_binary bits)
+    by (unfold bits; apply num2bits_witness_all_binary; lia).
+  assert (Hval : bits_to_num bits = v)
+    by (unfold bits; apply bits_to_num_testbit; exact Hv_range).
+  split; [exact Hlen |].
+  split; [exact Hbin |].
+  split; [exact Hval |].
+  split; [reflexivity |].
+  (* Now use the soundness theorem *)
+  apply (LessThan_sound n Hn a b Ha Hb bits out Hlen Hbin Hval).
+  reflexivity.
+Qed.
 
 Theorem LessThan_field_safe : forall n : nat, (0 < n)%nat -> (n <= 252)%nat ->
   forall a b : Z, 0 <= a < 2 ^ Z.of_nat n -> 0 <= b < 2 ^ Z.of_nat n ->

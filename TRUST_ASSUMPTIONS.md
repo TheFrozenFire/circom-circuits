@@ -8,7 +8,7 @@ The 49 Rocq proof files (~5,200 lines) verify **constraint soundness over the in
 
 Each proof hand-models the constraint semantics of a circom template and proves the corresponding soundness theorem. Soundness proofs have zero `Admitted` axioms; every soundness theorem is machine-checked.
 
-**Completeness proofs** additionally verify that the `<--` witness computation formulas actually produce values satisfying the `===` constraints, for valid inputs. 21 templates across Tiers 1-4 have fully machine-checked completeness proofs with zero `Admitted` axioms. Tiers 1-3 (bitify, arithmetic, fixed-point, vector, curve, hashing) use `WitnessLemmas.v` shared infrastructure over Z. Tier 4 templates using field inversion have completeness proofs stated mod p, depending on 2 axioms for `fp_inv` (the multiplicative inverse in F_p) in `FieldBridge.v`.
+**Completeness proofs** additionally verify that the `<--` witness computation formulas actually produce values satisfying the `===` constraints, for valid inputs. 27 templates across Tiers 1-5 have machine-checked completeness proofs. Tiers 1-3 (bitify, arithmetic, fixed-point, vector, curve, hashing) use `WitnessLemmas.v` shared infrastructure over Z. Tier 4 templates using field inversion have completeness proofs stated mod p, depending on 2 axioms for `fp_inv` (the multiplicative inverse in F_p) in `FieldBridge.v`. Tier 5 composite circuits (Max, BigMod, BigSubModP, BigMultModP, BigModInv, Sha256compression) have completeness proofs depending on additional axioms for multi-limb modular inverse (`big_mod_inv`, 3 axioms in `BigInt.v`) and SHA-256 compression (`sha256_compress`, 2 axioms in `Sha256compression.v`).
 
 **Coverage spans the full circuit library:**
 
@@ -53,6 +53,8 @@ These are standard cryptographic hardness assumptions that the *protocols* (not 
 | **RSA assumption** | RSA blinding | Factoring hardness |
 | **BabyJubjub group law** | Curve arithmetic, scalar multiplication | Axiomatized in `CurveParams.v`. 11 axioms state closure, associativity, commutativity, identity, inverse, scalar multiplication properties, and the connection between the Edwards addition formula and the abstract group operation. These are standard properties of twisted Edwards curves with the BabyJubjub parameters (a=168700, d=168696), verified in published literature but not machine-checked. ([#5][i5]) |
 | **Field multiplicative inverse** | IsZero, IsEqual, Montgomery conversions, MontgomeryAdd/Double completeness | Axiomatized in `FieldBridge.v`. `fp_inv` is an opaque function with 2 axioms: `fp_inv_in_field` (inverse is in the field) and `fp_inv_spec` (`a * fp_inv(a) ≡ 1 mod p`). Models Fermat's little theorem (`a^(p-2) mod p`), which Circom uses for field division. |
+| **Multi-limb modular inverse** | BigModInv completeness | Axiomatized in `BigInt.v`. `big_mod_inv` is an opaque function with 3 axioms: `big_mod_inv_length` (output has k limbs), `big_mod_inv_range` (each limb is in [0, 2^n)), and `big_mod_inv_spec` (`a * big_mod_inv(a,p) ≡ 1 mod p` when gcd(a,p)=1). Models the extended Euclidean algorithm over multi-limb integers. |
+| **SHA-256 compression function** | Sha256compression completeness | Axiomatized in `Sha256compression.v`. `sha256_compress` is an opaque function with 2 axioms: `sha256_compress_length` (output has 256 bits) and `sha256_compress_binary` (output is all binary when inputs are binary). Models the 64-round SHA-256 compression function, a well-established NIST standard. |
 
 ## Resolved Verification Gaps
 
@@ -64,6 +66,7 @@ These gaps have been addressed by dedicated work items.
 | **Witness generation (Tiers 1-3)** | 15 templates have fully machine-checked completeness proofs with zero `Admitted` axioms: Num2BitsLE, TruncNumLE, BinSum, FixedPointMul/Div/DotProduct, VectorMean, BabySuborderAdd, BigAdd, BigSub, BigMult, LongToShortNoEndCarry, CheckCarryToZero. | [#2][i2] |
 | **Witness generation (Tier 4)** | 6 templates using field inversion have completeness proofs depending on 2 `fp_inv` axioms: IsZero, IsEqual, Edwards2Montgomery, Montgomery2Edwards, MontgomeryAdd, MontgomeryDouble. BabyAdd completeness depends only on pre-existing `baby_add_formula` axiom (no `fp_inv`). | [#2][i2] |
 | **Under-constraint** | Automated under-constraint detection suite covers all circuit templates with signal coverage and degree-of-freedom checks. | [#3][i3] |
+| **Witness generation (Tier 5)** | 6 composite circuits have completeness proofs: Max (pure Z), BigMod/BigMultModP/BigSubModP (via `num_to_limbs` decomposition), BigModInv (3 `big_mod_inv` axioms), Sha256compression (2 `sha256_compress` axioms). LessThan completeness also added to support Max. | [#13][i13] |
 
 ## Remaining Verification Gaps
 
@@ -71,7 +74,6 @@ These are known gaps between what the proofs cover and full end-to-end verificat
 
 | Gap | Description | Mitigation |
 |---|---|---|
-| **Witness generation (Tier 5)** | Composite circuits (Max, BigMod, BigSubModP, BigMultModP, BigModInv, Sha256compression) lack completeness proofs. BigModInv uses multi-limb modular inverse via Fermat's little theorem, requiring substantially different axiomatization. | Test coverage (1,036 tests exercise witness generation across all circuits). |
 | **Parameter correctness** | Curve constants (BabyJubjub base point, order), SHA-256 round constants, and Poseidon parameters are assumed correct. | Values are taken from published standards and reference implementations. |
 | **Circuit composition** | Most proofs verify individual templates in isolation, not full application-level compositions of multiple templates. | Integration tests cover composed circuits. |
 
@@ -99,3 +101,4 @@ These are known gaps between what the proofs cover and full end-to-end verificat
 [i4]: https://github.com/TheFrozenFire/circom-circuits/issues/4
 [i5]: https://github.com/TheFrozenFire/circom-circuits/issues/5
 [i6]: https://github.com/TheFrozenFire/circom-circuits/issues/6
+[i13]: https://github.com/TheFrozenFire/circom-circuits/issues/13

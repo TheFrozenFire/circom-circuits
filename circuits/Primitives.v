@@ -339,6 +339,37 @@ Proof. intros. reflexivity. Qed.
 Lemma limbs_to_num_nil : forall n, limbs_to_num n [] = 0.
 Proof. intros. reflexivity. Qed.
 
+(** Non-negative limbs produce a non-negative value. *)
+Lemma limbs_to_num_nonneg_limbs : forall n limbs,
+  (forall i, (i < length limbs)%nat -> 0 <= nth i limbs 0) ->
+  0 <= limbs_to_num n limbs.
+Proof.
+  intros n. induction limbs as [| l rest IH]; intros Hnn.
+  - simpl. lia.
+  - rewrite limbs_to_num_cons.
+    assert (Hl : 0 <= l) by (apply (Hnn 0%nat); simpl; lia).
+    assert (Hrest : 0 <= limbs_to_num n rest).
+    { apply IH. intros i Hi. apply (Hnn (S i)). simpl. lia. }
+    assert (Hpow : 0 < 2 ^ Z.of_nat n) by (apply Z.pow_pos_nonneg; lia).
+    nia.
+Qed.
+
+(** Bounded limbs produce a bounded value. *)
+Lemma limbs_to_num_upper : forall n limbs,
+  (forall i, (i < length limbs)%nat -> 0 <= nth i limbs 0 < 2 ^ Z.of_nat n) ->
+  limbs_to_num n limbs < 2 ^ (Z.of_nat n * Z.of_nat (length limbs)).
+Proof.
+  intros n. induction limbs as [| l rest IH]; intros Hbound.
+  - simpl. apply Z.pow_pos_nonneg; lia.
+  - rewrite limbs_to_num_cons.
+    assert (Hl := Hbound 0%nat ltac:(simpl; lia)). simpl in Hl.
+    assert (Hpow : 0 < 2 ^ Z.of_nat n) by (apply Z.pow_pos_nonneg; lia).
+    assert (Hrest : limbs_to_num n rest < 2 ^ (Z.of_nat n * Z.of_nat (length rest))).
+    { apply IH. intros i Hi. apply (Hbound (S i)). simpl. lia. }
+    simpl length. rewrite Nat2Z.inj_succ, Z.mul_succ_r, Z.pow_add_r by lia.
+    nia.
+Qed.
+
 (** Pointwise addition of limbs adds their numeric values. *)
 Lemma limbs_to_num_add : forall n a b,
   length a = length b ->
