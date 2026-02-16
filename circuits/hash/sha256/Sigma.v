@@ -10,6 +10,8 @@ Require Import hash.sha256.Shift.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Sigma Circuit Verification
     Models constraints from circuits/hash/sha256/sigma.circom. *)
 

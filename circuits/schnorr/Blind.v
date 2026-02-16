@@ -11,6 +11,8 @@ Require Import schnorr.Message.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Schnorr Message Blind Circuit Verification
     Models constraints from circuits/schnorr/blind.circom. *)
 

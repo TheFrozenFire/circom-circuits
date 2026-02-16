@@ -10,6 +10,8 @@ Require Import hash.sha256.BinSum.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * T2 Circuit Verification
     Models constraints from circuits/hash/sha256/t2.circom. *)
 

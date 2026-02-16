@@ -8,6 +8,8 @@ Require Import packing.Bitify.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Activation Circuit Verification
     Models constraints from circuits/linalg/activation.circom. *)
 

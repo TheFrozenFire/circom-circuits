@@ -7,6 +7,8 @@ Require Import Primitives.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Polynomial Universal Hash Function Verification
     Models constraints from circuits/bridge/uhf.circom. *)
 

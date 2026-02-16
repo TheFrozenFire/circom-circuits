@@ -7,6 +7,8 @@ Require Import Primitives.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * RotR Circuit Verification
     Models constraints from circuits/hash/sha256/rotate.circom. *)
 

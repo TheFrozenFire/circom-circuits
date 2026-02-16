@@ -11,6 +11,8 @@ Require Import curve.ScalarMul.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * ElGamal Circuit Verification
     Models constraints from circuits/elgamal/elgamal.circom and helpers.circom. *)
 

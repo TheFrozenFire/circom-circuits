@@ -8,6 +8,8 @@ Require Import linalg.FixedPoint.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * QuantizationProof Circuit Verification
     Models constraints from circuits/search/quantize.circom. *)
 

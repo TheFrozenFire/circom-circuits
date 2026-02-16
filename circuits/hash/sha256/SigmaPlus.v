@@ -9,6 +9,8 @@ Require Import hash.sha256.BinSum.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * SigmaPlus Circuit Verification
     Models constraints from circuits/hash/sha256/sigmaplus.circom. *)
 

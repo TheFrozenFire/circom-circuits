@@ -9,6 +9,8 @@ Require Import curve.Compress.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Schnorr Message Circuit Verification
     Models constraints from circuits/schnorr/message.circom. *)
 

@@ -11,6 +11,8 @@ Require Import hash.sha256.BinSum.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * SHA-256 Compression Function Verification
     Models constraints from circuits/hash/sha256/sha256compression.circom. *)
 

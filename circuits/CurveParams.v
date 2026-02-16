@@ -8,6 +8,8 @@ Require Import FieldBridge.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * BabyJubjub Curve Parameters and Group Law Axioms
 
     This module provides:

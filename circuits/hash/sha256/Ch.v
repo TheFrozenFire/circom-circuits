@@ -5,6 +5,8 @@ Require Import Primitives.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Ch Circuit Verification
     Models constraints from circuits/hash/sha256/ch.circom. *)
 
@@ -17,8 +19,5 @@ Theorem Ch_correct : forall a b c out : Z,
   out = a * (b - c) + c ->
   out = ch_bit a b c /\ is_binary out.
 Proof.
-  intros a b c out Ha Hb Hc Hout.
-  destruct Ha as [Ha | Ha]; destruct Hb as [Hb | Hb];
-    destruct Hc as [Hc | Hc];
-    subst; unfold ch_bit, is_binary; split; lia.
+  intros a b c out Ha Hb Hc Hout. unfold ch_bit; binary_cases.
 Qed.

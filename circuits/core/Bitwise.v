@@ -7,6 +7,8 @@ Require Import Primitives.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Bitwise Gate Circuit Verification
     Models constraints from circuits/core/bitwise.circom. *)
 
@@ -22,9 +24,7 @@ Theorem AND_correct : forall a b out : Z,
   out = (2 * a * b - a - b + 1) * b ->
   out = a * b /\ is_binary out.
 Proof.
-  intros a b out Ha Hb Hout.
-  destruct Ha as [Ha | Ha]; destruct Hb as [Hb | Hb];
-    subst; unfold is_binary; split; lia.
+  intros a b out Ha Hb Hout. binary_cases.
 Qed.
 
 (** ** OR (bitwise.circom:16-22)
@@ -36,9 +36,7 @@ Theorem OR_correct : forall a b out : Z,
   out = a + b - a * b ->
   (out = 1 <-> a = 1 \/ b = 1) /\ is_binary out.
 Proof.
-  intros a b out Ha Hb Hout.
-  destruct Ha as [Ha | Ha]; destruct Hb as [Hb | Hb];
-    subst; unfold is_binary; (split; [split; intro H |]); lia.
+  intros a b out Ha Hb Hout. binary_cases.
 Qed.
 
 (** ** XOR (bitwise.circom:24-30)
@@ -50,9 +48,7 @@ Theorem XOR_correct : forall a b out : Z,
   out = a + b - 2 * a * b ->
   (out = 1 <-> a <> b) /\ is_binary out.
 Proof.
-  intros a b out Ha Hb Hout.
-  destruct Ha as [Ha | Ha]; destruct Hb as [Hb | Hb];
-    subst; unfold is_binary; (split; [split; intro H |]); lia.
+  intros a b out Ha Hb Hout. binary_cases.
 Qed.
 
 (** ** MUXOR (bitwise.circom:32-42)
@@ -98,9 +94,7 @@ Theorem MultiXOR_correct : forall a b out : Z,
   out = a + b - 2 * a * b ->
   out = xor_bit a b /\ is_binary out.
 Proof.
-  intros a b out Ha Hb Hout.
-  destruct Ha as [Ha | Ha]; destruct Hb as [Hb | Hb];
-    subst; unfold xor_bit, is_binary; split; lia.
+  intros a b out Ha Hb Hout. unfold xor_bit; binary_cases.
 Qed.
 
 (** ** BitwiseNOT (bitwise.circom:95-101)

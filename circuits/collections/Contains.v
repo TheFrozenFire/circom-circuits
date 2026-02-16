@@ -8,6 +8,8 @@ Require Import core.Comparators.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Contains Circuit Verification
     Models constraints from circuits/collections/contains.circom. *)
 

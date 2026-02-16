@@ -7,6 +7,8 @@ Require Import Primitives.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * VectorCommit Circuit Verification
     Models constraints from circuits/search/commit.circom. *)
 

@@ -7,6 +7,8 @@ Require Import Primitives.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Matrix Circuit Verification
     Models constraints from circuits/linalg/matrix.circom. *)
 

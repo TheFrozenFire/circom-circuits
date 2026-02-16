@@ -9,6 +9,8 @@ Require Import WitnessLemmas.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Big Integer Arithmetic Circuit Verification
     Models constraints from circuits/arithmetic/bigint.circom. *)
 

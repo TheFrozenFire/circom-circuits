@@ -10,6 +10,8 @@ Require Import curve.ScalarMul.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Schnorr Blinding Circuit Verification
     Models constraints from circuits/schnorr/blinding.circom. *)
 

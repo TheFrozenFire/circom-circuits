@@ -10,6 +10,8 @@ Require Import collections.Selector.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Similarity Circuit Verification
     Models constraints from circuits/linalg/similarity.circom. *)
 

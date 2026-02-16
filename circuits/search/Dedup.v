@@ -9,6 +9,8 @@ Require Import hash.Merkle.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * PrivateDedup Circuit Verification
     Models constraints from circuits/search/dedup.circom. *)
 

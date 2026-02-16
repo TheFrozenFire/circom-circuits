@@ -5,6 +5,8 @@ Require Import Primitives.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Multiplexer Circuit Verification
     Models constraints from circuits/core/mux.circom. *)
 

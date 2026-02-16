@@ -8,6 +8,8 @@ Require Import packing.Bitify.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Point Compression Circuit Verification
     Models constraints from circuits/curve/compress.circom. *)
 

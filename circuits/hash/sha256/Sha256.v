@@ -8,6 +8,8 @@ Require Import hash.sha256.Sha256compression.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * SHA-256 Circuit Verification
     Models constraints from circuits/hash/sha256/sha256.circom. *)
 

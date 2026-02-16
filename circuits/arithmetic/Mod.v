@@ -7,6 +7,8 @@ Require Import Primitives.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Modular Arithmetic Circuit Verification
     Models the constraints of ModSum, ModSub, ModSumThree, ModSubThree,
     ModSumFour, ModProd, Split, SplitThree from circuits/arithmetic/mod.circom.

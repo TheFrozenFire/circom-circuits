@@ -8,6 +8,8 @@ Require Import arithmetic.BigInt.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * RSA Message Blinding Verification
     Models constraints from circuits/rsa/blind.circom. *)
 

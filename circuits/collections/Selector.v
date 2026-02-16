@@ -7,6 +7,8 @@ Require Import Primitives.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Selector Circuit Verification
     Models constraints from circuits/collections/selector.circom. *)
 

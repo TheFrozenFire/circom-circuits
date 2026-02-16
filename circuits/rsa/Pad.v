@@ -8,6 +8,8 @@ Require Import packing.Bitify.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * RSA PKCS v1.5 Padding Verification
     Models constraints from circuits/rsa/pad.circom. *)
 

@@ -12,6 +12,8 @@ Require Import core.Comparators.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * BabyJubjub Circuit Verification
     Models constraints from circuits/curve/babyjub.circom. *)
 
@@ -213,7 +215,6 @@ Theorem BabyAdd_complete : forall x1 y1 x2 y2 : Z,
     ((1 - babyjub_d * tau) * yout - (delta + babyjub_a * beta - gamma)) mod p_field = 0.
 Proof.
   intros x1 y1 x2 y2 Hcurve1 Hcurve2 tau Hne_plus Hne_minus.
-  assert (Hp_pos : 0 < p_field) by exact p_field_pos.
   (* Get the addition formula from the axiom *)
   assert (Hformula := baby_add_formula (mkPoint x1 y1) (mkPoint x2 y2)
     Hcurve1 Hcurve2).
@@ -227,16 +228,8 @@ Proof.
   split; [reflexivity |]. split; [reflexivity |]. split; [reflexivity |].
   unfold R.
   split.
-  - (* ((1 + d*tau) * px(baby_add P Q) - (x1*y2 + y1*x2)) mod p = 0 *)
-    rewrite Hfx.
-    replace (x1 * y2 + y1 * x2 - (x1 * y2 + y1 * x2)) with 0 by ring.
-    rewrite Z.mod_0_l by lia. reflexivity.
-  - (* ((1 - d*tau) * py(baby_add P Q) - (delta + a*beta - gamma)) mod p = 0 *)
-    rewrite Hfy.
-    replace ((-babyjub_a * x1 + y1) * (x2 + y2) + babyjub_a * (x1 * y2) - y1 * x2 -
-      ((-babyjub_a * x1 + y1) * (x2 + y2) + babyjub_a * (x1 * y2) - y1 * x2))
-      with 0 by ring.
-    rewrite Z.mod_0_l by lia. reflexivity.
+  - rewrite Hfx. solve_mod_self_zero.
+  - rewrite Hfy. solve_mod_self_zero.
 Qed.
 
 (** ** Suborder Arithmetic Field Safety

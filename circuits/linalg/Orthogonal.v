@@ -9,6 +9,8 @@ Require Import linalg.Matrix.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Orthogonal Circuit Verification
     Models constraints from circuits/linalg/orthogonal.circom. *)
 

@@ -8,6 +8,8 @@ Require Import WitnessLemmas.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Fixed-Point Arithmetic Circuit Verification
     Models constraints from circuits/linalg/fixedpoint.circom. *)
 

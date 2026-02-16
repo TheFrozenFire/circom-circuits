@@ -7,6 +7,8 @@ Require Import Primitives.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Poseidon Hash Circuit Verification
     Models constraints from circuits/hash/poseidon.circom. *)
 

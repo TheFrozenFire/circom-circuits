@@ -8,6 +8,8 @@ Require Import packing.Bitify.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Pack/Unpack Circuit Verification
     Models constraints from circuits/packing/pack.circom. *)
 

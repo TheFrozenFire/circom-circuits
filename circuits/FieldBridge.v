@@ -3,6 +3,8 @@ From Stdlib Require Import Lia.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Field Bridge: Connecting Z Proofs to Prime Field Arithmetic
 
     All proofs in this library reason over unbounded integers (Z).
@@ -137,6 +139,21 @@ Proof.
   rewrite Heq. rewrite Z.sub_diag. rewrite Z.mod_0_l by lia. reflexivity.
 Qed.
 
+(** ** Proof Automation *)
+
+(** Solve [in_field (x mod p_field)] by applying [Z.mod_pos_bound]. *)
+Ltac solve_in_field_modp :=
+  unfold in_field; split; apply Z.mod_pos_bound; pose proof p_field_pos; lia.
+
+(** Solve [(a - b) mod p_field = 0] by reducing to [a mod p = b mod p]. *)
+Ltac solve_mod_zero :=
+  apply mod_eq_sub_zero; [pose proof p_field_pos; lia |].
+
+(** Solve [(x mod p - x) mod p = 0] or [(x - x) mod p = 0]. *)
+Ltac solve_mod_self_zero :=
+  try rewrite Zminus_mod_idemp_l; rewrite Z.sub_diag;
+  rewrite Z.mod_0_l by (pose proof p_field_pos; lia); reflexivity.
+
 (** ** Field Multiplicative Inverse
 
     Circom's field division (a/b) computes a * b^(p-2) mod p via Fermat's
@@ -151,6 +168,18 @@ Axiom fp_inv_in_field : forall a,
 Axiom fp_inv_spec : forall a,
   in_field a -> a <> 0 -> (a * fp_inv a) mod p_field = 1.
 
+(** Solve [A mod p = B mod p] after fp_inv cancellation:
+    mul_mod_idemp_l, reassociate, commute fp_inv, cancel, simplify. *)
+Ltac fp_inv_cancel inv_hyp :=
+  rewrite Z.mul_mod_idemp_l by (pose proof p_field_pos; lia);
+  rewrite <- Z.mul_assoc;
+  try rewrite (Z.mul_comm (fp_inv _) _);
+  rewrite Z.mul_mod by (pose proof p_field_pos; lia);
+  rewrite inv_hyp;
+  rewrite Z.mul_1_r;
+  rewrite Z.mod_mod by (pose proof p_field_pos; lia);
+  reflexivity.
+
 (** Derived convenience lemma for field division: a / b = a * fp_inv b. *)
 Lemma fp_div_spec : forall a b,
   in_field a -> in_field b -> b <> 0 ->
@@ -161,16 +190,15 @@ Proof.
   assert (Hinv_field : in_field (fp_inv b)) by (apply fp_inv_in_field; assumption).
   assert (Hinv_spec : (b * fp_inv b) mod p_field = 1) by (apply fp_inv_spec; assumption).
   split.
-  - unfold in_field. split.
-    + apply Z.mod_pos_bound. pose proof p_field_pos. lia.
-    + apply Z.mod_pos_bound. pose proof p_field_pos. lia.
+  - unfold in_field. split; apply Z.mod_pos_bound; pose proof p_field_pos; lia.
   - (* (a * fp_inv b) mod p * b mod p = a mod p *)
-    rewrite Z.mul_mod_idemp_l by (pose proof p_field_pos; lia).
-    rewrite <- Z.mul_assoc.
-    rewrite (Z.mul_comm (fp_inv b) b).
-    rewrite Z.mul_mod by (pose proof p_field_pos; lia).
-    rewrite Hinv_spec.
-    rewrite Z.mul_1_r.
-    rewrite Z.mod_mod by (pose proof p_field_pos; lia).
-    reflexivity.
+    fp_inv_cancel Hinv_spec.
 Qed.
+
+(** ** Hint Databases *)
+
+Create HintDb circuit_field discriminated.
+#[export] Hint Resolve in_field_0 in_field_1 in_field_binary : circuit_field.
+#[export] Hint Resolve fp_inv_in_field : circuit_field.
+#[export] Hint Extern 1 (in_field (_ mod p_field)) => solve_in_field_modp : circuit_field.
+#[export] Hint Extern 2 (0 < p_field) => exact p_field_pos : circuit_field.

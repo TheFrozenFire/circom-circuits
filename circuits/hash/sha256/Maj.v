@@ -5,6 +5,8 @@ Require Import Primitives.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Maj Circuit Verification
     Models constraints from circuits/hash/sha256/maj.circom. *)
 
@@ -22,8 +24,5 @@ Theorem Maj_correct : forall a b c mid out : Z,
   out = a * (b + c - 2 * mid) + mid ->
   out = maj_bit a b c /\ is_binary out.
 Proof.
-  intros a b c mid out Ha Hb Hc Hmid Hout.
-  destruct Ha as [Ha | Ha]; destruct Hb as [Hb | Hb];
-    destruct Hc as [Hc | Hc];
-    subst; unfold maj_bit, is_binary; split; lia.
+  intros a b c mid out Ha Hb Hc Hmid Hout. unfold maj_bit; binary_cases.
 Qed.

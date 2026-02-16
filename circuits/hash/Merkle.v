@@ -7,6 +7,8 @@ Require Import Primitives.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Merkle Tree Inclusion Proof Verification
     Models constraints from circuits/hash/merkle.circom. *)
 

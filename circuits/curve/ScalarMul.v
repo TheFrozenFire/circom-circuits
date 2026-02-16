@@ -12,6 +12,8 @@ Require Import core.Mux.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Scalar Multiplication Circuit Verification
     Models constraints from circuits/curve/scalarmul.circom. *)
 

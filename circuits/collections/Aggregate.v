@@ -7,6 +7,8 @@ Require Import Primitives.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Aggregate Circuit Verification
     Models constraints from circuits/collections/aggregate.circom. *)
 

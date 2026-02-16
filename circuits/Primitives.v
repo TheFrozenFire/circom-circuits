@@ -5,6 +5,8 @@ Import ListNotations.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Shared Definitions for Circuit Verification *)
 
 (** A value is binary if it is 0 or 1. *)
@@ -33,6 +35,20 @@ Proof.
     + right. apply Z.mul_eq_0 in H. lia.
   - intros [H | H]; subst; ring.
 Qed.
+
+(** Solve goals by exhaustive case analysis on binary hypotheses.
+    Handles 1-variable (2 cases), 2-variable (4 cases), and 3-variable (8 cases) splits. *)
+Ltac binary_cases :=
+  unfold is_binary in *;
+  match goal with
+  | [Ha : _ = 0 \/ _ = 1, Hb : _ = 0 \/ _ = 1, Hc : _ = 0 \/ _ = 1 |- _] =>
+    destruct Ha as [Ha | Ha]; destruct Hb as [Hb | Hb];
+    destruct Hc as [Hc | Hc]; subst; try lia
+  | [Ha : _ = 0 \/ _ = 1, Hb : _ = 0 \/ _ = 1 |- _] =>
+    destruct Ha as [Ha | Ha]; destruct Hb as [Hb | Hb]; subst; try lia
+  | [Ha : _ = 0 \/ _ = 1 |- _] =>
+    destruct Ha as [Ha | Ha]; subst; try lia
+  end.
 
 (** bits_to_num with cons — avoids simpl expanding Z multiplication. *)
 Lemma bits_to_num_cons : forall b rest,
@@ -460,9 +476,7 @@ Fixpoint fold_xor (bits : list Z) : Z :=
 Lemma xor_bit_binary : forall a b,
   is_binary a -> is_binary b -> is_binary (xor_bit a b).
 Proof.
-  intros a b Ha Hb.
-  destruct Ha as [Ha | Ha]; destruct Hb as [Hb | Hb];
-    subst; unfold xor_bit, is_binary; lia.
+  intros a b Ha Hb. unfold xor_bit; binary_cases.
 Qed.
 
 (** xor_bit matches the constraint a + b - 2*a*b. *)
@@ -471,9 +485,7 @@ Lemma xor_bit_correct : forall a b out,
   out = a + b - 2 * a * b ->
   out = xor_bit a b.
 Proof.
-  intros a b out Ha Hb Hout.
-  destruct Ha as [Ha | Ha]; destruct Hb as [Hb | Hb];
-    subst; unfold xor_bit; lia.
+  intros a b out Ha Hb Hout. unfold xor_bit; binary_cases.
 Qed.
 
 (** * Ordering Definitions *)

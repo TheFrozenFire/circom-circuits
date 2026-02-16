@@ -8,6 +8,8 @@ Require Import core.Bitwise.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Ascon Circuit Verification
     Models constraints from circuits/ascon/sbox.circom,
     permutations.circom, and hash.circom. *)

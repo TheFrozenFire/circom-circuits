@@ -8,6 +8,8 @@ Require Import WitnessLemmas.
 
 Open Scope Z_scope.
 
+Set Default Proof Using "Type".
+
 (** * Vector Circuit Verification
     Models constraints from circuits/linalg/vector.circom. *)
 
