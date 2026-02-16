@@ -146,6 +146,11 @@ templates:
         technique: apply IsZero_sound from Comparators
         depends_on:
           - Comparators.IsZero_sound
+      scalar_mul_on_curve_bounded:
+        type: Theorem
+        statement: for binary scalar e and on-curve base point, scalar_mul(bits_to_num(e), base) remains on curve
+        technique: induction on scalar bits, apply point addition preserves curve membership
+        depends_on: [BabyJub.BabyAdd_is_group_op]
       EscalarMulAny_spec:
         type: Theorem
         statement: 0 <= bits_to_num e < 2^nBits

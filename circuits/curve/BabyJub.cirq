@@ -30,6 +30,17 @@ templates:
         technique: substitute beta/gamma/tau, first two goals direct, third by ring
         depends_on: []
 
+      BabyAdd_is_group_op:
+        type: Theorem
+        statement: BabyAdd constraints match abstract group operation on on-curve points
+        technique: substitute beta/gamma/tau, apply field inverse axiom for (1 + d*tau)
+        depends_on: [BabyAdd_spec]
+      BabyAdd_complete:
+        type: Theorem
+        statement: for on-curve points with (1 + d*tau) mod p != 0, exists xout yout beta gamma delta tau satisfying all BabyAdd constraints
+        technique: witness field expressions, verify constraints via field arithmetic
+        depends_on: [Primitives.fp_inv]
+
   BabyDbl:
     source: babyjub.circom:38-52
     constraints:
@@ -117,4 +128,14 @@ templates:
           - out = sum - k * q
           - 0 <= out < q
         technique: substitute sum/out, apply Zmod_unique with quotient k
+        depends_on: []
+      BabySuborderAdd_field_safe:
+        type: Theorem
+        statement: for a, b in suborder, a, b, and (a + b) remain in field
+        technique: bound analysis on a + b with suborder < p_field
+        depends_on: []
+      BabySuborderAdd_complete:
+        type: Theorem
+        statement: for q > 0 and a + b >= 0, exists out k such that out < q and out = (a + b) mod q
+        technique: witness out = (a + b) mod q, k = (a + b) / q, verify via Z.mod_pos_bound
         depends_on: []

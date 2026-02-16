@@ -22,6 +22,11 @@ templates:
         assumes: [out = 1 - inp * inv, inp * out = 0]
         technique: Z.mul_eq_0 to split product, case analysis on inp = 0
         depends_on: [Primitives.is_binary]
+      IsZero_complete:
+        type: Theorem
+        statement: exists out inv in field such that (inp = 0 <-> out = 1) and inp * out = 0
+        technique: witness inv = if inp = 0 then 0 else fp_inv(inp), verify constraints
+        depends_on: [Primitives.fp_inv]
 
   IsEqual:
     source: comparators.circom:18-23
@@ -36,6 +41,11 @@ templates:
         assumes: [out = 1 - (b - a) * inv, "(b - a) * out = 0"]
         technique: rewrite to IsZero_sound on (b - a), lia
         depends_on: [IsZero_sound]
+      IsEqual_complete:
+        type: Theorem
+        statement: exists out inv in field such that (a = b <-> out = 1)
+        technique: delegate to IsZero_complete on (b - a)
+        depends_on: [IsZero_complete]
 
   LessThan:
     source: comparators.circom:27-34
@@ -66,6 +76,16 @@ templates:
           - Primitives.bits_to_num
           - Primitives.bits_to_num_bound
           - Primitives.bits_to_num_app
+      LessThan_field_safe:
+        type: Theorem
+        statement: for 0 < n <= 252, a, b, and a + 2^n - b remain in [0, p_field)
+        technique: bound analysis on a + 2^n - b with n <= 252
+        depends_on: []
+      LessThan_complete:
+        type: Theorem
+        statement: for 0 < n and a, b < 2^n, exists bits, out satisfying LessThan constraints with (a < b <-> out = 1)
+        technique: witness bits = Num2Bits(a + 2^n - b), derive top bit from range
+        depends_on: [Num2BitsLE_complete]
 
   ForceEqualIfEnabled:
     source: comparators.circom:37-43

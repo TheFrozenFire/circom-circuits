@@ -47,6 +47,11 @@ templates:
       - 0 <= r < k (range check via LessThan)
       - out = q
     properties:
+      VectorMean_complete:
+        type: Theorem
+        statement: for k > 0 and s >= 0, exists q r such that s = q*k + r with 0 <= r < k
+        technique: witness q = s/k, r = s mod k, verify via Z.mod_pos_bound
+        depends_on: []
       VectorMean_correct:
         type: Theorem
         statement: q = s / k /\ r = s mod k

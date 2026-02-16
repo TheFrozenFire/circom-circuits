@@ -16,10 +16,82 @@ definitions:
     type: Lemma
     statement: (i >= 1) -> nth i (x :: l) 0 = nth (i - 1) l 0
     notes: generalizes nth_succ_cons for opaque i >= 1
+  nth_cons_if_eqb:
+    type: Lemma
+    statement: nth i (x :: l) 0 = if (i =? 0) then x else nth (i-1) l 0
+    notes: helper for nth on cons using boolean equality
+  nth_firstn_lt:
+    type: Lemma
+    statement: (i < n) -> nth i (firstn n l) 0 = nth i l 0
+    notes: helper for nth on firstn when index is in bounds
   big_lt_chain:
     type: Fixpoint
     signature: "(lt_vals eq_vals : list Z) -> Z"
     description: recursive comparison chain; lt + eq * recursive_result
+  big_add_witness_aux:
+    type: Fixpoint
+    signature: "(a b : list Z) (carry_in : Z) -> list Z * list Z"
+    description: recursive computation of (outs, carries) from input limbs with carry propagation
+  big_add_witness:
+    type: Definition
+    signature: "(n : nat) (a b : list Z) -> list Z * list Z"
+    description: top-level BigAdd witness computation wrapping big_add_witness_aux with carry_in=0
+  big_add_witness_aux_lengths:
+    type: Lemma
+    statement: length outs = length a + 1 /\ length carries = length a
+    notes: proves output and carry lists have correct lengths
+  big_add_witness_aux_correct:
+    type: Lemma
+    statement: per-limb constraint equations hold for witness computation
+    notes: proves BigAdd constraints are satisfied by witness values
+  big_sub_witness_aux:
+    type: Fixpoint
+    signature: "(a b : list Z) (borrow_in : Z) -> list Z * list Z"
+    description: recursive computation of (outs, borrows) from input limbs with borrow propagation
+  big_sub_witness:
+    type: Definition
+    signature: "(n : nat) (a b : list Z) -> list Z * list Z"
+    description: top-level BigSub witness computation, dropping final borrow
+  big_sub_witness_aux_lengths:
+    type: Lemma
+    statement: length outs = length a /\ length borrows = length a - 1
+    notes: proves output and borrow lists have correct lengths
+  big_sub_witness_aux_correct:
+    type: Lemma
+    statement: per-limb constraint equations hold for witness computation
+    notes: proves BigSub constraints are satisfied by witness values
+  big_sub_witness_aux_value:
+    type: Lemma
+    statement: limbs_to_num(a) - borrow_in - limbs_to_num(b) = limbs_to_num(out)
+    notes: proves value preservation through borrow propagation
+  carry_chain_aux:
+    type: Fixpoint
+    signature: "(inp : list Z) (carry_in : Z) -> list Z * list Z"
+    description: recursive carry propagation computation
+  carry_chain_aux_lengths:
+    type: Lemma
+    statement: length outs = length inp /\ length carries = length inp
+    notes: proves output and carry lists have correct lengths
+  carry_chain_aux_correct:
+    type: Lemma
+    statement: per-limb constraint equations hold for carry chain computation
+    notes: proves carry propagation constraints are satisfied by witness values
+  limbs_to_num_snoc:
+    type: Lemma
+    statement: limbs_to_num n (l ++ [x]) = limbs_to_num n l + x * 2^(n * length l)
+    notes: helper for limbs_to_num with appended element
+  limbs_to_num_firstn_skipn:
+    type: Lemma
+    statement: limbs_to_num n l = limbs_to_num n (firstn k l) + 2^(n*k) * limbs_to_num n (skipn k l)
+    notes: helper for splitting limbs_to_num via firstn/skipn
+  carry_chain_aux_value:
+    type: Lemma
+    statement: limbs_to_num(inp) + carry_in = limbs_to_num(out) + final_carry * 2^(n * length inp)
+    notes: proves value preservation through carry chain
+  carry_propagation_complete:
+    type: Lemma
+    statement: for any input list, exists carries satisfying carry propagation constraints
+    notes: constructs witness carries for CheckCarryToZero and LongToShortNoEndCarry completeness
 
 templates:
   CheckCarryToZero:
@@ -53,6 +125,16 @@ templates:
           carries[k-1]=0. Then limbs_to_num_repeat_zero.
         depends_on:
           - Primitives.carry_propagation_preserves_value
+      CheckCarryToZero_field_safe:
+        type: Theorem
+        statement: for n+m+1 <= 253, all constraint values (inp, carries) remain in [0, p_field)
+        technique: bound analysis on carry values with n+m+1 <= 253
+        depends_on: []
+      CheckCarryToZero_complete:
+        type: Theorem
+        statement: for k >= 2 and limbs_to_num(inp) = 0, exists carries satisfying all CheckCarryToZero constraints
+        technique: apply carry_propagation_complete, verify final carry is 0 from value = 0
+        depends_on: [carry_propagation_complete]
 
   LongToShortNoEndCarry:
     source: bigint.circom:38-62
@@ -77,6 +159,11 @@ templates:
           carries[k-1] to 0 via app_nth2_plus then Z.mul_0_l.
         depends_on:
           - Primitives.carry_propagation_preserves_value
+      LongToShortNoEndCarry_complete:
+        type: Theorem
+        statement: for k >= 2 and n-bit inp limbs, exists out carries satisfying LongToShortNoEndCarry constraints with limbs_to_num(inp) = limbs_to_num(out)
+        technique: apply carry_propagation_complete, extract out limbs as remainders
+        depends_on: [carry_propagation_complete]
 
   BigAdd:
     source: bigint.circom:66-96
@@ -113,6 +200,16 @@ templates:
           - "out[k] = carries[k-1]"
         technique: instantiate bigadd_with_carry with carry_in = 0, lia
         depends_on: [bigadd_with_carry]
+      BigAdd_field_safe:
+        type: Theorem
+        statement: for n <= 252 and k >= 1, all constraint values (a, b, sum limbs, carries) remain in [0, p_field)
+        technique: bound analysis on sum limbs and carries with n <= 252
+        depends_on: []
+      BigAdd_complete:
+        type: Theorem
+        statement: for k >= 1, exists out carries satisfying all BigAdd constraints with limbs_to_num(a) + limbs_to_num(b) = limbs_to_num(out)
+        technique: witness via big_add_witness, verify constraints via big_add_witness_aux_correct, value via bigadd_with_carry
+        depends_on: [big_add_witness, big_add_witness_aux_correct, bigadd_with_carry]
 
   BigSub:
     source: bigint.circom:100-128
@@ -152,6 +249,16 @@ templates:
           - "out[k-1] = a[k-1] - borrows[k-2] - b[k-1]"
         technique: instantiate bigsub_with_borrow with borrow_in = 0, lia
         depends_on: [bigsub_with_borrow]
+      BigSub_field_safe:
+        type: Theorem
+        statement: for n <= 252 and k >= 2, all constraint values (a, b, diff limbs, borrows) remain in [0, p_field)
+        technique: bound analysis on diff limbs and borrows with n <= 252
+        depends_on: []
+      BigSub_complete:
+        type: Theorem
+        statement: for k >= 2 and a >= b, exists out borrows satisfying all BigSub constraints with limbs_to_num(a) - limbs_to_num(b) = limbs_to_num(out)
+        technique: witness via big_sub_witness, verify constraints via big_sub_witness_aux_correct, value via bigsub_with_borrow
+        depends_on: [big_sub_witness, big_sub_witness_aux_correct, bigsub_with_borrow]
 
   BigMultNoCarry:
     source: bigint.circom:179-206
@@ -200,12 +307,23 @@ templates:
           Last obligation: carries ++ [0] has final entry 0 by app_nth2_plus.
         depends_on:
           - Primitives.carry_propagation_preserves_value
+      BigMult_field_safe:
+        type: Theorem
+        statement: for k >= 1 and 2*k*2^(2n) < p_field, all constraint values remain in field
+        technique: bound analysis on raw limbs and carry values
+        depends_on: []
+      BigMult_complete:
+        type: Theorem
+        statement: for k >= 1 and length(rawLimbs) = 2k, exists out carries satisfying carry propagation constraints with limbs_to_num(rawLimbs) = limbs_to_num(out)
+        technique: apply carry_propagation_complete, extract out limbs as remainders
+        depends_on: [carry_propagation_complete]
 
   BigMod:
-    source: bigint.circom:210-263
+    source: bigint.circom:210-266
     constraints:
       - a = b * quotient + remainder (via diff limbs)
       - diff checked to zero via CheckCarryToZero
+      - remainder < divisor (via BigLessThan)
     properties:
       BigMod_constraint_holds:
         type: Theorem
@@ -220,9 +338,56 @@ templates:
         technique: substitute diff composition into diff=0, lia
         depends_on: []
         notes: derives modular equation a = b*quotient + remainder from diff=0 and composition
+      BigMod_complete:
+        type: Theorem
+        statement: >
+          for n >= 1, k >= 2, exists quotient remainder satisfying all BigMod constraints
+          with a = b*quotient + remainder and remainder < b
+        technique: witness quotient = A/B, remainder = A mod B, verify via Z.div_mod and Z.mod_pos_bound
+        depends_on: [Primitives.num_to_limbs]
+
+  BigSubModP:
+    source: bigint.circom:268-308
+    constraints:
+      - out + b - a = multiple of p (via BigMod)
+    properties:
+      BigSubModP_complete:
+        type: Theorem
+        statement: >
+          for n >= 1, k >= 2, exists out quotient satisfying all BigSubModP constraints
+          with out = (a - b) mod p
+        technique: witness out = ((A - B) mod P + P) mod P, verify constraints
+        depends_on: [BigMod_complete]
+
+  BigMultModP:
+    source: bigint.circom:312-382
+    constraints:
+      - a * b = quotient * p + out (via BigMult and CheckCarryToZero)
+      - out < p (via BigLessThan)
+    properties:
+      BigMultModP_complete:
+        type: Theorem
+        statement: >
+          for n >= 1, k >= 2, exists out quotient satisfying all BigMultModP constraints
+          with a*b = p*quotient + out and out < p
+        technique: witness quotient = (A*B)/P, out = (A*B) mod P, verify via Z.div_mod and Z.mod_pos_bound
+        depends_on: [Primitives.num_to_limbs]
+
+  BigModInv:
+    source: bigint.circom:384-405
+    constraints:
+      - out * a mod p = 1 (via BigMultModP)
+    properties:
+      BigModInv_complete:
+        type: Theorem
+        statement: >
+          for n >= 1, k >= 2, exists inv satisfying all BigModInv constraints
+          with (a * inv) mod p = 1 (axiomatized via mod_inv)
+        technique: axiomatize modular inverse existence, verify BigMultModP constraints
+        depends_on: [BigMultModP_complete]
 
   BigLessThan:
-    source: bigint.circom:407-434
+    source: bigint.circom:413-440
     constraints:
       - per-limb LessThan and IsEqual comparisons
       - out = big_lt_chain lt_vals eq_vals
@@ -267,7 +432,7 @@ templates:
         notes: shows comparison chain short-circuits on first decisive limb
 
   BigIsEqual:
-    source: bigint.circom:438-456
+    source: bigint.circom:444-462
     constraints:
       - per-limb IsEqual comparisons -> eq_vals
       - out = product of eq_vals

@@ -68,6 +68,11 @@ templates:
         technique: apply bits_to_num_bound, rewrite length
         depends_on:
           - Primitives.bits_to_num_bound
+      Sha256compression_complete:
+        type: Theorem
+        statement: for binary hin (256 bits) and inp (512 bits), exists w, state, out satisfying all Sha256compression constraints
+        technique: witness message schedule and state evolution, verify round constraints
+        depends_on: [BinSum_complete]
       Sha256compression_spec:
         type: Theorem
         statement: 0 <= bits_to_num out < 2^256

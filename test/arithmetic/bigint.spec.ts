@@ -172,6 +172,7 @@ describe_circuit("BigMod", {
         const w = await calculators.mod.calculate({ a, b });
         const out = w.array("main.out");
         assert.equal(fromLimbs(out, 4), 100n);
+        assert.isTrue(fromLimbs(out, 4) < fromLimbs(b, 4));
     });
 
     it("remainder is zero when divisible", async () => {
@@ -181,6 +182,7 @@ describe_circuit("BigMod", {
         const w = await calculators.mod.calculate({ a, b });
         const out = w.array("main.out");
         assert.equal(fromLimbs(out, 4), 0n);
+        assert.isTrue(fromLimbs(out, 4) < fromLimbs(b, 4));
     });
 
     it("value smaller than modulus", async () => {
@@ -190,6 +192,7 @@ describe_circuit("BigMod", {
         const w = await calculators.mod.calculate({ a, b });
         const out = w.array("main.out");
         assert.equal(fromLimbs(out, 4), 100n);
+        assert.isTrue(fromLimbs(out, 4) < fromLimbs(b, 4));
     });
 });
 
@@ -237,6 +240,7 @@ describe_circuit("BigMultModP", {
         const w = await calculators.mul.calculate({ a, b, p });
         const out = w.array("main.out");
         assert.equal(fromLimbs(out, 4), 9n);
+        assert.isTrue(fromLimbs(out, 4) < fromLimbs(p, 4));
     });
 
     it("multiplies without reduction", async () => {
@@ -246,6 +250,7 @@ describe_circuit("BigMultModP", {
         const w = await calculators.mul.calculate({ a, b, p });
         const out = w.array("main.out");
         assert.equal(fromLimbs(out, 4), 50n);
+        assert.isTrue(fromLimbs(out, 4) < fromLimbs(p, 4));
     });
 
     it("multiply by one", async () => {
@@ -254,6 +259,7 @@ describe_circuit("BigMultModP", {
         const w = await calculators.mul.calculate({ a, b, p });
         const out = w.array("main.out");
         assert.equal(fromLimbs(out, 4), 200n);
+        assert.isTrue(fromLimbs(out, 4) < fromLimbs(p, 4));
     });
 });
 

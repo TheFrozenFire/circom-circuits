@@ -100,6 +100,11 @@ templates:
         depends_on:
           - BabyJub.BabyAdd_spec
           - Primitives.bits_to_num_bound
+      ElGamal_roundtrip_concrete:
+        type: Theorem
+        statement: for on-curve msg, G, y, privKey, decrypt(encrypt(msg)) = msg using BabyJubjub operations
+        technique: substitute pubKey = privKey * G, apply scalar_mul_comm, point_add_assoc, point_add_neg, point_add_identity
+        depends_on: [ElGamal_roundtrip_algebraic]
       ElGamal_roundtrip_algebraic:
         type: Theorem
         statement: >

@@ -260,6 +260,10 @@ template BigMod(n, k) {
         diff[i] <== qb_raw[i] - a[i];
     }
     CheckCarryToZero(n, n + 2, k + 1)(diff);
+
+    // Verify remainder < divisor (canonical Euclidean division)
+    signal lt_rem <== BigLessThan(n, k)(out, b);
+    lt_rem === 1;
 }
 
 /// (a - b) mod p, where a, b, p are k-limb numbers with n-bit limbs.
@@ -373,6 +377,10 @@ template BigMultModP(n, k) {
         diff[i] <== ab[i] - qp[i];
     }
     CheckCarryToZero(n, n + 2, 2 * k)(diff);
+
+    // Verify remainder < modulus (canonical reduction)
+    signal lt_rem <== BigLessThan(n, k)(out, p);
+    lt_rem === 1;
 }
 
 /// Modular inverse: out = a^(-1) mod p.

@@ -11,6 +11,11 @@ templates:
       - sum_j sum_k in[j][k] * 2^k = sum_k out[k] * 2^k
     notes: structurally a Num2Bits decomposition of the sum of inputs
     properties:
+      BinSum_complete:
+        type: Theorem
+        statement: for 0 <= input_sum < 2^nout, exists out (binary, length=nout) such that bits_to_num(out) = input_sum
+        technique: witness out = num_to_bits(input_sum), verify binary and value constraints
+        depends_on: [Primitives.num_to_limbs]
       BinSum_correct:
         type: Theorem
         statement: all_binary out /\ 0 <= input_sum < 2^(length out) /\ input_sum = bits_to_num out

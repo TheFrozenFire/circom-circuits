@@ -1554,7 +1554,8 @@ Theorem BigMod_complete :
     (forall i, (i < 2)%nat -> 0 <= nth i quotient 0 < 2 ^ Z.of_nat n) /\
     (forall i, (i < k)%nat -> 0 <= nth i remainder 0 < 2 ^ Z.of_nat n) /\
     limbs_to_num n a =
-      limbs_to_num n b * limbs_to_num n quotient + limbs_to_num n remainder.
+      limbs_to_num n b * limbs_to_num n quotient + limbs_to_num n remainder /\
+    limbs_to_num n remainder < limbs_to_num n b.
 Proof.
   intros n k a b Hn Hk Halen Hblen Ha Hb HBpos HQbound.
   set (A := limbs_to_num n a).
@@ -1597,7 +1598,8 @@ Proof.
     replace (Z.of_nat n * Z.of_nat 2) with (2 * Z.of_nat n) by lia. exact HQ_range. }
   assert (HR_val : limbs_to_num n remainder = R).
   { unfold remainder. apply num_to_limbs_correct. exact HR_range. }
-  rewrite HQ_val, HR_val. exact Hdm.
+  rewrite HQ_val, HR_val.
+  split; [exact Hdm | exact HR_bound].
 Qed.
 
 (** ** BigMultModP Completeness (bigint.circom:268-303)
@@ -1619,7 +1621,8 @@ Theorem BigMultModP_complete :
     (forall i, (i < k)%nat -> 0 <= nth i out 0 < 2 ^ Z.of_nat n) /\
     (forall i, (i < k)%nat -> 0 <= nth i quotient 0 < 2 ^ Z.of_nat n) /\
     limbs_to_num n a * limbs_to_num n b =
-      limbs_to_num n p * limbs_to_num n quotient + limbs_to_num n out.
+      limbs_to_num n p * limbs_to_num n quotient + limbs_to_num n out /\
+    limbs_to_num n out < limbs_to_num n p.
 Proof.
   intros n k a b p Hn Hk Halen Hblen Hplen Ha Hb Hp HPpos HQbound.
   set (A := limbs_to_num n a).
@@ -1660,7 +1663,8 @@ Proof.
     by (unfold quotient; apply num_to_limbs_correct; exact HQ_range).
   assert (HR_val : limbs_to_num n out = R)
     by (unfold out; apply num_to_limbs_correct; exact HR_range).
-  rewrite HQ_val, HR_val. exact Hdm.
+  rewrite HQ_val, HR_val.
+  split; [exact Hdm | exact HR_bound].
 Qed.
 
 (** ** BigSubModP Completeness (bigint.circom:308-337)

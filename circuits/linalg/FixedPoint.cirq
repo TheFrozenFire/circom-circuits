@@ -59,6 +59,12 @@ templates:
         technique: Zdiv_unique and Zmod_unique
         depends_on: []
 
+      FixedPointMul_complete:
+        type: Theorem
+        statement: for a*b >= 0 and S = 2^scale, exists q r such that a*b = q*S + r with 0 <= r < S
+        technique: witness q = (a*b)/S, r = (a*b) mod S, verify via Z.mod_pos_bound
+        depends_on: []
+
   FixedPointDiv:
     source: fixedpoint.circom:108-134
     constraints:
@@ -70,6 +76,12 @@ templates:
         statement: q = (a * S) / b /\ r = (a * S) mod b
         assumes: [b > 0, q * b + r = a * S, 0 <= r < b]
         technique: Zdiv_unique and Zmod_unique
+        depends_on: []
+
+      FixedPointDiv_complete:
+        type: Theorem
+        statement: for a*S >= 0 and b > 0, exists q r such that a*S = q*b + r with 0 <= r < b
+        technique: witness q = (a*S)/b, r = (a*S) mod b, verify via Z.mod_pos_bound
         depends_on: []
 
   FixedPointDotProduct:
@@ -84,4 +96,9 @@ templates:
         statement: q = rawDot / S /\ r = rawDot mod S
         assumes: [rawDot = q * S + r, 0 <= r < S]
         technique: Zdiv_unique and Zmod_unique
+        depends_on: []
+      FixedPointDotProduct_complete:
+        type: Theorem
+        statement: for rawDot >= 0 and S = 2^scale, exists q r such that rawDot = q*S + r with 0 <= r < S
+        technique: witness q = rawDot/S, r = rawDot mod S, verify via Z.mod_pos_bound
         depends_on: []

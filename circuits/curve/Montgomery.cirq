@@ -21,6 +21,11 @@ templates:
           - v * x = u
         technique: substitute u (= v*x) into first constraint, lia
         depends_on: []
+      Edwards2Montgomery_complete:
+        type: Theorem
+        statement: for x, y in field with (1-y) mod p != 0 and x != 0, exists u v satisfying Edwards2Montgomery constraints
+        technique: witness u = (1+y)/(1-y), v = u/x via field inverse
+        depends_on: [Primitives.fp_inv]
       Edwards2Montgomery_welldefined:
         type: Theorem
         statement: (1 - y) /= 0 /\ x /= 0
@@ -47,6 +52,12 @@ templates:
         technique: substitute u (= x*v) into second constraint, lia
         depends_on: []
 
+      Montgomery2Edwards_complete:
+        type: Theorem
+        statement: for u, v in field with v != 0 and (u+1) mod p != 0, exists x y satisfying Montgomery2Edwards constraints
+        technique: witness x = u/v, y = (u-1)/(u+1) via field inverse
+        depends_on: [Primitives.fp_inv]
+
   MontgomeryAdd:
     source: montgomery.circom:33-51
     constraints:
@@ -64,6 +75,12 @@ templates:
           - y3 = lambda * (x1 - x3) - y1
         technique: substitute x3 into y3 equation, lia
         depends_on: []
+
+      MontgomeryAdd_complete:
+        type: Theorem
+        statement: for x1, y1, x2, y2, A, B in field with (x2-x1) mod p != 0, exists lam x3 y3 satisfying MontgomeryAdd constraints
+        technique: witness lam = (y2-y1)/(x2-x1) via field inverse, derive x3/y3
+        depends_on: [Primitives.fp_inv]
 
   MontgomeryDouble:
     source: montgomery.circom:57-77
@@ -86,3 +103,8 @@ templates:
           - y3 = lambda * (x1 - x3) - y1
         technique: substitute x1_2 and x3, lia
         depends_on: []
+      MontgomeryDouble_complete:
+        type: Theorem
+        statement: for x1, y1, A, B in field with (2*B*y1) mod p != 0, exists lam x3 y3 x1_2 satisfying MontgomeryDouble constraints
+        technique: witness lam = (3*x1^2 + 2*A*x1 + 1)/(2*B*y1) via field inverse, derive x3/y3
+        depends_on: [Primitives.fp_inv]

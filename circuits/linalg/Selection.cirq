@@ -11,6 +11,16 @@ templates:
       - out >= in[i] for all i (via LessThan comparisons)
     notes: prover witnesses the index; circuit verifies maximality
     properties:
+      list_has_max:
+        type: Lemma
+        statement: for any non-empty list, exists index such that list[index] >= list[i] for all i
+        technique: induction on list, compare head with recursive max
+        depends_on: []
+      Max_complete:
+        type: Theorem
+        statement: for n >= 1 inputs of known bit-width, exists out index such that out = inputs[index] and out >= inputs[i] for all i
+        technique: witness index via list_has_max, verify maximality constraints
+        depends_on: [list_has_max]
       Max_correct:
         type: Theorem
         statement: forall i, nth i inputs 0 <= out

@@ -36,6 +36,17 @@ templates:
           - Primitives.binary_constraint
           - Primitives.bits_to_num_unique
 
+      Num2Bits_field_safe:
+        type: Theorem
+        statement: for output length <= 253 and binary constraints, inp and sum of (out[i] * 2^i) remain in [0, p_field)
+        technique: bound analysis on bits_to_num with length <= 253
+        depends_on: []
+      Num2BitsLE_complete:
+        type: Theorem
+        statement: for 0 <= inp < 2^n, exists out (binary, length=n) such that bits_to_num(out) = inp
+        technique: witness out = num_to_limbs(inp, 1, n), verify binary and value via num_to_limbs_correct
+        depends_on: [Primitives.num_to_limbs]
+
   Bits2Num:
     source: bitify.circom:46-56
     constraints:
@@ -83,3 +94,8 @@ templates:
         depends_on:
           - Num2Bits_correct
           - Primitives.bits_to_num_firstn_bound
+      TruncNumLE_complete:
+        type: Theorem
+        statement: for nOut <= nIn and 0 <= inp < 2^nIn, exists out such that out = inp mod 2^nOut
+        technique: witness bits = num_to_limbs(inp), derive truncation from firstn
+        depends_on: [Num2BitsLE_complete]
