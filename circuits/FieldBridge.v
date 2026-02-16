@@ -168,6 +168,17 @@ Axiom fp_inv_in_field : forall a,
 Axiom fp_inv_spec : forall a,
   in_field a -> a <> 0 -> (a * fp_inv a) mod p_field = 1.
 
+(** Given [Hinv : (w * fp_inv w) mod p_field = 1], prove
+    [(raw * fp_inv w) mod p_field = 1] when [w := raw mod p_field].
+    Collapses the transitivity + Z.mul_mod_idemp_l pattern. *)
+Ltac derive_raw_fp_inv Hinv :=
+  match type of Hinv with
+  | (?w * fp_inv ?w) mod p_field = 1 =>
+    transitivity ((w * fp_inv w) mod p_field);
+    [ symmetry; apply Z.mul_mod_idemp_l; pose proof p_field_pos; lia
+    | exact Hinv ]
+  end.
+
 (** Solve [A mod p = B mod p] after fp_inv cancellation:
     mul_mod_idemp_l, reassociate, commute fp_inv, cancel, simplify. *)
 Ltac fp_inv_cancel inv_hyp :=

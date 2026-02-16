@@ -119,10 +119,8 @@ Proof.
     by (apply fp_inv_spec; assumption).
   assert (Hinv_x : (x * fp_inv x) mod p_field = 1)
     by (apply fp_inv_spec; assumption).
-  assert (Hinv_1my : ((1 - y) * fp_inv one_minus_y) mod p_field = 1).
-  { transitivity ((one_minus_y * fp_inv one_minus_y) mod p_field).
-    - symmetry. apply Z.mul_mod_idemp_l. pose proof p_field_pos. lia.
-    - exact Hinv_omy. }
+  assert (Hinv_1my : ((1 - y) * fp_inv one_minus_y) mod p_field = 1)
+    by derive_raw_fp_inv Hinv_omy.
   split.
   - solve_mod_zero. unfold u. fp_inv_cancel Hinv_1my.
   - solve_mod_zero. unfold v. fp_inv_cancel Hinv_x.
@@ -152,10 +150,8 @@ Proof.
   assert (Hinv_u1 : (u_plus_1 * fp_inv u_plus_1) mod p_field = 1)
     by (apply fp_inv_spec; assumption).
   exists x, y. split; [exact Hx_field |]. split; [exact Hy_field |].
-  assert (Hinv_u1p : ((u + 1) * fp_inv u_plus_1) mod p_field = 1).
-  { transitivity ((u_plus_1 * fp_inv u_plus_1) mod p_field).
-    - symmetry. apply Z.mul_mod_idemp_l. pose proof p_field_pos. lia.
-    - exact Hinv_u1. }
+  assert (Hinv_u1p : ((u + 1) * fp_inv u_plus_1) mod p_field = 1)
+    by derive_raw_fp_inv Hinv_u1.
   split.
   - solve_mod_zero. unfold x. fp_inv_cancel Hinv_v.
   - solve_mod_zero. unfold y. fp_inv_cancel Hinv_u1p.
@@ -190,10 +186,8 @@ Proof.
   assert (Hy3_field : in_field y3) by (unfold y3; solve_in_field_modp).
   exists lam, x3, y3.
   split; [exact Hlam_field |]. split; [exact Hx3_field |]. split; [exact Hy3_field |].
-  assert (Hinv_dx2 : ((x2 - x1) * fp_inv dx) mod p_field = 1).
-  { transitivity ((dx * fp_inv dx) mod p_field).
-    - symmetry. apply Z.mul_mod_idemp_l. pose proof p_field_pos. lia.
-    - exact Hinv_dx. }
+  assert (Hinv_dx2 : ((x2 - x1) * fp_inv dx) mod p_field = 1)
+    by derive_raw_fp_inv Hinv_dx.
   split.
   - solve_mod_zero. unfold lam. fp_inv_cancel Hinv_dx2.
   - split; [unfold x3; solve_mod_self_zero | unfold y3; solve_mod_self_zero].
@@ -232,10 +226,8 @@ Proof.
   exists lam, x3, y3, x1_2.
   split; [exact Hlam_field |]. split; [exact Hx3_field |]. split; [exact Hy3_field |].
   split; [reflexivity |].
-  assert (Hinv_den2 : ((2 * B * y1) * fp_inv den) mod p_field = 1).
-  { transitivity ((den * fp_inv den) mod p_field).
-    - symmetry. apply Z.mul_mod_idemp_l. pose proof p_field_pos. lia.
-    - exact Hinv_den. }
+  assert (Hinv_den2 : ((2 * B * y1) * fp_inv den) mod p_field = 1)
+    by derive_raw_fp_inv Hinv_den.
   split.
   - solve_mod_zero. unfold lam. fp_inv_cancel Hinv_den2.
   - split; [unfold x3; solve_mod_self_zero | unfold y3; solve_mod_self_zero].
