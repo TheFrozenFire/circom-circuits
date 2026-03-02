@@ -107,6 +107,96 @@ template Graph_EvalQuadratic(nNodes, nEdges, nNodeProps) {
     }
 }
 
+/// Symmetric-Q quadratic form over edge endpoints.
+/// Exploits Q[p][q] == Q[q][p] to reduce cross-product constraints by ~25%.
+///
+/// For each edge (u,v): out[i] = Σ Q[p][p] × srcProp[p] × dstProp[p]              (diagonal)
+///                              + Σ_{p<q} Q[p][q] × (src[p]×dst[q] + src[q]×dst[p]) (upper triangle)
+///                              + linear terms + constant
+///
+/// Cross-product constraints per edge:
+///   Full:      2×nNodeProps²
+///   Symmetric: 2×nNodeProps + 3×nNodeProps×(nNodeProps-1)/2
+///   Savings:   nNodeProps×(nNodeProps-1)/2 constraints per edge
+///
+/// IMPORTANT: Caller must ensure Q is symmetric. If Q is not symmetric,
+/// only the upper triangle (including diagonal) is used.
+template Graph_EvalQuadraticSym(nNodes, nEdges, nNodeProps) {
+    var nPairs = nNodeProps * (nNodeProps - 1) / 2;
+
+    signal input edges[nEdges][2];
+    signal input nodeProps[nNodes][nNodeProps];
+    signal input Q[nNodeProps][nNodeProps];
+    signal input linCoeff[2 * nNodeProps];
+    signal input constant;
+    signal output out[nEdges];
+
+    component srcRow[nEdges];
+    component dstRow[nEdges];
+
+    // Diagonal: src[p] * dst[p], then Q[p][p] * that
+    signal diagCross[nEdges][nNodeProps];
+    signal diagWeighted[nEdges][nNodeProps];
+
+    // Upper triangle pairs (p < q): src[p]*dst[q], src[q]*dst[p], Q[p][q]*(sum)
+    signal pairCrossA[nEdges][nPairs];
+    signal pairCrossB[nEdges][nPairs];
+    signal pairWeighted[nEdges][nPairs];
+
+    // Linear terms
+    signal srcLinTerms[nEdges][nNodeProps];
+    signal dstLinTerms[nEdges][nNodeProps];
+
+    for (var i = 0; i < nEdges; i++) {
+        srcRow[i] = LookupRow(nNodes, nNodeProps);
+        srcRow[i].sel <== edges[i][0];
+        for (var j = 0; j < nNodes; j++) {
+            for (var p = 0; p < nNodeProps; p++) {
+                srcRow[i].props[j][p] <== nodeProps[j][p];
+            }
+        }
+
+        dstRow[i] = LookupRow(nNodes, nNodeProps);
+        dstRow[i].sel <== edges[i][1];
+        for (var j = 0; j < nNodes; j++) {
+            for (var p = 0; p < nNodeProps; p++) {
+                dstRow[i].props[j][p] <== nodeProps[j][p];
+            }
+        }
+
+        var sum = constant;
+
+        // Diagonal terms: Q[p][p] × src[p] × dst[p]
+        for (var p = 0; p < nNodeProps; p++) {
+            diagCross[i][p] <== srcRow[i].out[p] * dstRow[i].out[p];
+            diagWeighted[i][p] <== Q[p][p] * diagCross[i][p];
+            sum += diagWeighted[i][p];
+        }
+
+        // Upper triangle: Q[p][q] × (src[p]×dst[q] + src[q]×dst[p]) for p < q
+        var idx = 0;
+        for (var p = 0; p < nNodeProps; p++) {
+            for (var q = p + 1; q < nNodeProps; q++) {
+                pairCrossA[i][idx] <== srcRow[i].out[p] * dstRow[i].out[q];
+                pairCrossB[i][idx] <== srcRow[i].out[q] * dstRow[i].out[p];
+                pairWeighted[i][idx] <== Q[p][q] * (pairCrossA[i][idx] + pairCrossB[i][idx]);
+                sum += pairWeighted[i][idx];
+                idx++;
+            }
+        }
+
+        // Linear terms
+        for (var p = 0; p < nNodeProps; p++) {
+            srcLinTerms[i][p] <== linCoeff[p] * srcRow[i].out[p];
+            sum += srcLinTerms[i][p];
+            dstLinTerms[i][p] <== linCoeff[nNodeProps + p] * dstRow[i].out[p];
+            sum += dstLinTerms[i][p];
+        }
+
+        out[i] <== sum;
+    }
+}
+
 /// Evaluate and compare on edge properties.
 /// comparisonType: 0=equal, 1=less-than, 2=greater-than
 /// For each edge, evaluates: edgeProps[i][propIdx1] {op} edgeProps[i][propIdx2]
