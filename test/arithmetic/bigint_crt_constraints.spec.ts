@@ -51,4 +51,28 @@ describe("@slow BigMultModP CRT constraint comparison", function () {
 
         assert.isBelow(crtCount, sbCount, "CRT should have fewer constraints");
     });
+
+    it("nocanon has fewer constraints than canonical CRT (n=8, k=4)", async () => {
+        const canonical: CircuitDef = {
+            path: "arithmetic/bigint_crt.circom",
+            template: "BigMultModP_CRT",
+            params: [8, 4],
+        };
+        const nocanon: CircuitDef = {
+            path: "arithmetic/bigint_crt.circom",
+            template: "BigMultModP_CRT_nocanon",
+            params: [8, 4],
+        };
+
+        const [canonCount, nocanonCount] = await Promise.all([
+            compile_and_count(canonical),
+            compile_and_count(nocanon),
+        ]);
+
+        console.log(`    BigMultModP_CRT(8,4):         ${canonCount} constraints`);
+        console.log(`    BigMultModP_CRT_nocanon(8,4):  ${nocanonCount} constraints`);
+        console.log(`    BigLessThan savings: ${canonCount - nocanonCount} constraints`);
+
+        assert.isBelow(nocanonCount, canonCount, "nocanon should have fewer constraints");
+    });
 });

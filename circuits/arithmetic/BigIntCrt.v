@@ -17,8 +17,12 @@ Set Default Proof Using "Type".
     Models constraints from circuits/arithmetic/bigint_crt.circom.
 
     BigMultModP_CRT verifies a*b = q*p + r by checking the equation
-    modulo p_field (native field) and several small 50-bit CRT primes.
-    Soundness follows from the Chinese Remainder Theorem. *)
+    modulo p_field (native field) and several 89-bit CRT primes.
+    Soundness follows from the Chinese Remainder Theorem.
+
+    BigMultModP_CRT_nocanon is a variant that omits the final out < p
+    check, proving only a congruence (out mod p = (a*b) mod p).
+    Used for intermediate results in exponentiation chains. *)
 
 (* ================================================================== *)
 (** ** Section 1: CRT Infrastructure *)
@@ -67,8 +71,8 @@ Proof.
   intros. simpl. reflexivity.
 Qed.
 
-(** CRT primes are abstract parameters — their concrete values (50-bit
-    primes near 2^49) are hardcoded in bigint_crt.circom. *)
+(** CRT primes are abstract parameters — their concrete values (89-bit
+    primes near 2^88) are hardcoded in bigint_crt.circom. *)
 
 Parameter crt_prime : nat -> Z.
 Parameter crt_num_primes : nat -> nat -> nat.
@@ -133,6 +137,39 @@ Proof.
     2 ^ (2 * Z.of_nat n * Z.of_nat k)).
   { apply Z.pow_le_mono_r; lia. }
   (* |D| < 2^(2nk) + 2^(2nk) + 2^(nk) < 4 * 2^(2nk) = 2^(2nk+2) *)
+  assert (H2nk2 : 2 ^ (2 * Z.of_nat n * Z.of_nat k + 2) =
+    4 * 2 ^ (2 * Z.of_nat n * Z.of_nat k)).
+  { rewrite Z.pow_add_r by lia. simpl (2 ^ 2). lia. }
+  rewrite H2nk2. apply Z.abs_lt. split; lia.
+Qed.
+
+(** Variant for nocanon: R can be up to 2^(nk) instead of P. *)
+Lemma crt_diff_bound_nocanon :
+  forall (n k : nat) (A B Q P R : Z),
+  (k >= 1)%nat ->
+  0 <= A < 2 ^ (Z.of_nat n * Z.of_nat k) ->
+  0 <= B < 2 ^ (Z.of_nat n * Z.of_nat k) ->
+  0 <= Q < 2 ^ (Z.of_nat n * Z.of_nat k) ->
+  0 <= P < 2 ^ (Z.of_nat n * Z.of_nat k) ->
+  0 <= R < 2 ^ (Z.of_nat n * Z.of_nat k) ->
+  Z.abs (A * B - P * Q - R) < 2 ^ (2 * Z.of_nat n * Z.of_nat k + 2).
+Proof.
+  intros n k A B P Q R Hk HA HB HP HQ HR.
+  assert (HAB_nn : 0 <= A * B) by (apply Z.mul_nonneg_nonneg; lia).
+  assert (HPQ_nn : 0 <= P * Q) by (apply Z.mul_nonneg_nonneg; lia).
+  assert (HAB : A * B < 2 ^ (2 * Z.of_nat n * Z.of_nat k)).
+  { assert (H2nk : 2 ^ (2 * Z.of_nat n * Z.of_nat k) =
+              2 ^ (Z.of_nat n * Z.of_nat k) * 2 ^ (Z.of_nat n * Z.of_nat k)).
+    { rewrite <- Z.pow_add_r; try lia. f_equal. lia. }
+    rewrite H2nk. apply Z.mul_lt_mono_nonneg; lia. }
+  assert (HPQ : P * Q < 2 ^ (2 * Z.of_nat n * Z.of_nat k)).
+  { assert (H2nk : 2 ^ (2 * Z.of_nat n * Z.of_nat k) =
+              2 ^ (Z.of_nat n * Z.of_nat k) * 2 ^ (Z.of_nat n * Z.of_nat k)).
+    { rewrite <- Z.pow_add_r; try lia. f_equal. lia. }
+    rewrite H2nk. apply Z.mul_lt_mono_nonneg; lia. }
+  assert (Hnk_pow : 2 ^ (Z.of_nat n * Z.of_nat k) <=
+    2 ^ (2 * Z.of_nat n * Z.of_nat k)).
+  { apply Z.pow_le_mono_r; lia. }
   assert (H2nk2 : 2 ^ (2 * Z.of_nat n * Z.of_nat k + 2) =
     4 * 2 ^ (2 * Z.of_nat n * Z.of_nat k)).
   { rewrite Z.pow_add_r by lia. simpl (2 ^ 2). lia. }
@@ -250,6 +287,119 @@ Proof.
   assert (Hexact : A * B = P * Q + R) by (unfold D in HD_zero; lia).
   (* Step 6: With 0 <= R < P, R = (A*B) mod P *)
   apply Zmod_unique with (q := Q); lia.
+Qed.
+
+(* ================================================================== *)
+(** ** Section 2b: BigMultModP_CRT_nocanon Soundness *)
+(* ================================================================== *)
+
+(** Nocanon variant: proves congruence rather than equality.
+    Without out < p, we can only conclude out ≡ (a*b) (mod p). *)
+
+Theorem BigMultModP_CRT_nocanon_sound :
+  forall (n k : nat) (a b p out quotient : list Z),
+  (k >= 1)%nat ->
+  length a = k -> length b = k -> length p = k ->
+  length out = k -> length quotient = k ->
+  (* Range checks on output and quotient *)
+  (forall i, (i < k)%nat -> 0 <= nth i out 0 < 2 ^ Z.of_nat n) ->
+  (forall i, (i < k)%nat -> 0 <= nth i quotient 0 < 2 ^ Z.of_nat n) ->
+  (* Native field check *)
+  (limbs_to_num n a * limbs_to_num n b -
+   limbs_to_num n p * limbs_to_num n quotient -
+   limbs_to_num n out) mod p_field = 0 ->
+  (* CRT checks *)
+  (forall j, (j < crt_num_primes n k)%nat ->
+    (limbs_to_num n a * limbs_to_num n b -
+     limbs_to_num n p * limbs_to_num n quotient -
+     limbs_to_num n out) mod (crt_prime j) = 0) ->
+  (* Range checks on inputs *)
+  (forall i, (i < k)%nat -> 0 <= nth i a 0 < 2 ^ Z.of_nat n) ->
+  (forall i, (i < k)%nat -> 0 <= nth i b 0 < 2 ^ Z.of_nat n) ->
+  (forall i, (i < k)%nat -> 0 <= nth i p 0 < 2 ^ Z.of_nat n) ->
+  (* No canonical check required *)
+  limbs_to_num n p > 0 ->
+  (* Conclusion: congruence, not equality *)
+  (limbs_to_num n out) mod (limbs_to_num n p) =
+    (limbs_to_num n a * limbs_to_num n b) mod (limbs_to_num n p).
+Proof.
+  intros n k a b p out quotient Hk
+    Halen Hblen Hplen Holen Hqlen
+    Hout_range Hq_range
+    Hnative Hcrt
+    Ha Hb Hp HPpos.
+  set (A := limbs_to_num n a).
+  set (B := limbs_to_num n b).
+  set (P := limbs_to_num n p).
+  set (Q := limbs_to_num n quotient).
+  set (R := limbs_to_num n out).
+  set (D := A * B - P * Q - R).
+  (* Step 1: Bound |D| < 2^(2nk+2) using nocanon variant *)
+  assert (HA_bound : 0 <= A < 2 ^ (Z.of_nat n * Z.of_nat k)).
+  { unfold A. split.
+    - apply limbs_to_num_nonneg_limbs. intros i Hi.
+      rewrite Halen in Hi. specialize (Ha i ltac:(lia)). lia.
+    - rewrite <- Halen. apply limbs_to_num_upper.
+      intros i Hi. rewrite Halen in Hi. apply Ha. lia. }
+  assert (HB_bound : 0 <= B < 2 ^ (Z.of_nat n * Z.of_nat k)).
+  { unfold B. split.
+    - apply limbs_to_num_nonneg_limbs. intros i Hi.
+      rewrite Hblen in Hi. specialize (Hb i ltac:(lia)). lia.
+    - rewrite <- Hblen. apply limbs_to_num_upper.
+      intros i Hi. rewrite Hblen in Hi. apply Hb. lia. }
+  assert (HQ_bound : 0 <= Q < 2 ^ (Z.of_nat n * Z.of_nat k)).
+  { unfold Q. split.
+    - apply limbs_to_num_nonneg_limbs. intros i Hi.
+      rewrite Hqlen in Hi. specialize (Hq_range i ltac:(lia)). lia.
+    - rewrite <- Hqlen. apply limbs_to_num_upper.
+      intros i Hi. rewrite Hqlen in Hi. apply Hq_range. lia. }
+  assert (HP_bound : 0 <= P < 2 ^ (Z.of_nat n * Z.of_nat k)).
+  { unfold P. split; [lia |].
+    rewrite <- Hplen. apply limbs_to_num_upper.
+    intros i Hi. rewrite Hplen in Hi. apply Hp. lia. }
+  assert (HR_bound : 0 <= R < 2 ^ (Z.of_nat n * Z.of_nat k)).
+  { unfold R. split.
+    - apply limbs_to_num_nonneg_limbs. intros i Hi.
+      rewrite Holen in Hi. specialize (Hout_range i ltac:(lia)). lia.
+    - rewrite <- Holen. apply limbs_to_num_upper.
+      intros i Hi. rewrite Holen in Hi. apply Hout_range. lia. }
+  assert (Hdiff : Z.abs D < 2 ^ (2 * Z.of_nat n * Z.of_nat k + 2)).
+  { unfold D. apply crt_diff_bound_nocanon; assumption. }
+  (* Step 2: Build moduli list, apply CRT *)
+  set (moduli := p_field :: map crt_prime (seq 0 (crt_num_primes n k))).
+  assert (Hmod_zero : forall m, In m moduli -> D mod m = 0).
+  { intros m Hm. unfold moduli in Hm.
+    destruct Hm as [Heq | Hm].
+    - subst m. exact Hnative.
+    - apply in_map_iff in Hm. destruct Hm as [idx [Heq Hin]].
+      subst m. apply in_seq in Hin.
+      apply Hcrt. lia. }
+  assert (Hmod_pos : forall m, In m moduli -> m > 0).
+  { intros m Hm. unfold moduli in Hm.
+    destruct Hm as [Heq | Hm].
+    - subst m. pose proof p_field_pos. lia.
+    - apply in_map_iff in Hm. destruct Hm as [idx [Heq _]].
+      subst m. apply crt_prime_positive. }
+  assert (Hmod_coprime : forall i j,
+    (i < length moduli)%nat -> (j < length moduli)%nat ->
+    i <> j -> Z.gcd (nth i moduli 0) (nth j moduli 0) = 1).
+  { intros i j Hi Hj Hij.
+    unfold moduli in Hi, Hj |- *.
+    simpl length in Hi, Hj.
+    rewrite length_map, length_seq in Hi, Hj.
+    apply crt_moduli_pairwise_coprime; assumption. }
+  assert (Hprod_bound : Z.abs D < list_prod moduli).
+  { pose proof (crt_product_sufficient n k) as Hsuff.
+    fold moduli in Hsuff. lia. }
+  assert (HD_zero : D = 0).
+  { apply (crt_zero_from_moduli D moduli); assumption. }
+  (* Step 3: D = 0 means A*B = P*Q + R *)
+  assert (Hexact : A * B = P * Q + R) by (unfold D in HD_zero; lia).
+  (* Step 4: R mod P = (A*B) mod P follows from A*B = P*Q + R *)
+  symmetry.
+  replace (A * B) with (R + Q * P) by lia.
+  rewrite Z.mod_add by lia.
+  reflexivity.
 Qed.
 
 (* ================================================================== *)
@@ -386,6 +536,53 @@ Proof.
   - rewrite HD. apply Z.mod_0_l. pose proof p_field_pos. lia.
   - intros j Hj. rewrite HD. apply Z.mod_0_l.
     pose proof (crt_prime_positive j). lia.
+Qed.
+
+(* ================================================================== *)
+(** ** Section 4b: BigMultModP_CRT_nocanon Completeness *)
+(* ================================================================== *)
+
+(** The canonical witness (R = (A*B) mod P) also satisfies the nocanon
+    constraints, since nocanon is strictly weaker (drops out < p). *)
+Theorem BigMultModP_CRT_nocanon_complete :
+  forall (n k : nat) (a b p : list Z),
+  (n >= 1)%nat -> (k >= 2)%nat ->
+  length a = k -> length b = k -> length p = k ->
+  (forall i, (i < k)%nat -> 0 <= nth i a 0 < 2 ^ Z.of_nat n) ->
+  (forall i, (i < k)%nat -> 0 <= nth i b 0 < 2 ^ Z.of_nat n) ->
+  (forall i, (i < k)%nat -> 0 <= nth i p 0 < 2 ^ Z.of_nat n) ->
+  limbs_to_num n p > 0 ->
+  (limbs_to_num n a * limbs_to_num n b) / limbs_to_num n p <
+    2 ^ (Z.of_nat n * Z.of_nat k) ->
+  exists (out quotient : list Z),
+    length out = k /\ length quotient = k /\
+    (forall i, (i < k)%nat -> 0 <= nth i out 0 < 2 ^ Z.of_nat n) /\
+    (forall i, (i < k)%nat -> 0 <= nth i quotient 0 < 2 ^ Z.of_nat n) /\
+    limbs_to_num n a * limbs_to_num n b =
+      limbs_to_num n p * limbs_to_num n quotient + limbs_to_num n out /\
+    (* Native field check holds *)
+    (limbs_to_num n a * limbs_to_num n b -
+     limbs_to_num n p * limbs_to_num n quotient -
+     limbs_to_num n out) mod p_field = 0 /\
+    (* CRT checks hold *)
+    (forall j, (j < crt_num_primes n k)%nat ->
+      (limbs_to_num n a * limbs_to_num n b -
+       limbs_to_num n p * limbs_to_num n quotient -
+       limbs_to_num n out) mod (crt_prime j) = 0).
+Proof.
+  intros n k a b p Hn Hk Halen Hblen Hplen Ha Hb Hp HPpos HQbound.
+  (* Reuse the canonical completeness proof — the witness is the same *)
+  destruct (BigMultModP_CRT_complete n k a b p Hn Hk Halen Hblen Hplen
+    Ha Hb Hp HPpos HQbound) as [out [quotient
+    [Holen [Hqlen [Hout_range [Hq_range [Hexact [Hlt [Hnative Hcrt]]]]]]]]].
+  exists out, quotient.
+  split; [exact Holen |].
+  split; [exact Hqlen |].
+  split; [exact Hout_range |].
+  split; [exact Hq_range |].
+  split; [exact Hexact |].
+  split; [exact Hnative |].
+  exact Hcrt.
 Qed.
 
 (* ================================================================== *)

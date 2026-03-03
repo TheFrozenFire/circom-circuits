@@ -5,13 +5,19 @@ imports: [Primitives, BigInt]
 
 notes: >
   CRT-verified modular arithmetic. BigMultModP_CRT checks A*B = Q*P + R
-  by verifying the equation modulo p_field (native) and several small 50-bit
-  primes. Soundness follows from the Chinese Remainder Theorem: if the
-  difference D = A*B - Q*P - R is zero modulo every modulus and |D| is less
-  than their product, then D = 0 exactly.
+  by verifying the equation modulo p_field (native) and several 89-bit
+  primes near 2^88. Soundness follows from the Chinese Remainder Theorem:
+  if the difference D = A*B - Q*P - R is zero modulo every modulus and
+  |D| is less than their product, then D = 0 exactly.
 
-  BigModExp65537 and BigModExp compose BigMultModP_CRT calls for modular
-  exponentiation (fixed 65537 and variable exponent respectively).
+  BigMultModP_CRT_nocanon is a variant omitting the final BigLessThan
+  check (out < p), proving only a congruence. Used for intermediate
+  results in exponentiation chains where only the final output needs
+  canonical reduction.
+
+  BigModExp65537 and BigModExp compose BigMultModP_CRT_nocanon calls for
+  intermediate multiplications and a single BigMultModP_CRT (or
+  BigLessThan) for the canonical final output.
 
 definitions:
   list_prod:
@@ -25,15 +31,13 @@ definitions:
   crt_prime:
     type: Parameter
     signature: "nat -> Z"
-    description: the j-th CRT prime (50-bit primes near 2^49)
+    description: the j-th CRT prime (89-bit primes near 2^88)
   crt_num_primes:
     type: Parameter
     signature: "nat -> nat -> nat"
-    description: number of CRT primes needed for (n, k) parameters
-  crt_prime_product:
-    type: Parameter
-    signature: "nat -> nat -> Z"
-    description: product of crt_prime(0) through crt_prime(crt_num_primes(n,k)-1)
+    description: >
+      number of CRT primes needed for (n, k) parameters;
+      computed as ceil((2*n*k + 2 - 254) / 89)
   crt_prime_positive:
     type: Axiom
     statement: forall j, crt_prime j > 0
@@ -56,7 +60,7 @@ definitions:
   crt_product_sufficient:
     type: Axiom
     statement: >
-      p_field * crt_prime_product n k > 2 ^ (2 * n * k + 2) when
+      p_field * product(crt_primes) > 2 ^ (2 * n * k + 2) when
       crt_num_primes n k > 0, or p_field > 2 ^ (2 * n * k + 2) when
       crt_num_primes n k = 0
     description: product of moduli exceeds the difference bound
@@ -67,10 +71,18 @@ definitions:
       Z.abs(A*B - Q*P - R) < 2^(2nk+2)
     description: bound on the verification difference from limb ranges
     notes: proved directly via lia from input range assumptions
+  crt_diff_bound_nocanon:
+    type: Lemma
+    statement: >
+      for 0 <= A,B,Q,R < 2^(nk) and 0 <= P < 2^(nk),
+      Z.abs(A*B - P*Q - R) < 2^(2nk+2)
+    description: >
+      same bound as crt_diff_bound but with R < 2^(nk) instead of R < P;
+      used for nocanon variant where out is not canonically reduced
 
 templates:
   BigMultModP_CRT:
-    source: bigint_crt.circom:151-273
+    source: bigint_crt.circom:121-243
     constraints:
       - "Num2Bits(n)(out[i]) for i in 0..k-1 (range check)"
       - "Num2Bits(n)(quotient[i]) for i in 0..k-1 (range check)"
@@ -138,20 +150,64 @@ templates:
           - Primitives.num_to_limbs
           - arithmetic.BigInt.BigMultModP_complete
 
-  BigModExp65537:
-    source: bigint_crt.circom:278-315
+  BigMultModP_CRT_nocanon:
+    source: bigint_crt.circom:250-357
     constraints:
-      - "mm[0] = BigMultModP_CRT(base, base, modulus) (base^2)"
-      - "mm[i] = BigMultModP_CRT(mm[i-1].out, mm[i-1].out, modulus) for i in 1..15"
-      - "mm[16] = BigMultModP_CRT(mm[15].out, base, modulus) (base^65537)"
-      - "out = mm[16].out"
+      - "Num2Bits(n)(out[i]) for i in 0..k-1 (range check)"
+      - "Num2Bits(n)(quotient[i]) for i in 0..k-1 (range check)"
+      - "ab = A * B (native field check)"
+      - "qp = Q * P (native field check)"
+      - "ab = qp + R"
+      - "crt_ab[j] = Aj * Bj (per-prime CRT check)"
+      - "crt_qp[j] = Qj * Pj (per-prime CRT check)"
+      - "crt_ab[j] + BIAS*mj = crt_qp[j] + Rj + crt_kj[j]*mj"
+      - "Num2Bits(range_bits)(crt_kj[j]) (range check on CRT quotient)"
+    notes: >
+      Same as BigMultModP_CRT but without BigLessThan canonical check.
+      Saves ~25% of constraint cost per multiplication.
+    properties:
+      BigMultModP_CRT_nocanon_sound:
+        type: Theorem
+        statement: >
+          (limbs_to_num n out) mod P = (limbs_to_num n a * limbs_to_num n b) mod P
+        assumes:
+          - same as BigMultModP_CRT_correct minus canonical check
+        technique: >
+          Same CRT argument gives D = 0, so A*B = P*Q + R.
+          Then R mod P = (A*B) mod P via Z.mod_add.
+        depends_on:
+          - crt_diff_bound_nocanon
+          - crt_zero_from_moduli
+          - crt_primes_coprime_with_p_field
+          - crt_product_sufficient
+      BigMultModP_CRT_nocanon_complete:
+        type: Theorem
+        statement: >
+          for valid inputs, exists out quotient satisfying all nocanon constraints
+        technique: >
+          the canonical witness (R = (A*B) mod P) satisfies nocanon constraints
+          since nocanon is strictly weaker; derived from BigMultModP_CRT_complete
+        depends_on:
+          - BigMultModP_CRT_complete
+
+  BigModExp65537:
+    source: bigint_crt.circom:364-402
+    constraints:
+      - "mm_nc[0] = BigMultModP_CRT_nocanon(base, base, modulus) (base^2)"
+      - "mm_nc[i] = BigMultModP_CRT_nocanon(mm_nc[i-1].out, mm_nc[i-1].out, modulus) for i in 1..15"
+      - "mm_final = BigMultModP_CRT(mm_nc[15].out, base, modulus) (base^65537, canonical)"
+      - "out = mm_final.out"
+    notes: >
+      16 BigMultModP_CRT_nocanon + 1 BigMultModP_CRT.
+      Only the final output is canonically reduced (out < modulus).
     properties:
       BigModExp65537_correct:
         type: Theorem
         statement: >
           limbs_to_num n out = mod_pow_nat (limbs_to_num n base) 65537 (limbs_to_num n modulus)
         assumes:
-          - all 17 BigMultModP_CRT instances are correct
+          - all 16 nocanon instances produce correct congruences
+          - final canonical instance is correct
           - limbs_to_num n modulus > 0
         technique: >
           65537 = 2^16 + 1. After i squarings: acc[i] = base^(2^(i+1)) mod p.
@@ -159,25 +215,32 @@ templates:
           gives base^(2^16) * base = base^(2^16 + 1) = base^65537.
         depends_on:
           - BigMultModP_CRT_correct
+          - BigMultModP_CRT_nocanon_sound
           - mod_pow_nat
       BigModExp65537_complete:
         type: Theorem
         statement: >
           for valid inputs, exists all intermediate and output signals satisfying
-          all 17 BigMultModP_CRT sub-constraints
-        technique: compose 17 applications of BigMultModP_CRT_complete
+          all sub-constraints
+        technique: >
+          compose 16 BigMultModP_CRT_nocanon_complete + 1 BigMultModP_CRT_complete
         depends_on:
           - BigMultModP_CRT_complete
+          - BigMultModP_CRT_nocanon_complete
 
   BigModExp:
-    source: bigint_crt.circom:321-372
+    source: bigint_crt.circom:409-464
     constraints:
       - "exp[i] * (exp[i] - 1) = 0 (binary)"
       - "acc[0] = [1, 0, ..., 0] (identity)"
-      - "sq[i] = BigMultModP_CRT(acc[i], acc[i], modulus)"
-      - "mul[i] = BigMultModP_CRT(sq[i].out, base, modulus)"
+      - "sq[i] = BigMultModP_CRT_nocanon(acc[i], acc[i], modulus)"
+      - "mul[i] = BigMultModP_CRT_nocanon(sq[i].out, base, modulus)"
       - "acc[i+1][j] = sq[i].out[j] + exp[eBits-1-i] * (mul[i].out[j] - sq[i].out[j])"
+      - "BigLessThan(n, k)(acc[eBits], modulus) = 1 (final canonical check)"
       - "out = acc[eBits]"
+    notes: >
+      2*eBits BigMultModP_CRT_nocanon + eBits mux + 1 BigLessThan.
+      Only the final output is canonically reduced (out < modulus).
     properties:
       BigModExp_correct:
         type: Theorem
@@ -185,7 +248,7 @@ templates:
           limbs_to_num n out = mod_pow_nat (limbs_to_num n base)
             (Z.to_nat (bits_to_num exp_bits)) (limbs_to_num n modulus)
         assumes:
-          - all 2*eBits BigMultModP_CRT instances are correct
+          - all 2*eBits nocanon instances produce correct congruences
           - exp bits are binary
           - limbs_to_num n modulus > 0
         technique: >
@@ -194,15 +257,15 @@ templates:
           Square doubles the exponent, multiply adds 1. Uses Z.double/Z.succ
           to track exponent accumulation through bits_to_num decomposition.
         depends_on:
-          - BigMultModP_CRT_correct
+          - BigMultModP_CRT_nocanon_sound
           - mod_pow_nat
       BigModExp_complete:
         type: Theorem
         statement: >
           for valid inputs and binary exp bits, exists all intermediate signals
-          satisfying all 2*eBits BigMultModP_CRT sub-constraints and mux equations
+          satisfying all sub-constraints and mux equations
         technique: >
-          compose 2*eBits BigMultModP_CRT_complete applications. Binary mux
+          compose 2*eBits BigMultModP_CRT_nocanon_complete applications. Binary mux
           is always satisfiable (linear equation with binary selector).
         depends_on:
-          - BigMultModP_CRT_complete
+          - BigMultModP_CRT_nocanon_complete

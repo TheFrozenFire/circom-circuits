@@ -112,6 +112,55 @@ describe_circuit("BigMultModP_CRT", {
 });
 
 // ═══════════════════════════════════════════════════
+// BigMultModP_CRT_nocanon — Without canonical reduction
+// ═══════════════════════════════════════════════════
+
+describe_circuit("BigMultModP_CRT_nocanon", {
+    mul: { path: "arithmetic/bigint_crt.circom", template: "BigMultModP_CRT_nocanon", params: [4, 2] },
+}, (calculators) => {
+    const p = toLimbs(251, 4, 2);
+
+    it("multiplies with reduction (nocanon)", async () => {
+        const a = toLimbs(20, 4, 2);
+        const b = toLimbs(13, 4, 2);
+        const w = await calculators.mul.calculate({ a, b, p });
+        const out = fromLimbs(w.array("main.out"), 4);
+        // nocanon: result is congruent to 9 mod 251 (and should be 9 since witness is canonical)
+        assert.equal(out % 251n, 9n);
+    });
+
+    it("multiply by zero (nocanon)", async () => {
+        const a = toLimbs(123, 4, 2);
+        const b = toLimbs(0, 4, 2);
+        const w = await calculators.mul.calculate({ a, b, p });
+        const out = fromLimbs(w.array("main.out"), 4);
+        assert.equal(out % 251n, 0n);
+    });
+
+    it("max values near modulus (nocanon)", async () => {
+        const a = toLimbs(250, 4, 2);
+        const b = toLimbs(250, 4, 2);
+        const w = await calculators.mul.calculate({ a, b, p });
+        const out = fromLimbs(w.array("main.out"), 4);
+        assert.equal(out % 251n, (250n * 250n) % 251n);
+    });
+
+    it("cross-validates against JS reference (nocanon)", async () => {
+        const cases: [number, number][] = [
+            [20, 13], [10, 5], [200, 1], [250, 250], [1, 1], [100, 200],
+        ];
+        for (const [av, bv] of cases) {
+            const a = toLimbs(av, 4, 2);
+            const b = toLimbs(bv, 4, 2);
+            const w = await calculators.mul.calculate({ a, b, p });
+            const out = fromLimbs(w.array("main.out"), 4);
+            const expected = (BigInt(av) * BigInt(bv)) % 251n;
+            assert.equal(out % 251n, expected, `${av} * ${bv} mod 251`);
+        }
+    });
+});
+
+// ═══════════════════════════════════════════════════
 // BigModExp65537 — Fixed-exponent modexp (RSA verify)
 // ═══════════════════════════════════════════════════
 
