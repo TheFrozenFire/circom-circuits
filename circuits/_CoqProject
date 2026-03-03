@@ -11,6 +11,7 @@ core/Mux.v
 packing/Bitify.v
 arithmetic/Mod.v
 arithmetic/BigInt.v
+arithmetic/BigIntCrt.v
 hash/sha256/Xor3.v
 hash/sha256/Ch.v
 hash/sha256/Maj.v

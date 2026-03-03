@@ -1,0 +1,208 @@
+circuit: bigint_crt.circom
+ast: bigint_crt.json
+proof: BigIntCrt.v
+imports: [Primitives, BigInt]
+
+notes: >
+  CRT-verified modular arithmetic. BigMultModP_CRT checks A*B = Q*P + R
+  by verifying the equation modulo p_field (native) and several small 50-bit
+  primes. Soundness follows from the Chinese Remainder Theorem: if the
+  difference D = A*B - Q*P - R is zero modulo every modulus and |D| is less
+  than their product, then D = 0 exactly.
+
+  BigModExp65537 and BigModExp compose BigMultModP_CRT calls for modular
+  exponentiation (fixed 65537 and variable exponent respectively).
+
+definitions:
+  list_prod:
+    type: Fixpoint
+    signature: "(l : list Z) -> Z"
+    description: product of a list of integers (1 for empty list)
+  mod_pow_nat:
+    type: Fixpoint
+    signature: "(base : Z) (exp : nat) (modulus : Z) -> Z"
+    description: modular exponentiation base^exp mod modulus, defined recursively
+  crt_prime:
+    type: Parameter
+    signature: "nat -> Z"
+    description: the j-th CRT prime (50-bit primes near 2^49)
+  crt_num_primes:
+    type: Parameter
+    signature: "nat -> nat -> nat"
+    description: number of CRT primes needed for (n, k) parameters
+  crt_prime_product:
+    type: Parameter
+    signature: "nat -> nat -> Z"
+    description: product of crt_prime(0) through crt_prime(crt_num_primes(n,k)-1)
+  crt_prime_positive:
+    type: Axiom
+    statement: forall j, crt_prime j > 0
+    description: all CRT primes are positive
+  crt_zero_from_moduli:
+    type: Axiom
+    statement: >
+      if x mod m = 0 for each m in a list of pairwise-coprime positive moduli,
+      and |x| < product of moduli, then x = 0
+    description: core CRT lemma for zero detection
+    notes: >
+      axiomatized because full CRT proof from scratch requires number-theory
+      infrastructure beyond Stdlib's scope (same pattern as big_mod_inv in BigInt.v)
+  crt_primes_coprime_with_p_field:
+    type: Axiom
+    statement: >
+      p_field and each crt_prime(j) are pairwise coprime, and crt_prime(i) and
+      crt_prime(j) are coprime for i <> j
+    description: pairwise coprimality of the moduli list [p_field; crt_primes...]
+  crt_product_sufficient:
+    type: Axiom
+    statement: >
+      p_field * crt_prime_product n k > 2 ^ (2 * n * k + 2) when
+      crt_num_primes n k > 0, or p_field > 2 ^ (2 * n * k + 2) when
+      crt_num_primes n k = 0
+    description: product of moduli exceeds the difference bound
+  crt_diff_bound:
+    type: Lemma
+    statement: >
+      for 0 <= A,B,Q < 2^(nk) and 0 <= R < P < 2^(nk),
+      Z.abs(A*B - Q*P - R) < 2^(2nk+2)
+    description: bound on the verification difference from limb ranges
+    notes: proved directly via lia from input range assumptions
+
+templates:
+  BigMultModP_CRT:
+    source: bigint_crt.circom:151-273
+    constraints:
+      - "Num2Bits(n)(out[i]) for i in 0..k-1 (range check)"
+      - "Num2Bits(n)(quotient[i]) for i in 0..k-1 (range check)"
+      - "ab = A * B where A = sum(a[i] * 2^(ni)), B = sum(b[i] * 2^(ni))"
+      - "qp = Q * P where Q = sum(quotient[i] * 2^(ni)), P = sum(p[i] * 2^(ni))"
+      - "ab = qp + R where R = sum(out[i] * 2^(ni))"
+      - "crt_ab[j] = Aj * Bj (reduced mod mj via compile-time coefficients)"
+      - "crt_qp[j] = Qj * Pj (reduced mod mj via compile-time coefficients)"
+      - "crt_ab[j] + BIAS*mj = crt_qp[j] + Rj + crt_kj[j]*mj"
+      - "Num2Bits(range_bits)(crt_kj[j]) (range check on CRT quotient)"
+      - "BigLessThan(n, k)(out, p) = 1 (canonical: out < p)"
+    properties:
+      BigMultModP_CRT_correct:
+        type: Theorem
+        statement: >
+          limbs_to_num n out = (limbs_to_num n a * limbs_to_num n b) mod (limbs_to_num n p)
+        assumes:
+          - k >= 1
+          - length a = k, length b = k, length p = k, length out = k, length quotient = k
+          - "forall i < k, 0 <= out[i] < 2^n (range checks)"
+          - "forall i < k, 0 <= quotient[i] < 2^n (range checks)"
+          - "(A*B - Q*P - R) mod p_field = 0 (native field check)"
+          - "forall j < num_primes, (A*B - Q*P - R) mod crt_prime(j) = 0"
+          - "limbs_to_num n out < limbs_to_num n p (canonical)"
+          - limbs_to_num n p > 0
+        technique: >
+          let D = A*B - Q*P - R. From range checks, |D| < 2^(2nk+2) via
+          crt_diff_bound. D mod p_field = 0 and D mod crt_prime(j) = 0.
+          Moduli are pairwise coprime (axiom) with product > 2^(2nk+2) (axiom).
+          Apply crt_zero_from_moduli: D = 0, so A*B = Q*P + R exactly.
+          With 0 <= R < P, conclude R = (A*B) mod P via Zmod_unique.
+        depends_on:
+          - crt_diff_bound
+          - crt_zero_from_moduli
+          - crt_primes_coprime_with_p_field
+          - crt_product_sufficient
+      BigMultModP_CRT_field_safe:
+        type: Theorem
+        statement: >
+          for 2*k*2^(2n) < p_field, all native and CRT constraint intermediate
+          values remain in [0, p_field)
+        assumes:
+          - k >= 1
+          - 2 * k * 2^(2n) < p_field
+        technique: >
+          native: A,B < 2^(nk) so A*B < 2^(2nk) < p_field.
+          CRT: Aj <= k * mj * 2^n, so Aj*Bj < (k * mj * 2^n)^2 < p_field.
+          Bias: BIAS*mj = k^2 * 2^(2n) * mj^2 + k * 2^n * mj < p_field.
+        depends_on: []
+      BigMultModP_CRT_complete:
+        type: Theorem
+        statement: >
+          for n >= 1, k >= 2, exists out quotient satisfying all constraints
+          with out = (a*b) mod p, and all CRT residue checks hold
+        assumes:
+          - n >= 1, k >= 2
+          - "forall i < k, 0 <= a[i],b[i],p[i] < 2^n"
+          - limbs_to_num n p > 0
+          - (A*B) / P < 2^(nk) (quotient fits in k limbs)
+        technique: >
+          witness Q = (A*B)/P, R = (A*B) mod P via num_to_limbs.
+          Since A*B = Q*P + R exactly, D = 0, so D mod m = 0 for any m.
+          Range checks from num_to_limbs_range. CRT kj witnesses are all 0.
+        depends_on:
+          - Primitives.num_to_limbs
+          - arithmetic.BigInt.BigMultModP_complete
+
+  BigModExp65537:
+    source: bigint_crt.circom:278-315
+    constraints:
+      - "mm[0] = BigMultModP_CRT(base, base, modulus) (base^2)"
+      - "mm[i] = BigMultModP_CRT(mm[i-1].out, mm[i-1].out, modulus) for i in 1..15"
+      - "mm[16] = BigMultModP_CRT(mm[15].out, base, modulus) (base^65537)"
+      - "out = mm[16].out"
+    properties:
+      BigModExp65537_correct:
+        type: Theorem
+        statement: >
+          limbs_to_num n out = mod_pow_nat (limbs_to_num n base) 65537 (limbs_to_num n modulus)
+        assumes:
+          - all 17 BigMultModP_CRT instances are correct
+          - limbs_to_num n modulus > 0
+        technique: >
+          65537 = 2^16 + 1. After i squarings: acc[i] = base^(2^(i+1)) mod p.
+          Induction on the 16 squarings using Z.mul_mod, then final multiply
+          gives base^(2^16) * base = base^(2^16 + 1) = base^65537.
+        depends_on:
+          - BigMultModP_CRT_correct
+          - mod_pow_nat
+      BigModExp65537_complete:
+        type: Theorem
+        statement: >
+          for valid inputs, exists all intermediate and output signals satisfying
+          all 17 BigMultModP_CRT sub-constraints
+        technique: compose 17 applications of BigMultModP_CRT_complete
+        depends_on:
+          - BigMultModP_CRT_complete
+
+  BigModExp:
+    source: bigint_crt.circom:321-372
+    constraints:
+      - "exp[i] * (exp[i] - 1) = 0 (binary)"
+      - "acc[0] = [1, 0, ..., 0] (identity)"
+      - "sq[i] = BigMultModP_CRT(acc[i], acc[i], modulus)"
+      - "mul[i] = BigMultModP_CRT(sq[i].out, base, modulus)"
+      - "acc[i+1][j] = sq[i].out[j] + exp[eBits-1-i] * (mul[i].out[j] - sq[i].out[j])"
+      - "out = acc[eBits]"
+    properties:
+      BigModExp_correct:
+        type: Theorem
+        statement: >
+          limbs_to_num n out = mod_pow_nat (limbs_to_num n base)
+            (Z.to_nat (bits_to_num exp_bits)) (limbs_to_num n modulus)
+        assumes:
+          - all 2*eBits BigMultModP_CRT instances are correct
+          - exp bits are binary
+          - limbs_to_num n modulus > 0
+        technique: >
+          induction on eBits with invariant: acc[i] = base^(exp >> (eBits-i)) mod p.
+          The mux acc[i+1] = sq + bit*(mul - sq) selects sq (bit=0) or mul (bit=1).
+          Square doubles the exponent, multiply adds 1. Uses Z.double/Z.succ
+          to track exponent accumulation through bits_to_num decomposition.
+        depends_on:
+          - BigMultModP_CRT_correct
+          - mod_pow_nat
+      BigModExp_complete:
+        type: Theorem
+        statement: >
+          for valid inputs and binary exp bits, exists all intermediate signals
+          satisfying all 2*eBits BigMultModP_CRT sub-constraints and mux equations
+        technique: >
+          compose 2*eBits BigMultModP_CRT_complete applications. Binary mux
+          is always satisfiable (linear equation with binary selector).
+        depends_on:
+          - BigMultModP_CRT_complete
