@@ -3,12 +3,12 @@ import { describe_circuit } from "../helpers.js";
 import { secp256k1 } from "@noble/curves/secp256k1.js";
 
 const Point = secp256k1.Point;
-const n = 32;
-const k = 8;
+const n = 64;
+const k = 4;
 
-function toLimbs32(val: bigint): bigint[] {
-    const mask = (1n << 32n) - 1n;
-    return Array.from({ length: 8 }, (_, i) => (val >> (BigInt(i) * 32n)) & mask);
+function toLimbs64(val: bigint): bigint[] {
+    const mask = (1n << 64n) - 1n;
+    return Array.from({ length: 4 }, (_, i) => (val >> (BigInt(i) * 64n)) & mask);
 }
 
 function bytesToBigInt(bytes: Uint8Array): bigint {
@@ -59,10 +59,10 @@ describe_circuit("ECDSAVerifyNoPubkeyCheck", {
         const tv = generateTestVector();
 
         const w = await calculators.verify.calculate({
-            r: toLimbs32(tv.r),
-            s: toLimbs32(tv.s),
-            msghash: toLimbs32(tv.msghash),
-            pubkey: [toLimbs32(tv.pubkey.x), toLimbs32(tv.pubkey.y)],
+            r: toLimbs64(tv.r),
+            s: toLimbs64(tv.s),
+            msghash: toLimbs64(tv.msghash),
+            pubkey: [toLimbs64(tv.pubkey.x), toLimbs64(tv.pubkey.y)],
         });
 
         const result = w.value("main.result");
@@ -75,10 +75,10 @@ describe_circuit("ECDSAVerifyNoPubkeyCheck", {
         const badR = tv.r ^ 1n;
 
         const w = await calculators.verify.calculate({
-            r: toLimbs32(badR),
-            s: toLimbs32(tv.s),
-            msghash: toLimbs32(tv.msghash),
-            pubkey: [toLimbs32(tv.pubkey.x), toLimbs32(tv.pubkey.y)],
+            r: toLimbs64(badR),
+            s: toLimbs64(tv.s),
+            msghash: toLimbs64(tv.msghash),
+            pubkey: [toLimbs64(tv.pubkey.x), toLimbs64(tv.pubkey.y)],
         });
 
         const result = w.value("main.result");

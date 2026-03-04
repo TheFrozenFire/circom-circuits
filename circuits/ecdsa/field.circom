@@ -10,94 +10,135 @@ include "packing/bitify.circom";
 // Exploit p = 2^256 - 2^32 - 977, so 2^256 ≡ (2^32 + 977) mod p.
 // ═══════════════════════════════════════════════════
 
-/// Reduces 15-register quadratic product (8×8→15) to 8 registers.
+/// Reduces 7-register quadratic product (4×4→7) to 4 registers.
 /// Adds 33 bits to overflow per register.
-template Secp256k1PrimeReduce15To8() {
-    signal input in[15];
-    signal output out[8];
+/// Input registers can be negative; overall input can be negative.
+template Secp256k1PrimeReduce7Registers() {
+    signal input in[7];
+    signal output out[4];
 
-    // 2^256 ≡ offset (mod p), where offset = 2^32 + 977 = 4294968273 (33 bits)
+    // 2^256 ≡ offset (mod p), where offset = 2^32 + 977 (33 bits)
     var offset = (1 << 32) + 977;
 
-    // Fold registers 8..14 back into 0..6 using: in[j+8] * 2^(256+32j) ≡ in[j+8] * offset * 2^(32j)
-    out[0] <== in[0] + offset * in[8];
-    out[1] <== in[1] + offset * in[9];
-    out[2] <== in[2] + offset * in[10];
-    out[3] <== in[3] + offset * in[11];
-    out[4] <== in[4] + offset * in[12];
-    out[5] <== in[5] + offset * in[13];
-    out[6] <== in[6] + offset * in[14];
-    out[7] <== in[7];
+    // Fold registers 4..6 back into 0..2 using: in[j+4] * 2^(256+64j) ≡ in[j+4] * offset * 2^(64j)
+    out[0] <== offset * in[4] + in[0];
+    out[1] <== offset * in[5] + in[1];
+    out[2] <== offset * in[6] + in[2];
+    out[3] <== in[3];
 }
 
-/// Reduces 22-register cubic product (8×8×8→22) to 8 registers.
-/// Adds 65 bits to overflow per register.
-template Secp256k1PrimeReduce22To8() {
-    signal input in[22];
-    signal output out[8];
+/// Reduces 10-register cubic product (7×4→10) to 4 registers.
+/// Adds 43 bits to overflow per register.
+/// Input registers can be negative; overall input can be negative.
+template Secp256k1PrimeReduce10Registers() {
+    signal input in[10];
+    signal output out[4];
 
-    var offset = (1 << 32) + 977;
-    // offset² is exact in BN254 field: (2^32+977)^2 = 2^64 + 2*977*2^32 + 977^2
-    // = 18446744082299486209 (65 bits)
-    var offset2 = offset * offset;
+    var offset = (1 << 32) + 977;  // 33 bits
+    var offset2 = ((1 << 33) * 977) + (977 ** 2);  // 43 bits
 
-    // Two-pass fold: registers 16..21 use offset², registers 8..15 use offset
-    out[0] <== in[0] + offset * in[8] + offset2 * in[16];
-    out[1] <== in[1] + offset * in[9] + offset2 * in[17];
-    out[2] <== in[2] + offset * in[10] + offset2 * in[18];
-    out[3] <== in[3] + offset * in[11] + offset2 * in[19];
-    out[4] <== in[4] + offset * in[12] + offset2 * in[20];
-    out[5] <== in[5] + offset * in[13] + offset2 * in[21];
-    out[6] <== in[6] + offset * in[14];
-    out[7] <== in[7] + offset * in[15];
+    // Two-pass fold: registers 8..9 use offset², registers 4..7 use offset
+    out[0] <== (offset2 * in[8]) + (offset * in[4]) + in[0];
+    out[1] <== (offset2 * in[9]) + (offset * in[5]) + in[1] + in[8];
+    out[2] <== (offset * in[6]) + in[2] + in[9];
+    out[3] <== (offset * in[7]) + in[3];
 }
 
 // ═══════════════════════════════════════════════════
 // Modular zero checks
 // ═══════════════════════════════════════════════════
 
-/// Verifies a 15-register expression ≡ 0 mod p (for quadratic products).
+/// Verifies a 7-register expression ≡ 0 mod p (for quadratic products).
 /// Registers have m-bit overflow. Uses polynomial multiply for q*p constraint.
-///
-/// Overflow analysis for n=32, k=8:
-///   After reduce 15→8: each register has m+33 bits.
-///   Total value bound: |val| < 2^(m+33) * sum(2^(32i), i=0..7) < 2^(m+258).
-///   Quotient bound: |q| < 2^(m+258) / p < 2^(m+3).
-///   Bias 2^(m+4) ensures positivity: q + 2^(m+4) > 0.
-///   positive[i] has max(m+33, 32+(m+4))+1 = m+37 bits.
 template CheckQuadraticModPIsZero(m) {
-    assert(m < 245);
+    assert(m < 147);
 
-    signal input in[15];
+    signal input in[7];
 
-    signal p[8];
-    p[0] <== 4294966319;
-    p[1] <== 4294967294;
-    p[2] <== 4294967295;
-    p[3] <== 4294967295;
-    p[4] <== 4294967295;
-    p[5] <== 4294967295;
-    p[6] <== 4294967295;
-    p[7] <== 4294967295;
+    signal p[4];
+    p[0] <== 18446744069414583343;
+    p[1] <== 18446744073709551615;
+    p[2] <== 18446744073709551615;
+    p[3] <== 18446744073709551615;
 
-    // Reduce 15 → 8 registers (adds 33 bits)
-    signal reduced[8];
-    reduced <== Secp256k1PrimeReduce15To8()(in);
+    // Reduce 7 → 4 registers (adds 33 bits → m+33 bits per register)
+    signal reduced[4];
+    reduced <== Secp256k1PrimeReduce7Registers()(in);
 
     // Add multiple of p to ensure positivity.
-    // With 32-bit limbs, bias exponent must be (m+4) to exceed |q| < 2^(m+3).
-    // (Reference uses (m-20) which works for 64-bit limbs but not 32-bit.)
-    signal positive[8];
-    for (var i = 0; i < 8; i++) {
-        positive[i] <== reduced[i] + p[i] * (1 << (m + 4));
+    // |val| < 2^(m+33+192) + eps, so p * 2^(m-30) ≈ 2^(m+226) > |val|
+    signal positive[4];
+    for (var i = 0; i < 4; i++) {
+        positive[i] <== reduced[i] + p[i] * (1 << (m - 30)); // m+34 bits
     }
 
-    // Witness quotient (3 registers of 32 bits)
-    var temp[200] = getProperRepresentation(m + 37, 32, 8, positive);
-    var proper[16];
-    for (var i = 0; i < 16; i++) proper[i] = temp[i];
+    // Witness quotient (2 registers of 64 bits)
+    var temp[100] = getProperRepresentation(m + 35, 64, 4, positive);
+    var proper[8];
+    for (var i = 0; i < 8; i++) proper[i] = temp[i];
 
-    var qVarTemp[2][200] = long_div2(32, 8, 8, proper, p);
+    var qVarTemp[2][200] = long_div2(64, 4, 4, proper, p);
+
+    signal q[2];
+    for (var i = 0; i < 2; i++) {
+        q[i] <-- qVarTemp[0][i];
+    }
+
+    // Range check quotient
+    component qRC[2];
+    for (var i = 0; i < 2; i++) {
+        qRC[i] = Num2Bits(64);
+        qRC[i].in <== q[i];
+    }
+
+    // Constrain q * p == positive
+    signal qpProd[5];
+    component qpComp = BigMultNoCarry(64, 64, 64, 2, 4);
+    for (var i = 0; i < 2; i++) qpComp.a[i] <== q[i];
+    for (var i = 0; i < 4; i++) qpComp.b[i] <== p[i];
+    for (var i = 0; i < 5; i++) qpProd[i] <== qpComp.out[i];
+
+    // Check qpProd - positive == 0 via carry-to-zero
+    component zeroCheck = CheckCarryToZero(64, m + 36, 5);
+    for (var i = 0; i < 5; i++) {
+        if (i < 4) {
+            zeroCheck.in[i] <== qpProd[i] - positive[i];
+        } else {
+            zeroCheck.in[i] <== qpProd[i];
+        }
+    }
+}
+
+/// Verifies a 10-register expression ≡ 0 mod p (for cubic products).
+/// Registers have m-bit overflow.
+template CheckCubicModPIsZero(m) {
+    assert(m < 206);
+
+    signal input in[10];
+
+    signal p[4];
+    p[0] <== 18446744069414583343;
+    p[1] <== 18446744073709551615;
+    p[2] <== 18446744073709551615;
+    p[3] <== 18446744073709551615;
+
+    // Reduce 10 → 4 registers (adds 43 bits → m+43 bits per register)
+    signal reduced[4];
+    reduced <== Secp256k1PrimeReduce10Registers()(in);
+
+    // Add multiple of p to ensure positivity.
+    // |val| < 2^(m+43+192) + eps, so p * 2^(m-20) ≈ 2^(m+236) > |val|
+    signal positive[4];
+    for (var i = 0; i < 4; i++) {
+        positive[i] <== reduced[i] + p[i] * (1 << (m - 20)); // m+44 bits
+    }
+
+    // Witness quotient (3 registers of 64 bits)
+    var temp[100] = getProperRepresentation(m + 45, 64, 4, positive);
+    var proper[8];
+    for (var i = 0; i < 8; i++) proper[i] = temp[i];
+
+    var qVarTemp[2][200] = long_div2(64, 4, 4, proper, p);
 
     signal q[3];
     for (var i = 0; i < 3; i++) {
@@ -107,137 +148,62 @@ template CheckQuadraticModPIsZero(m) {
     // Range check quotient
     component qRC[3];
     for (var i = 0; i < 3; i++) {
-        qRC[i] = Num2Bits(32);
+        qRC[i] = Num2Bits(64);
         qRC[i].in <== q[i];
     }
 
-    // Constrain q * p == positive via polynomial multiplication
-    signal qpProd[10];
-    component qpComp = BigMultNoCarryPoly(32, 32, 32, 3, 8);
+    // Constrain q * p == positive
+    signal qpProd[6];
+    component qpComp = BigMultNoCarry(64, 64, 64, 3, 4);
     for (var i = 0; i < 3; i++) qpComp.a[i] <== q[i];
-    for (var i = 0; i < 8; i++) qpComp.b[i] <== p[i];
-    for (var i = 0; i < 10; i++) qpProd[i] <== qpComp.out[i];
-
-    // Check qpProd - positive == 0 via carry-to-zero
-    // diff has max(67, m+37)+1 = m+38 bits
-    signal diff[10];
-    for (var i = 0; i < 10; i++) {
-        if (i < 8) {
-            diff[i] <== qpProd[i] - positive[i];
-        } else {
-            diff[i] <== qpProd[i];
-        }
-    }
-    CheckCarryToZero(32, m + 38, 10)(diff);
-}
-
-/// Verifies a 22-register expression ≡ 0 mod p (for cubic products).
-/// Registers have m-bit overflow.
-///
-/// Overflow analysis for n=32, k=8:
-///   After reduce 22→8: each register has m+65 bits.
-///   Total value bound: |val| < 2^(m+65) * sum(2^(32i), i=0..7) < 2^(m+290).
-///   Quotient bound: |q| < 2^(m+290) / p < 2^(m+35).
-///   Bias 2^(m+36) ensures positivity: q + 2^(m+36) > 0.
-///   positive[i] has max(m+65, 32+(m+36))+1 = m+69 bits.
-template CheckCubicModPIsZero(m) {
-    assert(m < 213);
-
-    signal input in[22];
-
-    signal p[8];
-    p[0] <== 4294966319;
-    p[1] <== 4294967294;
-    p[2] <== 4294967295;
-    p[3] <== 4294967295;
-    p[4] <== 4294967295;
-    p[5] <== 4294967295;
-    p[6] <== 4294967295;
-    p[7] <== 4294967295;
-
-    // Reduce 22 → 8 registers (adds 65 bits)
-    signal reduced[8];
-    reduced <== Secp256k1PrimeReduce22To8()(in);
-
-    // Add multiple of p to ensure positivity.
-    // With 32-bit limbs, bias exponent must be (m+36) to exceed |q| < 2^(m+35).
-    // (Reference uses (m-20) which works for 64-bit limbs but not 32-bit.)
-    signal positive[8];
-    for (var i = 0; i < 8; i++) {
-        positive[i] <== reduced[i] + p[i] * (1 << (m + 36));
-    }
-
-    // Witness quotient (up to 5 registers of 32 bits)
-    var temp[200] = getProperRepresentation(m + 69, 32, 8, positive);
-    var proper[16];
-    for (var i = 0; i < 16; i++) proper[i] = temp[i];
-
-    var qVarTemp[2][200] = long_div2(32, 8, 8, proper, p);
-
-    signal q[5];
-    for (var i = 0; i < 5; i++) {
-        q[i] <-- qVarTemp[0][i];
-    }
-
-    // Range check quotient
-    component qRC[5];
-    for (var i = 0; i < 5; i++) {
-        qRC[i] = Num2Bits(32);
-        qRC[i].in <== q[i];
-    }
-
-    // Constrain q * p == positive via polynomial multiplication
-    signal qpProd[12];
-    component qpComp = BigMultNoCarryPoly(32, 32, 32, 5, 8);
-    for (var i = 0; i < 5; i++) qpComp.a[i] <== q[i];
-    for (var i = 0; i < 8; i++) qpComp.b[i] <== p[i];
-    for (var i = 0; i < 12; i++) qpProd[i] <== qpComp.out[i];
+    for (var i = 0; i < 4; i++) qpComp.b[i] <== p[i];
+    for (var i = 0; i < 6; i++) qpProd[i] <== qpComp.out[i];
 
     // Check qpProd - positive == 0
-    // diff has max(67, m+69)+1 = m+70 bits
-    signal diff[12];
-    for (var i = 0; i < 12; i++) {
-        if (i < 8) {
-            diff[i] <== qpProd[i] - positive[i];
+    component zeroCheck = CheckCarryToZero(64, m + 46, 6);
+    for (var i = 0; i < 6; i++) {
+        if (i < 4) {
+            zeroCheck.in[i] <== qpProd[i] - positive[i];
         } else {
-            diff[i] <== qpProd[i];
+            zeroCheck.in[i] <== qpProd[i];
         }
     }
-    CheckCarryToZero(32, m + 70, 12)(diff);
 }
 
 // ═══════════════════════════════════════════════════
 // Range check: value < secp256k1 prime
 // ═══════════════════════════════════════════════════
 
-/// Verifies 8 × 32-bit limbs represent a value in [0, p).
+/// Verifies 4 × 64-bit limbs represent a value in [0, p).
 /// Range-checks each limb, then handles the boundary case where
-/// all upper limbs equal 0xFFFFFFFF.
+/// all upper limbs equal 0xFFFFFFFFFFFFFFFF.
 template CheckInRangeSecp256k1() {
-    signal input in[8];
+    signal input in[4];
 
-    // Range check each limb to 32 bits
-    component rc[8];
-    for (var i = 0; i < 8; i++) {
-        rc[i] = Num2Bits(32);
+    // Range check each limb to 64 bits
+    component rc[4];
+    for (var i = 0; i < 4; i++) {
+        rc[i] = Num2Bits(64);
         rc[i].in <== in[i];
     }
 
-    // Check if top 7 limbs all equal 0xFFFFFFFF
-    component isMax[7];
-    signal allMax[8];
+    // Check if top 3 limbs all equal 0xFFFFFFFFFFFFFFFF
+    component isMax[3];
+    signal allMax[4];
     allMax[0] <== 1;
-    for (var i = 1; i < 8; i++) {
+    for (var i = 1; i < 4; i++) {
         isMax[i - 1] = IsEqual();
         isMax[i - 1].in[0] <== in[i];
-        isMax[i - 1].in[1] <== (1 << 32) - 1;
+        isMax[i - 1].in[1] <== (1 << 64) - 1;
         allMax[i] <== allMax[i - 1] * isMax[i - 1].out;
     }
 
-    // p[0] = 0xFFFFFC2F = 4294966319
+    // p[0] = 0xFFFFFFFEFFFFFC2F = 18446744069414583343
     // If all upper limbs are max, bottom limb must be < p[0]
-    component lt = LessThan(32);
+    signal c;
+    c <== (1 << 64) - ((1 << 32) + (1 << 9) + (1 << 8) + (1 << 7) + (1 << 6) + (1 << 4) + 1);
+    component lt = LessThan(64);
     lt.in[0] <== in[0];
-    lt.in[1] <== 4294966319;
-    (1 - lt.out) * allMax[7] === 0;
+    lt.in[1] <== c;
+    (1 - lt.out) * allMax[3] === 0;
 }

@@ -21,7 +21,7 @@ include "ecdsa/point.circom";
 /// NOTE: Does not handle scalar = 0 or point = identity.
 /// The caller must ensure scalar ∈ [1, order-1] and point is a valid curve point.
 template Secp256k1ScalarMult(n, k) {
-    assert(n == 32 && k == 8);
+    assert(n == 64 && k == 4);
 
     signal input scalar[k];
     signal input point[2][k];
@@ -120,7 +120,7 @@ template Secp256k1ScalarMult(n, k) {
 ///
 /// privkey must be in [1, order-1]. Does not handle privkey = 0.
 template Secp256k1PrivToPub(n, k) {
-    assert(n == 32 && k == 8);
+    assert(n == 64 && k == 4);
 
     var stride = 8;
     signal input privkey[k];
@@ -136,11 +136,11 @@ template Secp256k1PrivToPub(n, k) {
     var num_strides = div_ceil(n * k, stride);
 
     // Precomputed table: powers[s][j] = j * 2^(8s) * G for j ∈ [0, 255]
-    var powers[32][256][2][8] = SECP256K1_G_TABLE(n, k);
+    var powers[32][256][2][4] = SECP256K1_G_TABLE(n, k);
 
     // Dummy point: G * 2^255 — used when selector == 0 to avoid point-at-infinity.
     // AddUnequal requires distinct points, so we need a stand-in.
-    var dummyVar[2][8] = SECP256K1_DUMMY(n, k);
+    var dummyVar[2][4] = SECP256K1_DUMMY(n, k);
     signal dummy[2][k];
     for (var i = 0; i < k; i++) {
         dummy[0][i] <== dummyVar[0][i];

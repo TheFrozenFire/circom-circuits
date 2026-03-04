@@ -25,7 +25,7 @@ include "ecdsa/scalarmul.circom";
 /// Inputs are k limbs of n bits, little-endian.
 /// result = 1 if valid, 0 if invalid.
 template ECDSAVerifyNoPubkeyCheck(n, k) {
-    assert(n == 32 && k == 8);
+    assert(n == 64 && k == 4);
 
     signal input r[k];
     signal input s[k];
@@ -33,11 +33,11 @@ template ECDSAVerifyNoPubkeyCheck(n, k) {
     signal input pubkey[2][k];
     signal output result;
 
-    var order[8] = SECP256K1_ORDER(n, k);
+    var order[200] = SECP256K1_ORDER(n, k);
 
     // ─── Step 1: Witness s^(-1) mod order ───
 
-    var s_var[8];
+    var s_var[200];
     for (var i = 0; i < k; i++) s_var[i] = s[i];
     var sinv_comp[200] = mod_inv(n, k, s_var, order);
 

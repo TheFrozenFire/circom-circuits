@@ -9,7 +9,7 @@ include "ecdsa/constants.circom";
 /// y3 = λ(x1 - x3) - y1 mod p
 function secp256k1_addunequal_func(n, k, x1, y1, x2, y2) {
     var out[2][200];
-    var p[8] = SECP256K1_PRIME(n, k);
+    var p[200] = SECP256K1_PRIME(n, k);
 
     // λ = (y2 - y1) * (x2 - x1)^(-1)
     var dy[200] = long_sub_mod_p(n, k, y2, y1, p);
@@ -38,7 +38,7 @@ function secp256k1_addunequal_func(n, k, x1, y1, x2, y2) {
 /// y3 = λ(x1 - x3) - y1 mod p
 function secp256k1_double_func(n, k, x1, y1) {
     var out[2][200];
-    var p[8] = SECP256K1_PRIME(n, k);
+    var p[200] = SECP256K1_PRIME(n, k);
 
     // λ = 3x1² / (2y1)
     var x1sq[200] = prod_mod_p(n, k, x1, x1, p);

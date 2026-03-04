@@ -6,28 +6,27 @@ include "arithmetic/bigint_func.circom";
 
 /// Checks that a k-limb "carry" representation equals zero.
 /// Each limb has n bits; carries are bounded to m bits (signed).
-/// Adds a bias of 2^(n+m) before division to handle negative limb values.
+/// Uses field division to compute carries, avoiding overflow for large m.
 template CheckCarryToZero(n, m, k) {
     assert(k >= 2);
+
+    var EPSILON = 3;
 
     signal input in[k];
 
     signal carry[k - 1];
     component carry_rc[k - 1];
 
-    var bias = 1 << (n + m);
-    var carry_bias = 1 << m;
-
-    carry[0] <-- (in[0] + bias) \ (1 << n) - carry_bias;
-    in[0] === carry[0] * (1 << n);
-    carry_rc[0] = Num2Bits(m + 1);
-    carry_rc[0].in <== carry[0] + carry_bias;
-
-    for (var i = 1; i < k - 1; i++) {
-        carry[i] <-- (in[i] + carry[i - 1] + bias) \ (1 << n) - carry_bias;
-        in[i] + carry[i - 1] === carry[i] * (1 << n);
-        carry_rc[i] = Num2Bits(m + 1);
-        carry_rc[i].in <== carry[i] + carry_bias;
+    for (var i = 0; i < k - 1; i++) {
+        carry_rc[i] = Num2Bits(m + EPSILON - n);
+        if (i == 0) {
+            carry[i] <-- in[i] / (1 << n);
+            in[i] === carry[i] * (1 << n);
+        } else {
+            carry[i] <-- (in[i] + carry[i - 1]) / (1 << n);
+            in[i] + carry[i - 1] === carry[i] * (1 << n);
+        }
+        carry_rc[i].in <== carry[i] + (1 << (m + EPSILON - n - 1));
     }
 
     in[k - 1] + carry[k - 2] === 0;
