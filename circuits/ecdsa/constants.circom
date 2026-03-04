@@ -61,6 +61,22 @@ function SECP256K1_GY(n, k) {
     return gy;
 }
 
+/// secp256k1 endomorphism constant beta: cube root of unity in GF(p).
+/// beta^3 = 1 mod p. The endomorphism phi(x,y) = (beta*x, y) satisfies phi(P) = lambda*P.
+function SECP256K1_BETA(n, k) {
+    assert(n == 32 && k == 8);
+    var beta[8];
+    beta[0] = 1905590766;  // 0x719501EE
+    beta[1] = 3241765928;  // 0xC1396C28
+    beta[2] = 318081429;   // 0x12F58995
+    beta[3] = 2632993141;  // 0x9CF04975
+    beta[4] = 2889102569;  // 0xAC3434E9
+    beta[5] = 1852065694;  // 0x6E64479E
+    beta[6] = 1702627088;  // 0x657C0710
+    beta[7] = 2062117419;  // 0x7AE96A2B
+    return beta;
+}
+
 /// Dummy point: G * 2^255. Used for zero-selection muxing in PrivToPub.
 /// This point will never appear as a legitimate partial sum.
 function SECP256K1_DUMMY(n, k) {

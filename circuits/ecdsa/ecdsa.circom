@@ -6,6 +6,7 @@ include "core/comparators.circom";
 include "packing/bitify.circom";
 include "ecdsa/constants.circom";
 include "ecdsa/point.circom";
+include "ecdsa/glv.circom";
 include "ecdsa/scalarmul.circom";
 
 // ═══════════════════════════════════════════════════
@@ -88,7 +89,7 @@ template ECDSAVerifyNoPubkeyCheck(n, k) {
 
     // ─── Step 5: u2 * pubkey (variable-base) ───
 
-    component u2Pub = Secp256k1ScalarMult(n, k);
+    component u2Pub = Secp256k1GLVScalarMult(n, k);
     for (var i = 0; i < k; i++) {
         u2Pub.scalar[i] <== u2_comp.out[i];
         u2Pub.point[0][i] <== pubkey[0][i];
