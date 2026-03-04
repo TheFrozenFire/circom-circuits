@@ -1,7 +1,7 @@
 #!/usr/bin/env -S npx tsx
 /**
  * Generates circuits/ecdsa/g_table.circom containing:
- *   SECP256K1_G_TABLE(n, k) → powers[32][256][2][4]
+ *   SECP256K1_G_TABLE(n, k) → powers[32][256][2][8]
  *
  * Table structure:
  *   powers[stride][selector][coord][limb]
@@ -9,7 +9,7 @@
  *   = 0 (placeholder)                  for selector == 0
  *
  * With stride=8, there are 32 strides (256/8) and 256 selector values.
- * Total: 32 * 255 * 2 * 4 = 65,280 non-zero values.
+ * Total: 32 * 255 * 2 * 8 = 130,560 non-zero values.
  */
 
 import { secp256k1 } from "@noble/curves/secp256k1.js";
@@ -20,15 +20,15 @@ const Point = secp256k1.Point;
 const STRIDE = 8;
 const NUM_STRIDES = 32; // 256 / 8
 const SELECTOR_COUNT = 1 << STRIDE; // 256
-const N = 64;
-const K = 4;
+const N = 32;
+const K = 8;
 
-function toLimbs64(val: bigint): bigint[] {
-    const mask = (1n << 64n) - 1n;
-    return Array.from({ length: K }, (_, i) => (val >> (BigInt(i) * 64n)) & mask);
+function toLimbs32(val: bigint): bigint[] {
+    const mask = (1n << 32n) - 1n;
+    return Array.from({ length: K }, (_, i) => (val >> (BigInt(i) * 32n)) & mask);
 }
 
-console.log("Computing G table for secp256k1 (stride=8, n=64, k=4)...");
+console.log("Computing G table for secp256k1 (stride=8, n=32, k=8)...");
 
 // Precompute stride bases: G, 2^8*G, 2^16*G, ..., 2^248*G
 const strideBases: Array<InstanceType<typeof Point>> = [];
@@ -67,8 +67,8 @@ for (let s = 0; s < NUM_STRIDES; s++) {
     let current = strideBases[s]; // 1 * stride base
     for (let j = 1; j < SELECTOR_COUNT; j++) {
         const aff = current.toAffine();
-        const xLimbs = toLimbs64(aff.x);
-        const yLimbs = toLimbs64(aff.y);
+        const xLimbs = toLimbs32(aff.x);
+        const yLimbs = toLimbs32(aff.y);
 
         for (let l = 0; l < K; l++) {
             lines.push(`    powers[${s}][${j}][0][${l}] = ${xLimbs[l]};`);

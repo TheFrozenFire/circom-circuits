@@ -25,7 +25,7 @@ include "ecdsa/scalarmul.circom";
 /// Inputs are k limbs of n bits, little-endian.
 /// result = 1 if valid, 0 if invalid.
 template ECDSAVerifyNoPubkeyCheck(n, k) {
-    assert(n == 64 && k == 4);
+    assert(n == 32 && k == 8);
 
     signal input r[k];
     signal input s[k];

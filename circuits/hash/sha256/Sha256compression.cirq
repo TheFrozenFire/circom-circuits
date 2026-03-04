@@ -14,6 +14,18 @@ definitions:
     description: >
       one round of state evolution: (new_a, a, b, c, new_e, e, f, g)
       where new_a = T1 + T2 and new_e = d + T1
+  sha256_compress:
+    type: Parameter
+    signature: "list Z -> list Z -> list Z"
+    description: axiomatized SHA-256 compression function
+  sha256_compress_length:
+    type: Axiom
+    statement: forall hin inp, length (sha256_compress hin inp) = 256
+    description: SHA-256 compression output has 256 bits
+  sha256_compress_binary:
+    type: Axiom
+    statement: forall hin inp, all_binary (sha256_compress hin inp)
+    description: SHA-256 compression output is binary
 
 templates:
   Sha256compression:

@@ -1,0 +1,104 @@
+{
+  "meta": {},
+  "compiler_version": [
+    2,
+    2,
+    2
+  ],
+  "custom_gates": false,
+  "custom_gates_declared": false,
+  "includes": [
+    "arithmetic/bigint.circom"
+  ],
+  "definitions": [
+    {
+      "Template": {
+        "meta": {},
+        "name": "BigMultModP_CRT",
+        "args": ["n", "k"],
+        "arg_location": { "start": 0, "end": 0 },
+        "body": { "Block": { "meta": {}, "stmts": [] } },
+        "parallel": false,
+        "is_custom_gate": false
+      }
+    },
+    {
+      "Template": {
+        "meta": {},
+        "name": "BigMultModP_CRT_nocanon",
+        "args": ["n", "k"],
+        "arg_location": { "start": 0, "end": 0 },
+        "body": { "Block": { "meta": {}, "stmts": [] } },
+        "parallel": false,
+        "is_custom_gate": false
+      }
+    },
+    {
+      "Template": {
+        "meta": {},
+        "name": "BigModExp65537",
+        "args": ["n", "k"],
+        "arg_location": { "start": 0, "end": 0 },
+        "body": { "Block": { "meta": {}, "stmts": [] } },
+        "parallel": false,
+        "is_custom_gate": false
+      }
+    },
+    {
+      "Template": {
+        "meta": {},
+        "name": "BigModExp",
+        "args": ["n", "k", "eBits"],
+        "arg_location": { "start": 0, "end": 0 },
+        "body": { "Block": { "meta": {}, "stmts": [] } },
+        "parallel": false,
+        "is_custom_gate": false
+      }
+    },
+    {
+      "Function": {
+        "meta": {},
+        "name": "pow_mod",
+        "args": ["base", "exp", "modulus"],
+        "arg_location": { "start": 0, "end": 0 },
+        "body": { "Block": { "meta": {}, "stmts": [] } }
+      }
+    },
+    {
+      "Function": {
+        "meta": {},
+        "name": "crt_prime",
+        "args": ["idx"],
+        "arg_location": { "start": 0, "end": 0 },
+        "body": { "Block": { "meta": {}, "stmts": [] } }
+      }
+    },
+    {
+      "Function": {
+        "meta": {},
+        "name": "crt_prime_76bit",
+        "args": ["idx"],
+        "arg_location": { "start": 0, "end": 0 },
+        "body": { "Block": { "meta": {}, "stmts": [] } }
+      }
+    },
+    {
+      "Function": {
+        "meta": {},
+        "name": "crt_num_primes",
+        "args": ["n", "k"],
+        "arg_location": { "start": 0, "end": 0 },
+        "body": { "Block": { "meta": {}, "stmts": [] } }
+      }
+    },
+    {
+      "Function": {
+        "meta": {},
+        "name": "crt_kj_range_bits",
+        "args": ["n", "k", "mj"],
+        "arg_location": { "start": 0, "end": 0 },
+        "body": { "Block": { "meta": {}, "stmts": [] } }
+      }
+    }
+  ]
+}

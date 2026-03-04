@@ -3,18 +3,18 @@ import { describe_circuit } from "../helpers.js";
 import { secp256k1 } from "@noble/curves/secp256k1.js";
 
 const Point = secp256k1.Point;
-const n = 64;
-const k = 4;
+const n = 32;
+const k = 8;
 
-function toLimbs64(val: bigint): bigint[] {
-    const mask = (1n << 64n) - 1n;
-    return Array.from({ length: 4 }, (_, i) => (val >> (BigInt(i) * 64n)) & mask);
+function toLimbs32(val: bigint): bigint[] {
+    const mask = (1n << 32n) - 1n;
+    return Array.from({ length: 8 }, (_, i) => (val >> (BigInt(i) * 32n)) & mask);
 }
 
-function fromLimbs64(limbs: bigint[]): bigint {
+function fromLimbs32(limbs: bigint[]): bigint {
     let result = 0n;
     for (let i = limbs.length - 1; i >= 0; i--) {
-        result = (result << 64n) + limbs[i];
+        result = (result << 32n) + limbs[i];
     }
     return result;
 }
@@ -27,11 +27,11 @@ describe_circuit("Secp256k1PrivToPub", {
         const expected = Point.BASE.toAffine();
 
         const w = await calculators.ptop.calculate({
-            privkey: toLimbs64(1n),
+            privkey: toLimbs32(1n),
         });
 
-        const outX = fromLimbs64(w.array("main.pubkey[0]"));
-        const outY = fromLimbs64(w.array("main.pubkey[1]"));
+        const outX = fromLimbs32(w.array("main.pubkey[0]"));
+        const outY = fromLimbs32(w.array("main.pubkey[1]"));
         assert.equal(outX, expected.x);
         assert.equal(outY, expected.y);
     });
@@ -41,11 +41,11 @@ describe_circuit("Secp256k1PrivToPub", {
         const expected = Point.BASE.multiply(privkey).toAffine();
 
         const w = await calculators.ptop.calculate({
-            privkey: toLimbs64(privkey),
+            privkey: toLimbs32(privkey),
         });
 
-        const outX = fromLimbs64(w.array("main.pubkey[0]"));
-        const outY = fromLimbs64(w.array("main.pubkey[1]"));
+        const outX = fromLimbs32(w.array("main.pubkey[0]"));
+        const outY = fromLimbs32(w.array("main.pubkey[1]"));
         assert.equal(outX, expected.x);
         assert.equal(outY, expected.y);
     });

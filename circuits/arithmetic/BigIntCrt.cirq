@@ -24,10 +24,28 @@ definitions:
     type: Fixpoint
     signature: "(l : list Z) -> Z"
     description: product of a list of integers (1 for empty list)
+  list_prod_pos:
+    type: Lemma
+    statement: >
+      forall l, (forall x, In x l -> x > 0) -> list_prod l > 0
+    description: product of positive integers is positive
   mod_pow_nat:
     type: Fixpoint
     signature: "(base : Z) (exp : nat) (modulus : Z) -> Z"
     description: modular exponentiation base^exp mod modulus, defined recursively
+  mod_pow_nat_mod:
+    type: Lemma
+    statement: >
+      forall base exp modulus, modulus > 0 ->
+      0 <= mod_pow_nat base exp modulus < modulus
+    description: mod_pow_nat result is in [0, modulus)
+  mod_pow_nat_succ:
+    type: Lemma
+    statement: >
+      forall base exp modulus, modulus > 0 ->
+      mod_pow_nat base (S exp) modulus =
+      (mod_pow_nat base exp modulus * base) mod modulus
+    description: recursive step for mod_pow_nat
   crt_prime:
     type: Parameter
     signature: "nat -> Z"
@@ -51,7 +69,7 @@ definitions:
     notes: >
       axiomatized because full CRT proof from scratch requires number-theory
       infrastructure beyond Stdlib's scope (same pattern as big_mod_inv in BigInt.v)
-  crt_primes_coprime_with_p_field:
+  crt_moduli_pairwise_coprime:
     type: Axiom
     statement: >
       p_field and each crt_prime(j) are pairwise coprime, and crt_prime(i) and
@@ -71,6 +89,12 @@ definitions:
       Z.abs(A*B - Q*P - R) < 2^(2nk+2)
     description: bound on the verification difference from limb ranges
     notes: proved directly via lia from input range assumptions
+  bits_to_num_msb:
+    type: Definition
+    signature: "(bits : list Z) (eBits : nat) -> Z"
+    description: >
+      interprets a list of binary values as an MSB-first integer;
+      used in BigModExp to track the exponent accumulated through bit scanning
   crt_diff_bound_nocanon:
     type: Lemma
     statement: >
@@ -117,7 +141,7 @@ templates:
         depends_on:
           - crt_diff_bound
           - crt_zero_from_moduli
-          - crt_primes_coprime_with_p_field
+          - crt_moduli_pairwise_coprime
           - crt_product_sufficient
       BigMultModP_CRT_field_safe:
         type: Theorem
@@ -178,7 +202,7 @@ templates:
         depends_on:
           - crt_diff_bound_nocanon
           - crt_zero_from_moduli
-          - crt_primes_coprime_with_p_field
+          - crt_moduli_pairwise_coprime
           - crt_product_sufficient
       BigMultModP_CRT_nocanon_complete:
         type: Theorem

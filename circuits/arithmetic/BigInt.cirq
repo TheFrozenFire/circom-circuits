@@ -92,6 +92,24 @@ definitions:
     type: Lemma
     statement: for any input list, exists carries satisfying carry propagation constraints
     notes: constructs witness carries for CheckCarryToZero and LongToShortNoEndCarry completeness
+  big_mod_inv:
+    type: Parameter
+    signature: "nat -> nat -> list Z -> list Z -> list Z"
+    description: axiomatized modular inverse witness computation
+  big_mod_inv_length:
+    type: Axiom
+    statement: forall n k a p, length (big_mod_inv n k a p) = k
+    description: modular inverse witness has k limbs
+  big_mod_inv_range:
+    type: Axiom
+    statement: forall n k a p i, i < k -> 0 <= nth i (big_mod_inv n k a p) 0 < 2^n
+    description: modular inverse limbs are in range [0, 2^n)
+  big_mod_inv_spec:
+    type: Axiom
+    statement: >
+      forall n k a p, limbs_to_num n p > 0 ->
+      (limbs_to_num n a * limbs_to_num n (big_mod_inv n k a p)) mod (limbs_to_num n p) = 1
+    description: modular inverse satisfies a * inv mod p = 1
 
 templates:
   CheckCarryToZero:

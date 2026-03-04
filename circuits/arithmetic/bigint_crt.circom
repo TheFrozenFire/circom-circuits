@@ -77,6 +77,23 @@ function crt_prime(idx) {
     return primes[idx];
 }
 
+/// Returns the idx-th CRT prime (76-bit primes starting near 2^75).
+/// Used for cubic checks at n=32 where 89-bit primes would overflow BN254.
+function crt_prime_76bit(idx) {
+    var primes[10];
+    primes[0] = 37778931862957161709601;
+    primes[1] = 37778931862957161709621;
+    primes[2] = 37778931862957161709643;
+    primes[3] = 37778931862957161709799;
+    primes[4] = 37778931862957161709829;
+    primes[5] = 37778931862957161709871;
+    primes[6] = 37778931862957161709879;
+    primes[7] = 37778931862957161709897;
+    primes[8] = 37778931862957161709913;
+    primes[9] = 37778931862957161709949;
+    return primes[idx];
+}
+
 /// Number of CRT moduli needed for soundness given n-bit limbs and k limbs.
 /// The product p_field * Π(primes) must exceed 2^(2nk+2).
 /// p_field provides ~254 bits; each 89-bit prime adds ~89 bits.

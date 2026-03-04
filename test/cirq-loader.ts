@@ -126,7 +126,7 @@ export function extractVernacNames(
 ): Array<{ name: string; kind: string }> {
     const content = readFileSync(vPath, "utf-8");
     const pattern =
-        /^(Theorem|Lemma|Definition|Fixpoint|Fact)\s+(\w+)/gm;
+        /^(Theorem|Lemma|Definition|Fixpoint|Fact|Parameter|Axiom)\s+(\w+)/gm;
     const results: Array<{ name: string; kind: string }> = [];
     let match: RegExpExecArray | null;
     while ((match = pattern.exec(content)) !== null) {
