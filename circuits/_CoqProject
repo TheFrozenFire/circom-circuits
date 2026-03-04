@@ -54,3 +54,9 @@ search/PrivateSearch.v
 search/Dedup.v
 search/Quantize.v
 ascon/Ascon.v
+ecdsa/Secp256k1Params.v
+ecdsa/Field.v
+ecdsa/Point.v
+ecdsa/ScalarMul.v
+ecdsa/GLV.v
+ecdsa/ECDSA.v
