@@ -127,39 +127,21 @@ template BigMultModP_CRT(n, k) {
     var num_primes = crt_num_primes(n, k);
 
     // ── Witness computation ──
-    // Use limb-wise multiplication (prod) to avoid field overflow when nk > 127.
-    // Then limb-by-limb long division with a running remainder that fits in the
-    // field (requires nk + n < 254, i.e. nk < 222 for n=32).
+    // Use multi-limb prod + long_div2 to avoid field overflow for nk > 254.
     var ab_limbs[200] = prod(n, k, a, b);
+    var p_limbs[200];
+    for (var i = 0; i < 200; i++) p_limbs[i] = 0;
+    for (var i = 0; i < k; i++) p_limbs[i] = p[i];
 
-    var p_val = 0;
-    for (var i = k - 1; i >= 0; i--) {
-        p_val = p_val * (1 << n) + p[i];
-    }
-
-    var rem = 0;
-    var q_limbs[200];
-    for (var i = 0; i < 200; i++) {
-        q_limbs[i] = 0;
-    }
-    for (var i = 2 * k - 1; i >= 0; i--) {
-        rem = rem * (1 << n) + ab_limbs[i];
-        q_limbs[i] = rem \ p_val;
-        rem = rem % p_val;
-    }
-    for (var i = 0; i < 2 * k - 1; i++) {
-        q_limbs[i + 1] += q_limbs[i] >> n;
-        q_limbs[i] = q_limbs[i] % (1 << n);
-    }
-    var result_val = rem;
+    var div_result[2][200] = long_div2(n, k, k, ab_limbs, p_limbs);
 
     for (var i = 0; i < k; i++) {
-        out[i] <-- (result_val >> (i * n)) % (1 << n);
+        out[i] <-- div_result[1][i];
     }
 
     signal quotient[k];
     for (var i = 0; i < k; i++) {
-        quotient[i] <-- q_limbs[i];
+        quotient[i] <-- div_result[0][i];
     }
 
     // ── Step 1: Range checks on output and quotient limbs ──
@@ -257,35 +239,19 @@ template BigMultModP_CRT_nocanon(n, k) {
 
     // ── Witness computation (identical to BigMultModP_CRT) ──
     var ab_limbs[200] = prod(n, k, a, b);
+    var p_limbs[200];
+    for (var i = 0; i < 200; i++) p_limbs[i] = 0;
+    for (var i = 0; i < k; i++) p_limbs[i] = p[i];
 
-    var p_val = 0;
-    for (var i = k - 1; i >= 0; i--) {
-        p_val = p_val * (1 << n) + p[i];
-    }
-
-    var rem = 0;
-    var q_limbs[200];
-    for (var i = 0; i < 200; i++) {
-        q_limbs[i] = 0;
-    }
-    for (var i = 2 * k - 1; i >= 0; i--) {
-        rem = rem * (1 << n) + ab_limbs[i];
-        q_limbs[i] = rem \ p_val;
-        rem = rem % p_val;
-    }
-    for (var i = 0; i < 2 * k - 1; i++) {
-        q_limbs[i + 1] += q_limbs[i] >> n;
-        q_limbs[i] = q_limbs[i] % (1 << n);
-    }
-    var result_val = rem;
+    var div_result[2][200] = long_div2(n, k, k, ab_limbs, p_limbs);
 
     for (var i = 0; i < k; i++) {
-        out[i] <-- (result_val >> (i * n)) % (1 << n);
+        out[i] <-- div_result[1][i];
     }
 
     signal quotient[k];
     for (var i = 0; i < k; i++) {
-        quotient[i] <-- q_limbs[i];
+        quotient[i] <-- div_result[0][i];
     }
 
     // ── Step 1: Range checks on output and quotient limbs ──

@@ -205,6 +205,44 @@ template BigMultNoCarry(n, ma, mb, ka, kb) {
     }
 }
 
+/// Carry-free multiplication via polynomial identity check.
+/// Evaluates a(x)·b(x) === out(x) at ka+kb-1 points (x = 0, 1, ..., ka+kb-2).
+/// Same interface as BigMultNoCarry but uses only ka+kb-1 constraints (vs ka*kb).
+template BigMultNoCarryPoly(n, ma, mb, ka, kb) {
+    assert(ma + mb <= 253);
+
+    signal input a[ka];
+    signal input b[kb];
+    signal output out[ka + kb - 1];
+
+    // Witness: compute output registers via schoolbook accumulation (0 constraints)
+    var sums[200];
+    for (var i = 0; i < ka + kb - 1; i++) sums[i] = 0;
+    for (var i = 0; i < ka; i++) {
+        for (var j = 0; j < kb; j++) {
+            sums[i + j] += a[i] * b[j];
+        }
+    }
+    for (var i = 0; i < ka + kb - 1; i++) out[i] <-- sums[i];
+
+    // Constraint: polynomial identity at ka+kb-1 evaluation points.
+    // If a(x)·b(x) - out(x) = 0 at ka+kb-1 points, and deg < ka+kb-1, then it's
+    // identically zero (a degree-d polynomial can't have d+1 roots unless all zero).
+    for (var pt = 0; pt < ka + kb - 1; pt++) {
+        var a_eval = 0;
+        var b_eval = 0;
+        var out_eval = 0;
+        var x_pow = 1;
+        for (var j = 0; j < ka + kb - 1; j++) {
+            if (j < ka) a_eval += a[j] * x_pow;
+            if (j < kb) b_eval += b[j] * x_pow;
+            out_eval += out[j] * x_pow;
+            x_pow *= pt;
+        }
+        a_eval * b_eval === out_eval;
+    }
+}
+
 /// Computes a mod b where a is (k+1) limbs and b is k limbs.
 /// Both have n-bit limbs. Output remainder is k limbs.
 template BigMod(n, k) {
@@ -273,29 +311,17 @@ template BigSubModP(n, k) {
     signal input p[k];
     signal output out[k];
 
-    // Witness: compute (a - b) mod p using only non-negative arithmetic
-    var a_val = 0;
-    var b_val = 0;
-    var p_val = 0;
-    for (var i = k - 1; i >= 0; i--) {
-        a_val = a_val * (1 << n) + a[i];
-        b_val = b_val * (1 << n) + b[i];
-        p_val = p_val * (1 << n) + p[i];
-    }
-    var result_val;
-    if (a_val >= b_val) {
-        result_val = (a_val - b_val) % p_val;
-    } else {
-        var diff = (b_val - a_val) % p_val;
-        if (diff == 0) {
-            result_val = 0;
-        } else {
-            result_val = p_val - diff;
-        }
-    }
+    // Witness: compute (a - b) mod p using multi-limb arithmetic (no overflow)
+    var a_limbs[200];
+    var b_limbs[200];
+    var p_limbs[200];
+    for (var i = 0; i < 200; i++) { a_limbs[i] = 0; b_limbs[i] = 0; p_limbs[i] = 0; }
+    for (var i = 0; i < k; i++) { a_limbs[i] = a[i]; b_limbs[i] = b[i]; p_limbs[i] = p[i]; }
+
+    var result[200] = long_sub_mod_p(n, k, a_limbs, b_limbs, p_limbs);
 
     for (var i = 0; i < k; i++) {
-        out[i] <-- (result_val >> (i * n)) % (1 << n);
+        out[i] <-- result[i];
     }
 
     component rcOut[k];
@@ -329,20 +355,16 @@ template BigMultModP(n, k) {
     signal input p[k];
     signal output out[k];
 
-    // Witness
-    var a_val = 0;
-    var b_val = 0;
-    var p_val = 0;
-    for (var i = k - 1; i >= 0; i--) {
-        a_val = a_val * (1 << n) + a[i];
-        b_val = b_val * (1 << n) + b[i];
-        p_val = p_val * (1 << n) + p[i];
-    }
-    var result_val = (a_val * b_val) % p_val;
-    var q_val = (a_val * b_val) \ p_val;
+    // Witness: use multi-limb prod + long_div2 (no overflow for nk > 254)
+    var ab_limbs[200] = prod(n, k, a, b);
+    var p_limbs[200];
+    for (var i = 0; i < 200; i++) p_limbs[i] = 0;
+    for (var i = 0; i < k; i++) p_limbs[i] = p[i];
+
+    var div_result[2][200] = long_div2(n, k, k, ab_limbs, p_limbs);
 
     for (var i = 0; i < k; i++) {
-        out[i] <-- (result_val >> (i * n)) % (1 << n);
+        out[i] <-- div_result[1][i];
     }
 
     component rcOut[k];
@@ -354,7 +376,7 @@ template BigMultModP(n, k) {
     // Quotient witness
     signal quotient[k];
     for (var i = 0; i < k; i++) {
-        quotient[i] <-- (q_val >> (i * n)) % (1 << n);
+        quotient[i] <-- div_result[0][i];
     }
     component rcQ[k];
     for (var i = 0; i < k; i++) {
