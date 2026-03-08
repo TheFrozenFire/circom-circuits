@@ -231,8 +231,7 @@ template Secp256k1GLVScalarMult(n, k) {
     signal intermed[NUM_BITS - 1][2][k];
     component doublers[NUM_BITS - 1];
     component adders[NUM_BITS - 1];
-    component mux_x[NUM_BITS];
-    component mux_y[NUM_BITS];
+    component muxes[NUM_BITS];
     component is_zero_sel[NUM_BITS];
     signal has_prev_nz[NUM_BITS];
 
@@ -249,28 +248,26 @@ template Secp256k1GLVScalarMult(n, k) {
         is_zero_sel[idx] = IsZero();
         is_zero_sel[idx].in <== sel[idx];
 
-        // 4-way mux: [dummy, P', Q', P'+Q']
-        mux_x[idx] = Multiplexer(k, 4);
-        mux_y[idx] = Multiplexer(k, 4);
-        mux_x[idx].sel <== sel[idx];
-        mux_y[idx].sel <== sel[idx];
+        // 4-way mux: [dummy, P', Q', P'+Q'] — shared Decoder for x and y
+        muxes[idx] = DualMultiplexer(k, 4);
+        muxes[idx].sel <== sel[idx];
         for (var l = 0; l < k; l++) {
-            mux_x[idx].inp[0][l] <== dummy[0][l];
-            mux_x[idx].inp[1][l] <== pp[0][l];
-            mux_x[idx].inp[2][l] <== qp[0][l];
-            mux_x[idx].inp[3][l] <== ppqp[0][l];
+            muxes[idx].inp0[0][l] <== dummy[0][l];
+            muxes[idx].inp0[1][l] <== pp[0][l];
+            muxes[idx].inp0[2][l] <== qp[0][l];
+            muxes[idx].inp0[3][l] <== ppqp[0][l];
 
-            mux_y[idx].inp[0][l] <== dummy[1][l];
-            mux_y[idx].inp[1][l] <== pp[1][l];
-            mux_y[idx].inp[2][l] <== qp[1][l];
-            mux_y[idx].inp[3][l] <== ppqp[1][l];
+            muxes[idx].inp1[0][l] <== dummy[1][l];
+            muxes[idx].inp1[1][l] <== pp[1][l];
+            muxes[idx].inp1[2][l] <== qp[1][l];
+            muxes[idx].inp1[3][l] <== ppqp[1][l];
         }
 
         if (idx == NUM_BITS - 1) {
             // MSB: partial = mux output, has_prev = (sel != 0)
             for (var l = 0; l < k; l++) {
-                partial[idx][0][l] <== mux_x[idx].out[l];
-                partial[idx][1][l] <== mux_y[idx].out[l];
+                partial[idx][0][l] <== muxes[idx].out0[l];
+                partial[idx][1][l] <== muxes[idx].out1[l];
             }
             has_prev_nz[idx] <== 1 - is_zero_sel[idx].out;
         } else {
@@ -286,8 +283,8 @@ template Secp256k1GLVScalarMult(n, k) {
             for (var l = 0; l < k; l++) {
                 adders[idx].a[0][l] <== doublers[idx].out[0][l];
                 adders[idx].a[1][l] <== doublers[idx].out[1][l];
-                adders[idx].b[0][l] <== mux_x[idx].out[l];
-                adders[idx].b[1][l] <== mux_y[idx].out[l];
+                adders[idx].b[0][l] <== muxes[idx].out0[l];
+                adders[idx].b[1][l] <== muxes[idx].out1[l];
             }
 
             // intermed = sel!=0 ? added : doubled
@@ -302,8 +299,8 @@ template Secp256k1GLVScalarMult(n, k) {
 
             // partial = has_prev_from_above ? intermed : mux_output
             for (var l = 0; l < k; l++) {
-                partial[idx][0][l] <== has_prev_nz[idx + 1] * (intermed[idx][0][l] - mux_x[idx].out[l]) + mux_x[idx].out[l];
-                partial[idx][1][l] <== has_prev_nz[idx + 1] * (intermed[idx][1][l] - mux_y[idx].out[l]) + mux_y[idx].out[l];
+                partial[idx][0][l] <== has_prev_nz[idx + 1] * (intermed[idx][0][l] - muxes[idx].out0[l]) + muxes[idx].out0[l];
+                partial[idx][1][l] <== has_prev_nz[idx + 1] * (intermed[idx][1][l] - muxes[idx].out1[l]) + muxes[idx].out1[l];
             }
         }
     }

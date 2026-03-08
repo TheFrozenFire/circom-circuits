@@ -11,7 +11,7 @@ interface Variant {
 
 const variants: Variant[] = [
     {
-        name: "ScalarMult (256-bit double-and-add)",
+        name: "ScalarMult (windowed w=4 double-and-add)",
         path: "bench/ecdsa_scalarmul.circom",
         template: "ECDSAVerifyScalarMult",
     },

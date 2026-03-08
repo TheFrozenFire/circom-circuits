@@ -551,31 +551,16 @@ template Secp256k1HintedGLVScalarMult(n, k) {
     //   accumulator = [2^64]·DUMMY + O = DUMMY_SHIFTED_64
     // ───────────────────────────────────────────────
 
-    // Bit decomposition of x1_abs, x2_abs, z1_abs, z2_abs (each 2 limbs × 32 bits)
-    component x1_bits[2];
-    component x2_bits[2];
-    component z1_bits[2];
-    component z2_bits[2];
-    for (var i = 0; i < 2; i++) {
-        x1_bits[i] = Num2Bits(n);
-        x1_bits[i].in <== x1_abs[i];
-        x2_bits[i] = Num2Bits(n);
-        x2_bits[i].in <== x2_abs[i];
-        z1_bits[i] = Num2Bits(n);
-        z1_bits[i].in <== z1_abs[i];
-        z2_bits[i] = Num2Bits(n);
-        z2_bits[i].in <== z2_abs[i];
-    }
+    // Reuse Phase 3 range-check Num2Bits outputs (x1_rc, x2_rc, z1_rc, z2_rc)
+    // as bit decompositions for the MSM loop — no need to decompose again.
 
     // Main loop signals
     signal sel[NUM_BITS];
     signal partial[NUM_BITS + 1][2][k];
     component doublers[NUM_BITS];
     component adders[NUM_BITS];
-    component mux_x[NUM_BITS];
-    component mux_y[NUM_BITS];
+    component muxes[NUM_BITS];
     component is_zero_sel[NUM_BITS];
-    signal intermed[NUM_BITS][2][k];
 
     // Initialize accumulator with DUMMY
     for (var i = 0; i < k; i++) {
@@ -587,23 +572,21 @@ template Secp256k1HintedGLVScalarMult(n, k) {
         // Build 4-bit selector from current bit of each sub-scalar
         var limb_idx = idx \ n;
         var bit_pos = idx % n;
-        sel[idx] <== x1_bits[limb_idx].out[bit_pos]
-                   + 2 * x2_bits[limb_idx].out[bit_pos]
-                   + 4 * z1_bits[limb_idx].out[bit_pos]
-                   + 8 * z2_bits[limb_idx].out[bit_pos];
+        sel[idx] <== x1_rc[limb_idx].out[bit_pos]
+                   + 2 * x2_rc[limb_idx].out[bit_pos]
+                   + 4 * z1_rc[limb_idx].out[bit_pos]
+                   + 8 * z2_rc[limb_idx].out[bit_pos];
 
         is_zero_sel[idx] = IsZero();
         is_zero_sel[idx].in <== sel[idx];
 
-        // 16-way mux for x and y coordinates
-        mux_x[idx] = Multiplexer(k, 16);
-        mux_y[idx] = Multiplexer(k, 16);
-        mux_x[idx].sel <== sel[idx];
-        mux_y[idx].sel <== sel[idx];
+        // 16-way mux for x and y coordinates — shared Decoder
+        muxes[idx] = DualMultiplexer(k, 16);
+        muxes[idx].sel <== sel[idx];
         for (var j = 0; j < 16; j++) {
             for (var l = 0; l < k; l++) {
-                mux_x[idx].inp[j][l] <== table[j][0][l];
-                mux_y[idx].inp[j][l] <== table[j][1][l];
+                muxes[idx].inp0[j][l] <== table[j][0][l];
+                muxes[idx].inp1[j][l] <== table[j][1][l];
             }
         }
 
@@ -619,19 +602,14 @@ template Secp256k1HintedGLVScalarMult(n, k) {
         for (var l = 0; l < k; l++) {
             adders[idx].a[0][l] <== doublers[idx].out[0][l];
             adders[idx].a[1][l] <== doublers[idx].out[1][l];
-            adders[idx].b[0][l] <== mux_x[idx].out[l];
-            adders[idx].b[1][l] <== mux_y[idx].out[l];
+            adders[idx].b[0][l] <== muxes[idx].out0[l];
+            adders[idx].b[1][l] <== muxes[idx].out1[l];
         }
 
         // If sel==0: skip add (use doubled only). Otherwise: use added.
         for (var l = 0; l < k; l++) {
-            intermed[idx][0][l] <== (1 - is_zero_sel[idx].out) * (adders[idx].out[0][l] - doublers[idx].out[0][l]) + doublers[idx].out[0][l];
-            intermed[idx][1][l] <== (1 - is_zero_sel[idx].out) * (adders[idx].out[1][l] - doublers[idx].out[1][l]) + doublers[idx].out[1][l];
-        }
-
-        for (var l = 0; l < k; l++) {
-            partial[idx][0][l] <== intermed[idx][0][l];
-            partial[idx][1][l] <== intermed[idx][1][l];
+            partial[idx][0][l] <== (1 - is_zero_sel[idx].out) * (adders[idx].out[0][l] - doublers[idx].out[0][l]) + doublers[idx].out[0][l];
+            partial[idx][1][l] <== (1 - is_zero_sel[idx].out) * (adders[idx].out[1][l] - doublers[idx].out[1][l]) + doublers[idx].out[1][l];
         }
     }
 

@@ -8,7 +8,7 @@ include "ecdsa/constants.circom";
 include "ecdsa/point.circom";
 include "ecdsa/scalarmul.circom";
 
-/// ECDSA verification using basic 256-bit double-and-add scalar multiplication.
+/// ECDSA verification using windowed (w=4) double-and-add scalar multiplication.
 /// Benchmark variant — uses Secp256k1ScalarMult for u2·pubkey.
 template ECDSAVerifyScalarMult(n, k) {
     assert(n == 32 && k == 8);
