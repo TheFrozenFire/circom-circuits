@@ -5,6 +5,7 @@ include "arithmetic/bigint_func.circom";
 include "ecdsa/constants.circom";
 include "ecdsa/functions.circom";
 include "ecdsa/field.circom";
+include "packing/bitify.circom";
 
 // ═══════════════════════════════════════════════════
 // Polynomial constraint templates for secp256k1 point operations.
@@ -192,7 +193,12 @@ template Secp256k1PointOnCurve() {
 // ═══════════════════════════════════════════════════
 
 /// Point addition for two distinct secp256k1 points.
-/// Witness via explicit formula, constrain via cubic identity + collinearity.
+/// Explicit-slope approach: witness λ and verify via quadratic checks mod p.
+/// Three constraints:
+///   1. λ·(x2 - x1) = y2 - y1 mod p  (slope definition)
+///   2. λ² = x3 + x1 + x2 mod p      (x-coordinate)
+///   3. y3 + y1 = λ·(x1 - x3) mod p   (y-coordinate)
+/// Uses CheckQuadraticModPIsZero (~186 each) instead of cubic checks (~497).
 template Secp256k1AddUnequal(n, k) {
     assert(n == 32 && k == 8);
 
@@ -211,43 +217,87 @@ template Secp256k1AddUnequal(n, k) {
         y2[i] = b[1][i];
     }
 
-    var tmp[2][200] = secp256k1_addunequal_func(n, k, x1, y1, x2, y2);
+    var tmp[3][200] = secp256k1_addunequal_func(n, k, x1, y1, x2, y2);
+
+    signal lambda[k];
     for (var i = 0; i < k; i++) {
+        lambda[i] <-- tmp[2][i];
         out[0][i] <-- tmp[0][i];
         out[1][i] <-- tmp[1][i];
     }
 
-    // Constraints: cubic identity + collinearity + range checks
-    component cubic = Secp256k1AddUnequalCubicConstraint();
+    // Range-check lambda limbs (32-bit each; canonical mod p not required)
+    component lam_rc[k];
     for (var i = 0; i < k; i++) {
-        cubic.x1[i] <== a[0][i];
-        cubic.y1[i] <== a[1][i];
-        cubic.x2[i] <== b[0][i];
-        cubic.y2[i] <== b[1][i];
-        cubic.x3[i] <== out[0][i];
-        cubic.y3[i] <== out[1][i];
+        lam_rc[i] = Num2Bits(n);
+        lam_rc[i].in <== lambda[i];
     }
 
-    component onLine = Secp256k1PointOnLine();
-    for (var i = 0; i < k; i++) {
-        onLine.x1[i] <== a[0][i];
-        onLine.y1[i] <== a[1][i];
-        onLine.x2[i] <== b[0][i];
-        onLine.y2[i] <== b[1][i];
-        onLine.x3[i] <== out[0][i];
-        onLine.y3[i] <== out[1][i];
-    }
-
+    // Range-check output to [0, p)
     component xRange = CheckInRangeSecp256k1();
     component yRange = CheckInRangeSecp256k1();
     for (var i = 0; i < k; i++) {
         xRange.in[i] <== out[0][i];
         yRange.in[i] <== out[1][i];
     }
+
+    // Products (all 8×8 → 15 registers, 67-bit overflow)
+    signal lam_x1[2*k - 1];
+    lam_x1 <== BigMultNoCarryPoly(n, n, n, k, k)(lambda, a[0]);
+
+    signal lam_x2[2*k - 1];
+    lam_x2 <== BigMultNoCarryPoly(n, n, n, k, k)(lambda, b[0]);
+
+    signal lam_sq[2*k - 1];
+    lam_sq <== BigMultNoCarryPoly(n, n, n, k, k)(lambda, lambda);
+
+    signal lam_x3[2*k - 1];
+    lam_x3 <== BigMultNoCarryPoly(n, n, n, k, k)(lambda, out[0]);
+
+    // Check 1: λ·x2 - λ·x1 - y2 + y1 ≡ 0 mod p
+    // Max overflow: 2 × 2^67 + 2^33 < 2^69 → m = 69
+    signal check1[2*k - 1];
+    for (var i = 0; i < 2*k - 1; i++) {
+        if (i < k) {
+            check1[i] <== lam_x2[i] - lam_x1[i] - b[1][i] + a[1][i];
+        } else {
+            check1[i] <== lam_x2[i] - lam_x1[i];
+        }
+    }
+    CheckQuadraticModPIsZero(69)(check1);
+
+    // Check 2: λ² - x3 - x1 - x2 ≡ 0 mod p
+    // Max overflow: 2^67 + 3 × 2^32 < 2^68 → m = 68
+    signal check2[2*k - 1];
+    for (var i = 0; i < 2*k - 1; i++) {
+        if (i < k) {
+            check2[i] <== lam_sq[i] - out[0][i] - a[0][i] - b[0][i];
+        } else {
+            check2[i] <== lam_sq[i];
+        }
+    }
+    CheckQuadraticModPIsZero(68)(check2);
+
+    // Check 3: λ·x3 - λ·x1 + y3 + y1 ≡ 0 mod p
+    // (Derived from y3 = λ(x1 - x3) - y1 → y3 + y1 + λx3 - λx1 = 0)
+    // Max overflow: 2 × 2^67 + 2 × 2^32 < 2^69 → m = 69
+    signal check3[2*k - 1];
+    for (var i = 0; i < 2*k - 1; i++) {
+        if (i < k) {
+            check3[i] <== lam_x3[i] - lam_x1[i] + out[1][i] + a[1][i];
+        } else {
+            check3[i] <== lam_x3[i] - lam_x1[i];
+        }
+    }
+    CheckQuadraticModPIsZero(69)(check3);
 }
 
 /// Point doubling on secp256k1.
-/// Witness via explicit formula, constrain via tangent + on-curve + range.
+/// Explicit-slope approach: witness λ (tangent slope) and verify via quadratic checks.
+/// Three constraints:
+///   1. 2·λ·y1 = 3·x1² mod p         (tangent slope definition, a=0 for secp256k1)
+///   2. λ² = x3 + 2·x1 mod p          (x-coordinate)
+///   3. y3 + y1 = λ·(x1 - x3) mod p   (y-coordinate)
 template Secp256k1Double(n, k) {
     assert(n == 32 && k == 8);
 
@@ -261,26 +311,23 @@ template Secp256k1Double(n, k) {
         y1[i] = in[1][i];
     }
 
-    var tmp[2][200] = secp256k1_double_func(n, k, x1, y1);
+    var tmp[3][200] = secp256k1_double_func(n, k, x1, y1);
+
+    signal lambda[k];
     for (var i = 0; i < k; i++) {
+        lambda[i] <-- tmp[2][i];
         out[0][i] <-- tmp[0][i];
         out[1][i] <-- tmp[1][i];
     }
 
-    component tangent = Secp256k1PointOnTangent();
+    // Range-check lambda limbs (32-bit each)
+    component lam_rc[k];
     for (var i = 0; i < k; i++) {
-        tangent.x1[i] <== in[0][i];
-        tangent.y1[i] <== in[1][i];
-        tangent.x3[i] <== out[0][i];
-        tangent.y3[i] <== out[1][i];
+        lam_rc[i] = Num2Bits(n);
+        lam_rc[i].in <== lambda[i];
     }
 
-    component onCurve = Secp256k1PointOnCurve();
-    for (var i = 0; i < k; i++) {
-        onCurve.x[i] <== out[0][i];
-        onCurve.y[i] <== out[1][i];
-    }
-
+    // Range-check output to [0, p)
     component xRange = CheckInRangeSecp256k1();
     component yRange = CheckInRangeSecp256k1();
     for (var i = 0; i < k; i++) {
@@ -288,7 +335,51 @@ template Secp256k1Double(n, k) {
         yRange.in[i] <== out[1][i];
     }
 
-    // Ensure x3 ≠ x1 (doubling must produce a distinct x-coordinate)
-    signal x3_eq_x1 <== BigIsEqual(k)(out[0], in[0]);
-    x3_eq_x1 === 0;
+    // Products (all 8×8 → 15 registers, 67-bit overflow)
+    signal lam_y1[2*k - 1];
+    lam_y1 <== BigMultNoCarryPoly(n, n, n, k, k)(lambda, in[1]);
+
+    signal x1_sq[2*k - 1];
+    x1_sq <== BigMultNoCarryPoly(n, n, n, k, k)(in[0], in[0]);
+
+    signal lam_sq[2*k - 1];
+    lam_sq <== BigMultNoCarryPoly(n, n, n, k, k)(lambda, lambda);
+
+    signal lam_x1[2*k - 1];
+    lam_x1 <== BigMultNoCarryPoly(n, n, n, k, k)(lambda, in[0]);
+
+    signal lam_x3[2*k - 1];
+    lam_x3 <== BigMultNoCarryPoly(n, n, n, k, k)(lambda, out[0]);
+
+    // Check 1: 2·λ·y1 - 3·x1² ≡ 0 mod p
+    // Max overflow: 3 × 2^67 < 2^69 → m = 69
+    signal check1[2*k - 1];
+    for (var i = 0; i < 2*k - 1; i++) {
+        check1[i] <== 2 * lam_y1[i] - 3 * x1_sq[i];
+    }
+    CheckQuadraticModPIsZero(69)(check1);
+
+    // Check 2: λ² - x3 - 2·x1 ≡ 0 mod p
+    // Max overflow: 2^67 + 3 × 2^32 < 2^68 → m = 68
+    signal check2[2*k - 1];
+    for (var i = 0; i < 2*k - 1; i++) {
+        if (i < k) {
+            check2[i] <== lam_sq[i] - out[0][i] - 2 * in[0][i];
+        } else {
+            check2[i] <== lam_sq[i];
+        }
+    }
+    CheckQuadraticModPIsZero(68)(check2);
+
+    // Check 3: λ·x3 - λ·x1 + y3 + y1 ≡ 0 mod p
+    // Max overflow: 2 × 2^67 + 2 × 2^32 < 2^69 → m = 69
+    signal check3[2*k - 1];
+    for (var i = 0; i < 2*k - 1; i++) {
+        if (i < k) {
+            check3[i] <== lam_x3[i] - lam_x1[i] + out[1][i] + in[1][i];
+        } else {
+            check3[i] <== lam_x3[i] - lam_x1[i];
+        }
+    }
+    CheckQuadraticModPIsZero(69)(check3);
 }
