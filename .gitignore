@@ -17,3 +17,6 @@ dist/
 Makefile
 Makefile.conf
 .coq-native/
+
+# Claude worktrees
+.claude/worktrees/
