@@ -6,7 +6,7 @@ include "core/comparators.circom";
 include "packing/bitify.circom";
 include "ecdsa/constants.circom";
 include "ecdsa/point.circom";
-include "ecdsa/glv.circom";
+include "ecdsa/hinted_glv.circom";
 include "ecdsa/scalarmul.circom";
 
 // ═══════════════════════════════════════════════════
@@ -32,6 +32,7 @@ template ECDSAVerifyNoPubkeyCheck(n, k) {
     signal input s[k];
     signal input msghash[k];
     signal input pubkey[2][k];
+    signal input u2pub_hint[2][k];  // prover-provided hint: [u2]·pubkey
     signal output result;
 
     var order[200] = SECP256K1_ORDER(n, k);
@@ -87,13 +88,15 @@ template ECDSAVerifyNoPubkeyCheck(n, k) {
         u2_comp.p[i] <== order[i];
     }
 
-    // ─── Step 5: u2 * pubkey (variable-base) ───
+    // ─── Step 5: u2 * pubkey (variable-base, hinted) ───
 
-    component u2Pub = Secp256k1GLVScalarMult(n, k);
+    component u2Pub = Secp256k1HintedGLVScalarMult(n, k);
     for (var i = 0; i < k; i++) {
         u2Pub.scalar[i] <== u2_comp.out[i];
         u2Pub.point[0][i] <== pubkey[0][i];
         u2Pub.point[1][i] <== pubkey[1][i];
+        u2Pub.hint[0][i] <== u2pub_hint[0][i];
+        u2Pub.hint[1][i] <== u2pub_hint[1][i];
     }
 
     // ─── Step 6: R = u1*G + u2*pubkey ───

@@ -3,6 +3,7 @@ import { describe_circuit } from "../helpers.js";
 import { secp256k1 } from "@noble/curves/secp256k1.js";
 
 const Point = secp256k1.Point;
+const CURVE_ORDER = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141n;
 const n = 32;
 const k = 8;
 
@@ -15,6 +16,26 @@ function bytesToBigInt(bytes: Uint8Array): bigint {
     let result = 0n;
     for (const b of bytes) result = (result << 8n) | BigInt(b);
     return result;
+}
+
+function modInv(a: bigint, m: bigint): bigint {
+    let [old_r, r] = [a % m, m];
+    let [old_s, s] = [1n, 0n];
+    while (r !== 0n) {
+        const q = old_r / r;
+        [old_r, r] = [r, old_r - q * r];
+        [old_s, s] = [s, old_s - q * s];
+    }
+    return ((old_s % m) + m) % m;
+}
+
+/// Compute u2pub_hint = [u2]·pubkey for the hinted ECDSA template.
+function computeU2PubHint(r: bigint, s: bigint, pubkey: { x: bigint; y: bigint }) {
+    const sinv = modInv(s, CURVE_ORDER);
+    const u2 = (r * sinv) % CURVE_ORDER;
+    const pubPoint = Point.fromAffine(pubkey);
+    const result = pubPoint.multiply(u2).toAffine();
+    return { x: result.x, y: result.y };
 }
 
 // Generate a test ECDSA signature using noble-secp256k1
@@ -57,12 +78,14 @@ describe_circuit("ECDSAVerifyNoPubkeyCheck", {
 
     it("verifies a valid ECDSA signature (result = 1)", async () => {
         const tv = generateTestVector();
+        const hint = computeU2PubHint(tv.r, tv.s, tv.pubkey);
 
         const w = await calculators.verify.calculate({
             r: toLimbs32(tv.r),
             s: toLimbs32(tv.s),
             msghash: toLimbs32(tv.msghash),
             pubkey: [toLimbs32(tv.pubkey.x), toLimbs32(tv.pubkey.y)],
+            u2pub_hint: [toLimbs32(hint.x), toLimbs32(hint.y)],
         });
 
         const result = w.value("main.result");
@@ -71,14 +94,16 @@ describe_circuit("ECDSAVerifyNoPubkeyCheck", {
 
     it("rejects a signature with wrong r (result = 0)", async () => {
         const tv = generateTestVector();
-        // Modify r to make it invalid
+        // Modify r to make it invalid — recompute hint with bad r
         const badR = tv.r ^ 1n;
+        const hint = computeU2PubHint(badR, tv.s, tv.pubkey);
 
         const w = await calculators.verify.calculate({
             r: toLimbs32(badR),
             s: toLimbs32(tv.s),
             msghash: toLimbs32(tv.msghash),
             pubkey: [toLimbs32(tv.pubkey.x), toLimbs32(tv.pubkey.y)],
+            u2pub_hint: [toLimbs32(hint.x), toLimbs32(hint.y)],
         });
 
         const result = w.value("main.result");

@@ -77,8 +77,8 @@ function SECP256K1_BETA(n, k) {
     return beta;
 }
 
-/// Dummy point: G * 2^255. Used for zero-selection muxing in PrivToPub.
-/// This point will never appear as a legitimate partial sum.
+/// Dummy point: G * 2^255. Used for zero-selection muxing in PrivToPub
+/// and as offset point in HintedGLVScalarMult.
 function SECP256K1_DUMMY(n, k) {
     assert(n == 32 && k == 8);
     var dummy[2][8];
@@ -99,4 +99,28 @@ function SECP256K1_DUMMY(n, k) {
     dummy[1][6] = 433413851;
     dummy[1][7] = 4234897737;
     return dummy;
+}
+
+/// Offset-shifted dummy: [2^64] * SECP256K1_DUMMY = [2^319] * G.
+/// Precomputed for MSM(4,64) identity verification in HintedGLVScalarMult.
+function SECP256K1_DUMMY_SHIFTED_64(n, k) {
+    assert(n == 32 && k == 8);
+    var pt[2][8];
+    pt[0][0] = 138163804;
+    pt[0][1] = 2198444321;
+    pt[0][2] = 4141075811;
+    pt[0][3] = 30146289;
+    pt[0][4] = 37751690;
+    pt[0][5] = 1519377485;
+    pt[0][6] = 4068463413;
+    pt[0][7] = 4181030494;
+    pt[1][0] = 2185145513;
+    pt[1][1] = 3850043800;
+    pt[1][2] = 2080116452;
+    pt[1][3] = 818659888;
+    pt[1][4] = 454401409;
+    pt[1][5] = 727488522;
+    pt[1][6] = 690395099;
+    pt[1][7] = 598108695;
+    return pt;
 }

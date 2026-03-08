@@ -177,3 +177,162 @@ function secp256k1_endomorphism_func(n, k, x) {
     var beta[200] = SECP256K1_BETA(n, k);
     return prod_mod_p(n, k, beta, x, p);
 }
+
+/// Multi-limb addition: out = a + b (k-limb, n-bit). Returns (k+1)-limb result.
+function long_add(n, k, a, b) {
+    var out[200];
+    for (var i = 0; i < 200; i++) out[i] = 0;
+    var carry = 0;
+    for (var i = 0; i < k; i++) {
+        var s = a[i] + b[i] + carry;
+        out[i] = s % (1 << n);
+        carry = s \ (1 << n);
+    }
+    out[k] = carry;
+    return out;
+}
+
+/// Scalar multiplication on secp256k1 (witness computation only).
+/// Returns Q = [scalar]·P as out[2][200] (x, y in k limbs each).
+/// scalar is a k-limb number, point is (px, py) each k limbs.
+function secp256k1_scalar_mul_func(n, k, scalar, px, py) {
+    var out[2][200];
+    for (var i = 0; i < 2; i++)
+        for (var j = 0; j < 200; j++) out[i][j] = 0;
+
+    var acc_x[200];
+    var acc_y[200];
+    for (var j = 0; j < 200; j++) { acc_x[j] = 0; acc_y[j] = 0; }
+
+    var first = 1;
+    for (var bit_idx = n * k - 1; bit_idx >= 0; bit_idx--) {
+        var limb_idx = bit_idx \ n;
+        var bit_pos = bit_idx % n;
+        var bit = (scalar[limb_idx] >> bit_pos) & 1;
+
+        if (first == 0) {
+            var doubled[2][200] = secp256k1_double_func(n, k, acc_x, acc_y);
+            for (var j = 0; j < k; j++) { acc_x[j] = doubled[0][j]; acc_y[j] = doubled[1][j]; }
+        }
+
+        if (bit == 1) {
+            if (first == 1) {
+                for (var j = 0; j < k; j++) { acc_x[j] = px[j]; acc_y[j] = py[j]; }
+                first = 0;
+            } else {
+                var added[2][200] = secp256k1_addunequal_func(n, k, acc_x, acc_y, px, py);
+                for (var j = 0; j < k; j++) { acc_x[j] = added[0][j]; acc_y[j] = added[1][j]; }
+            }
+        }
+    }
+
+    for (var j = 0; j < k; j++) { out[0][j] = acc_x[j]; out[1][j] = acc_y[j]; }
+    return out;
+}
+
+/// Half-GCD: find (x, z) with scalar·z ≡ x (mod order), |x|, |z| < 2^128.
+/// Uses partial extended Euclidean algorithm (Lehmer-style).
+/// Returns out[4][200]:
+///   out[0] = x_abs (k limbs)
+///   out[1] = z_abs (k limbs)
+///   out[2][0] = sx (1 if scalar·z_abs ≡ -x_abs mod order, 0 if ≡ +x_abs)
+///   out[3][0] = sz (always 0; z_abs is always positive)
+function half_gcd(n, k, scalar, order) {
+    assert(n == 32 && k == 8);
+
+    var out[4][200];
+    for (var i = 0; i < 4; i++)
+        for (var j = 0; j < 200; j++) out[i][j] = 0;
+
+    // Extended GCD: r_i = s_i * order + t_i * scalar
+    // We track r (remainder, always >= 0) and t (coefficient of scalar, signed)
+    var r_prev[200];
+    var r_curr[200];
+    for (var i = 0; i < 200; i++) { r_prev[i] = 0; r_curr[i] = 0; }
+    for (var i = 0; i < k; i++) { r_prev[i] = order[i]; r_curr[i] = scalar[i]; }
+
+    var t_prev_abs[200];
+    var t_curr_abs[200];
+    for (var i = 0; i < 200; i++) { t_prev_abs[i] = 0; t_curr_abs[i] = 0; }
+    var t_prev_sign = 0;
+    var t_curr_sign = 0;
+    // t_0 = 0, t_1 = 1
+    t_curr_abs[0] = 1;
+
+    // bound = 2^128 (limb 4 = 1, all others 0)
+    var bound[200];
+    for (var i = 0; i < 200; i++) bound[i] = 0;
+    bound[4] = 1;
+
+    var done = 0;
+    // Extended GCD loop — at most ~256 iterations for 256-bit inputs
+    for (var iter = 0; iter < 300; iter++) {
+        if (done == 0) {
+            // Check if r_curr < bound (2^128)
+            if (long_gt(n, k, bound, r_curr) == 1) {
+                done = 1;
+            } else {
+                // q = floor(r_prev / r_curr), r_next = r_prev mod r_curr
+                var div[2][200] = long_div2(n, k, 0, r_prev, r_curr);
+                var q[200];
+                var r_next[200];
+                for (var j = 0; j < 200; j++) { q[j] = 0; r_next[j] = 0; }
+                q[0] = div[0][0];
+                for (var j = 0; j < k; j++) r_next[j] = div[1][j];
+
+                // t_next = t_prev - q * t_curr (with sign handling)
+                // qt = q * |t_curr| (q is single-limb here)
+                var qt[200] = long_scalar_mult(n, k, q[0], t_curr_abs);
+
+                var t_next_abs[200];
+                for (var j = 0; j < 200; j++) t_next_abs[j] = 0;
+                var t_next_sign = 0;
+
+                if (t_prev_sign == t_curr_sign) {
+                    // Same sign: t_next = |t_prev| - qt (may flip sign)
+                    if (long_gt(n, k + 1, t_prev_abs, qt) == 1) {
+                        t_next_abs = long_sub(n, k + 1, t_prev_abs, qt);
+                        t_next_sign = t_prev_sign;
+                    } else {
+                        t_next_abs = long_sub(n, k + 1, qt, t_prev_abs);
+                        t_next_sign = 1 - t_prev_sign;
+                    }
+                } else {
+                    // Opposite signs: t_next = |t_prev| + qt
+                    t_next_abs = long_add(n, k + 1, t_prev_abs, qt);
+                    t_next_sign = t_prev_sign;
+                }
+
+                // Shift: prev <- curr, curr <- next
+                for (var j = 0; j < 200; j++) {
+                    r_prev[j] = r_curr[j];
+                    r_curr[j] = r_next[j];
+                    t_prev_abs[j] = t_curr_abs[j];
+                    t_curr_abs[j] = t_next_abs[j];
+                }
+                t_prev_sign = t_curr_sign;
+                t_curr_sign = t_next_sign;
+            }
+        }
+    }
+
+    // r_curr < 2^128 and r_curr = t_curr * scalar (mod order)
+    // x = r_curr, z = |t_curr|
+    for (var j = 0; j < k; j++) {
+        out[0][j] = r_curr[j];
+        out[1][j] = t_curr_abs[j];
+    }
+
+    // Determine sign relationship:
+    // We have r_curr ≡ t_curr_signed * scalar (mod order)
+    // where t_curr_signed = (-1)^t_curr_sign * |t_curr|
+    // We want: scalar * z_abs ≡ ±x_abs (mod order)
+    // z_abs = |t_curr|, x_abs = r_curr
+    // scalar * z_abs = scalar * |t_curr|
+    // If t_curr_sign == 0: scalar * |t_curr| ≡ r_curr (mod order) → sx = 0
+    // If t_curr_sign == 1: scalar * |t_curr| ≡ -r_curr (mod order) → sx = 1
+    out[2][0] = t_curr_sign;
+    out[3][0] = 0;
+
+    return out;
+}
