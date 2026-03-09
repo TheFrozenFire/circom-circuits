@@ -125,6 +125,22 @@ function SECP256K1_DUMMY_SHIFTED_64(n, k) {
     return pt;
 }
 
+/// secp256k1 endomorphism scalar lambda.
+/// lambda^2 + lambda + 1 ≡ 0 (mod order). The endomorphism phi(P) = lambda·P.
+function SECP256K1_LAMBDA(n, k) {
+    assert(n == 32 && k == 8);
+    var lam[8];
+    lam[0] = 455327090;   // 0x1B23BD72
+    lam[1] = 3741488764;  // 0xDF02967C
+    lam[2] = 545351288;   // 0x20816678
+    lam[3] = 305013482;   // 0x122E22EA
+    lam[4] = 2282906714;  // 0x8812645A
+    lam[5] = 2770738178;  // 0xA5261C02
+    lam[6] = 3227267296;  // 0xC05C30E0
+    lam[7] = 1399041356;  // 0x5363AD4C
+    return lam;
+}
+
 /// Offset-shifted dummy: [2^128] * SECP256K1_DUMMY = [2^383] * G.
 /// Precomputed for MSM(2,128) identity verification in HintedGLVScalarMult.
 function SECP256K1_DUMMY_SHIFTED_128(n, k) {
@@ -146,5 +162,29 @@ function SECP256K1_DUMMY_SHIFTED_128(n, k) {
     pt[1][5] = 3631212187;
     pt[1][6] = 3492136847;
     pt[1][7] = 1900992647;
+    return pt;
+}
+
+/// Offset-shifted dummy: [2^68] * SECP256K1_DUMMY = [2^323] * G.
+/// Precomputed for MSM(4,68) identity verification in EisensteinScalarMult.
+function SECP256K1_DUMMY_SHIFTED_68(n, k) {
+    assert(n == 32 && k == 8);
+    var pt[2][8];
+    pt[0][0] = 2805329540;
+    pt[0][1] = 3397074000;
+    pt[0][2] = 1587398006;
+    pt[0][3] = 928748861;
+    pt[0][4] = 1998241306;
+    pt[0][5] = 3310345558;
+    pt[0][6] = 399318630;
+    pt[0][7] = 266228365;
+    pt[1][0] = 696151730;
+    pt[1][1] = 1231501281;
+    pt[1][2] = 364610138;
+    pt[1][3] = 3118135112;
+    pt[1][4] = 516194568;
+    pt[1][5] = 1880805077;
+    pt[1][6] = 291644402;
+    pt[1][7] = 2258148036;
     return pt;
 }

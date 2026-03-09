@@ -25,6 +25,11 @@ const variants: Variant[] = [
         path: "bench/ecdsa_hinted_glv.circom",
         template: "ECDSAVerifyHintedGLV",
     },
+    {
+        name: "Eisenstein (68-bit MSM(4,68))",
+        path: "bench/ecdsa_eisenstein.circom",
+        template: "ECDSAVerifyEisenstein",
+    },
 ];
 
 async function compileAndCount(v: Variant): Promise<number> {
