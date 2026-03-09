@@ -221,7 +221,7 @@ function secp256k1_scalar_mul_func(n, k, scalar, px, py) {
         var bit = (scalar[limb_idx] >> bit_pos) & 1;
 
         if (first == 0) {
-            var doubled[2][200] = secp256k1_double_func(n, k, acc_x, acc_y);
+            var doubled[3][200] = secp256k1_double_func(n, k, acc_x, acc_y);
             for (var j = 0; j < k; j++) { acc_x[j] = doubled[0][j]; acc_y[j] = doubled[1][j]; }
         }
 
@@ -230,7 +230,7 @@ function secp256k1_scalar_mul_func(n, k, scalar, px, py) {
                 for (var j = 0; j < k; j++) { acc_x[j] = px[j]; acc_y[j] = py[j]; }
                 first = 0;
             } else {
-                var added[2][200] = secp256k1_addunequal_func(n, k, acc_x, acc_y, px, py);
+                var added[3][200] = secp256k1_addunequal_func(n, k, acc_x, acc_y, px, py);
                 for (var j = 0; j < k; j++) { acc_x[j] = added[0][j]; acc_y[j] = added[1][j]; }
             }
         }
@@ -283,16 +283,31 @@ function half_gcd(n, k, scalar, order) {
                 done = 1;
             } else {
                 // q = floor(r_prev / r_curr), r_next = r_prev mod r_curr
-                var div[2][200] = long_div2(n, k, 0, r_prev, r_curr);
+                // Find effective number of limbs in r_curr (long_div2
+                // requires the top limb of the divisor to be nonzero)
+                var ek = 1;
+                for (var j = 0; j < k; j++) {
+                    if (r_curr[j] != 0) ek = j + 1;
+                }
+                // m = extra dividend limbs beyond ek
+                var ek_prev = 1;
+                for (var j = 0; j < k; j++) {
+                    if (r_prev[j] != 0) ek_prev = j + 1;
+                }
+                var m = ek_prev - ek;
+                if (m < 0) m = 0;
+
+                var div[2][200] = long_div2(n, ek, m, r_prev, r_curr);
                 var q[200];
                 var r_next[200];
                 for (var j = 0; j < 200; j++) { q[j] = 0; r_next[j] = 0; }
-                q[0] = div[0][0];
-                for (var j = 0; j < k; j++) r_next[j] = div[1][j];
+                for (var j = 0; j <= m; j++) q[j] = div[0][j];
+                for (var j = 0; j < ek; j++) r_next[j] = div[1][j];
 
                 // t_next = t_prev - q * t_curr (with sign handling)
-                // qt = q * |t_curr| (q is single-limb here)
-                var qt[200] = long_scalar_mult(n, k, q[0], t_curr_abs);
+                // qt = q * |t_curr| — full k×k multiplication since q may
+                // exceed a single limb (e.g. first GCD step: order / 5 ≈ 2^254)
+                var qt[200] = prod(n, k, q, t_curr_abs);
 
                 var t_next_abs[200];
                 for (var j = 0; j < 200; j++) t_next_abs[j] = 0;
@@ -300,16 +315,16 @@ function half_gcd(n, k, scalar, order) {
 
                 if (t_prev_sign == t_curr_sign) {
                     // Same sign: t_next = |t_prev| - qt (may flip sign)
-                    if (long_gt(n, k + 1, t_prev_abs, qt) == 1) {
-                        t_next_abs = long_sub(n, k + 1, t_prev_abs, qt);
+                    if (long_gt(n, 2 * k, t_prev_abs, qt) == 1) {
+                        t_next_abs = long_sub(n, 2 * k, t_prev_abs, qt);
                         t_next_sign = t_prev_sign;
                     } else {
-                        t_next_abs = long_sub(n, k + 1, qt, t_prev_abs);
+                        t_next_abs = long_sub(n, 2 * k, qt, t_prev_abs);
                         t_next_sign = 1 - t_prev_sign;
                     }
                 } else {
                     // Opposite signs: t_next = |t_prev| + qt
-                    t_next_abs = long_add(n, k + 1, t_prev_abs, qt);
+                    t_next_abs = long_add(n, 2 * k, t_prev_abs, qt);
                     t_next_sign = t_prev_sign;
                 }
 

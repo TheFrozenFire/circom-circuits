@@ -73,4 +73,50 @@ describe_circuit("Secp256k1HintedGLVScalarMult", {
 
         assert.equal(readLimbs(w, "main.out[0]"), Q.x, "x mismatch");
     });
+
+    it("computes [42]*G correctly", async function () {
+        this.timeout(0);
+        const scalar = 42n;
+        const P = Point.BASE.toAffine();
+        const Q = Point.BASE.multiply(scalar).toAffine();
+
+        const w = await calculators.hinted.calculate({
+            scalar: toLimbs32(scalar),
+            point: [toLimbs32(P.x), toLimbs32(P.y)],
+            hint: [toLimbs32(Q.x), toLimbs32(Q.y)],
+        });
+
+        assert.equal(readLimbs(w, "main.out[0]"), Q.x, "x mismatch");
+    });
+
+    it("computes [5]*(7G) correctly", async function () {
+        this.timeout(0);
+        const scalar = 5n;
+        const basePoint = Point.BASE.multiply(7n);
+        const P = basePoint.toAffine();
+        const Q = basePoint.multiply(scalar).toAffine();
+
+        const w = await calculators.hinted.calculate({
+            scalar: toLimbs32(scalar),
+            point: [toLimbs32(P.x), toLimbs32(P.y)],
+            hint: [toLimbs32(Q.x), toLimbs32(Q.y)],
+        });
+
+        assert.equal(readLimbs(w, "main.out[0]"), Q.x, "x mismatch");
+    });
+
+    it("computes [3]*G correctly", async function () {
+        this.timeout(0);
+        const scalar = 3n;
+        const P = Point.BASE.toAffine();
+        const Q = Point.BASE.multiply(scalar).toAffine();
+
+        const w = await calculators.hinted.calculate({
+            scalar: toLimbs32(scalar),
+            point: [toLimbs32(P.x), toLimbs32(P.y)],
+            hint: [toLimbs32(Q.x), toLimbs32(Q.y)],
+        });
+
+        assert.equal(readLimbs(w, "main.out[0]"), Q.x, "x mismatch");
+    });
 });

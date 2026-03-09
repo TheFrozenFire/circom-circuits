@@ -292,6 +292,102 @@ template Secp256k1AddUnequal(n, k) {
     CheckQuadraticModPIsZero(69)(check3);
 }
 
+/// Loop-optimized point addition: no `< p` canonicality check on outputs.
+/// Keeps 32-bit Num2Bits on all output limbs (required for overflow bounds)
+/// but omits the CheckInRangeSecp256k1 comparison (7 IsEqual + LessThan).
+/// Safe for MSM loop intermediates where the final BigIsEqual against a
+/// canonical constant catches any non-canonical accumulation.
+template Secp256k1AddUnequalLoop(n, k) {
+    assert(n == 32 && k == 8);
+
+    signal input a[2][k];
+    signal input b[2][k];
+    signal output out[2][k];
+
+    var x1[8];
+    var y1[8];
+    var x2[8];
+    var y2[8];
+    for (var i = 0; i < k; i++) {
+        x1[i] = a[0][i];
+        y1[i] = a[1][i];
+        x2[i] = b[0][i];
+        y2[i] = b[1][i];
+    }
+
+    var tmp[3][200] = secp256k1_addunequal_func(n, k, x1, y1, x2, y2);
+
+    signal lambda[k];
+    for (var i = 0; i < k; i++) {
+        lambda[i] <-- tmp[2][i];
+        out[0][i] <-- tmp[0][i];
+        out[1][i] <-- tmp[1][i];
+    }
+
+    // Range-check lambda limbs (32-bit each)
+    component lam_rc[k];
+    for (var i = 0; i < k; i++) {
+        lam_rc[i] = Num2Bits(n);
+        lam_rc[i].in <== lambda[i];
+    }
+
+    // Range-check output limbs to 32 bits (no < p canonicality)
+    component out_rc_x[k];
+    component out_rc_y[k];
+    for (var i = 0; i < k; i++) {
+        out_rc_x[i] = Num2Bits(n);
+        out_rc_x[i].in <== out[0][i];
+        out_rc_y[i] = Num2Bits(n);
+        out_rc_y[i].in <== out[1][i];
+    }
+
+    // Products (all 8×8 → 15 registers, 67-bit overflow)
+    signal lam_x1[2*k - 1];
+    lam_x1 <== BigMultNoCarryPoly(n, n, n, k, k)(lambda, a[0]);
+
+    signal lam_x2[2*k - 1];
+    lam_x2 <== BigMultNoCarryPoly(n, n, n, k, k)(lambda, b[0]);
+
+    signal lam_sq[2*k - 1];
+    lam_sq <== BigMultNoCarryPoly(n, n, n, k, k)(lambda, lambda);
+
+    signal lam_x3[2*k - 1];
+    lam_x3 <== BigMultNoCarryPoly(n, n, n, k, k)(lambda, out[0]);
+
+    // Check 1: λ·x2 - λ·x1 - y2 + y1 ≡ 0 mod p
+    signal check1[2*k - 1];
+    for (var i = 0; i < 2*k - 1; i++) {
+        if (i < k) {
+            check1[i] <== lam_x2[i] - lam_x1[i] - b[1][i] + a[1][i];
+        } else {
+            check1[i] <== lam_x2[i] - lam_x1[i];
+        }
+    }
+    CheckQuadraticModPIsZero(69)(check1);
+
+    // Check 2: λ² - x3 - x1 - x2 ≡ 0 mod p
+    signal check2[2*k - 1];
+    for (var i = 0; i < 2*k - 1; i++) {
+        if (i < k) {
+            check2[i] <== lam_sq[i] - out[0][i] - a[0][i] - b[0][i];
+        } else {
+            check2[i] <== lam_sq[i];
+        }
+    }
+    CheckQuadraticModPIsZero(68)(check2);
+
+    // Check 3: λ·x3 - λ·x1 + y3 + y1 ≡ 0 mod p
+    signal check3[2*k - 1];
+    for (var i = 0; i < 2*k - 1; i++) {
+        if (i < k) {
+            check3[i] <== lam_x3[i] - lam_x1[i] + out[1][i] + a[1][i];
+        } else {
+            check3[i] <== lam_x3[i] - lam_x1[i];
+        }
+    }
+    CheckQuadraticModPIsZero(69)(check3);
+}
+
 /// Point doubling on secp256k1.
 /// Explicit-slope approach: witness λ (tangent slope) and verify via quadratic checks.
 /// Three constraints:
@@ -373,6 +469,94 @@ template Secp256k1Double(n, k) {
 
     // Check 3: λ·x3 - λ·x1 + y3 + y1 ≡ 0 mod p
     // Max overflow: 2 × 2^67 + 2 × 2^32 < 2^69 → m = 69
+    signal check3[2*k - 1];
+    for (var i = 0; i < 2*k - 1; i++) {
+        if (i < k) {
+            check3[i] <== lam_x3[i] - lam_x1[i] + out[1][i] + in[1][i];
+        } else {
+            check3[i] <== lam_x3[i] - lam_x1[i];
+        }
+    }
+    CheckQuadraticModPIsZero(69)(check3);
+}
+
+/// Loop-optimized point doubling: no `< p` canonicality check on outputs.
+/// Same as Secp256k1Double but replaces CheckInRangeSecp256k1 with bare
+/// Num2Bits(32) per limb. See Secp256k1AddUnequalLoop for safety rationale.
+template Secp256k1DoubleLoop(n, k) {
+    assert(n == 32 && k == 8);
+
+    signal input in[2][k];
+    signal output out[2][k];
+
+    var x1[8];
+    var y1[8];
+    for (var i = 0; i < k; i++) {
+        x1[i] = in[0][i];
+        y1[i] = in[1][i];
+    }
+
+    var tmp[3][200] = secp256k1_double_func(n, k, x1, y1);
+
+    signal lambda[k];
+    for (var i = 0; i < k; i++) {
+        lambda[i] <-- tmp[2][i];
+        out[0][i] <-- tmp[0][i];
+        out[1][i] <-- tmp[1][i];
+    }
+
+    // Range-check lambda limbs (32-bit each)
+    component lam_rc[k];
+    for (var i = 0; i < k; i++) {
+        lam_rc[i] = Num2Bits(n);
+        lam_rc[i].in <== lambda[i];
+    }
+
+    // Range-check output limbs to 32 bits (no < p canonicality)
+    component out_rc_x[k];
+    component out_rc_y[k];
+    for (var i = 0; i < k; i++) {
+        out_rc_x[i] = Num2Bits(n);
+        out_rc_x[i].in <== out[0][i];
+        out_rc_y[i] = Num2Bits(n);
+        out_rc_y[i].in <== out[1][i];
+    }
+
+    // Products (all 8×8 → 15 registers, 67-bit overflow)
+    signal lam_y1[2*k - 1];
+    lam_y1 <== BigMultNoCarryPoly(n, n, n, k, k)(lambda, in[1]);
+
+    signal x1_sq[2*k - 1];
+    x1_sq <== BigMultNoCarryPoly(n, n, n, k, k)(in[0], in[0]);
+
+    signal lam_sq[2*k - 1];
+    lam_sq <== BigMultNoCarryPoly(n, n, n, k, k)(lambda, lambda);
+
+    signal lam_x1[2*k - 1];
+    lam_x1 <== BigMultNoCarryPoly(n, n, n, k, k)(lambda, in[0]);
+
+    signal lam_x3[2*k - 1];
+    lam_x3 <== BigMultNoCarryPoly(n, n, n, k, k)(lambda, out[0]);
+
+    // Check 1: 2·λ·y1 - 3·x1² ≡ 0 mod p
+    signal check1[2*k - 1];
+    for (var i = 0; i < 2*k - 1; i++) {
+        check1[i] <== 2 * lam_y1[i] - 3 * x1_sq[i];
+    }
+    CheckQuadraticModPIsZero(69)(check1);
+
+    // Check 2: λ² - x3 - 2·x1 ≡ 0 mod p
+    signal check2[2*k - 1];
+    for (var i = 0; i < 2*k - 1; i++) {
+        if (i < k) {
+            check2[i] <== lam_sq[i] - out[0][i] - 2 * in[0][i];
+        } else {
+            check2[i] <== lam_sq[i];
+        }
+    }
+    CheckQuadraticModPIsZero(68)(check2);
+
+    // Check 3: λ·x3 - λ·x1 + y3 + y1 ≡ 0 mod p
     signal check3[2*k - 1];
     for (var i = 0; i < 2*k - 1; i++) {
         if (i < k) {

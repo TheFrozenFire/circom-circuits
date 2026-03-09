@@ -124,3 +124,27 @@ function SECP256K1_DUMMY_SHIFTED_64(n, k) {
     pt[1][7] = 598108695;
     return pt;
 }
+
+/// Offset-shifted dummy: [2^128] * SECP256K1_DUMMY = [2^383] * G.
+/// Precomputed for MSM(2,128) identity verification in HintedGLVScalarMult.
+function SECP256K1_DUMMY_SHIFTED_128(n, k) {
+    assert(n == 32 && k == 8);
+    var pt[2][8];
+    pt[0][0] = 2385517844;
+    pt[0][1] = 4178588755;
+    pt[0][2] = 1377268262;
+    pt[0][3] = 3873725955;
+    pt[0][4] = 1042404843;
+    pt[0][5] = 1369996494;
+    pt[0][6] = 18697973;
+    pt[0][7] = 3790112103;
+    pt[1][0] = 1951106003;
+    pt[1][1] = 330313086;
+    pt[1][2] = 4142125177;
+    pt[1][3] = 3877467739;
+    pt[1][4] = 233266192;
+    pt[1][5] = 3631212187;
+    pt[1][6] = 3492136847;
+    pt[1][7] = 1900992647;
+    return pt;
+}

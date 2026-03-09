@@ -21,7 +21,7 @@ const variants: Variant[] = [
         template: "ECDSAVerifyGLV",
     },
     {
-        name: "HintedGLV (64-bit Pippenger MSM)",
+        name: "HintedGLV (128-bit Pippenger MSM)",
         path: "bench/ecdsa_hinted_glv.circom",
         template: "ECDSAVerifyHintedGLV",
     },

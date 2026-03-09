@@ -9,7 +9,7 @@ include "ecdsa/point.circom";
 include "ecdsa/hinted_glv.circom";
 include "ecdsa/scalarmul.circom";
 
-/// ECDSA verification using hinted GLV scalar multiplication (64-bit MSM loop).
+/// ECDSA verification using hinted scalar multiplication (128-bit MSM loop).
 /// Benchmark variant — same algorithm as ECDSAVerifyNoPubkeyCheck but uses
 /// Secp256k1HintedGLVScalarMult instead of Secp256k1ScalarMult for u2·pubkey.
 /// The prover must supply u2pub_hint = [u2]·pubkey externally.
@@ -67,7 +67,7 @@ template ECDSAVerifyHintedGLV(n, k) {
         u2_comp.p[i] <== order[i];
     }
 
-    // Step 5: u2 * pubkey (HintedGLV — 64-bit MSM loop)
+    // Step 5: u2 * pubkey (Hinted — 128-bit MSM loop)
     component u2Pub = Secp256k1HintedGLVScalarMult(n, k);
     for (var i = 0; i < k; i++) {
         u2Pub.scalar[i] <== u2_comp.out[i];
