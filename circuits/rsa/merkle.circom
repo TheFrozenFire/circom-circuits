@@ -17,10 +17,10 @@ template RSAMerkleHash(n, k) {
     signal input N[k];
     signal output out[k];
 
-    // L³ mod N (canonical)
+    // L³ mod N (nocanon: limbs are n-bit but value may exceed N)
     signal L3[k] <== RSACube(n, k)(L, N);
 
-    // R³ mod N (canonical)
+    // R³ mod N (nocanon: same)
     signal R3[k] <== RSACube(n, k)(R, N);
 
     // 2·R³ = R³ + R³, then reduce mod N
