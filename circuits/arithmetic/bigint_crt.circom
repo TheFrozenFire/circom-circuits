@@ -174,18 +174,24 @@ template BigMultModP_CRT(n, k) {
     // ── Step 2: Native field check (2 constraints) ──
     // Reconstruct big integers as field elements via linear combinations.
     // Coefficients 2^(ni) wrap modulo p_field, giving a free mod-p_field check.
+    //
+    // NOTE: We compute base_i via repeated multiplication instead of
+    // `1 << (n * i)` because circom's `<<` overflows at 256 bits —
+    // `1 << 256` wraps to 0 instead of reducing mod p_field.
     var A = 0;
     var B = 0;
     var Q = 0;
     var P = 0;
     var R = 0;
+    var base_i = 1;
+    var shift_n = 1 << n;
     for (var i = 0; i < k; i++) {
-        var base_i = 1 << (n * i);
         A += a[i] * base_i;
         B += b[i] * base_i;
         Q += quotient[i] * base_i;
         P += p[i] * base_i;
         R += out[i] * base_i;
+        base_i *= shift_n;
     }
 
     signal ab <== A * B;
@@ -282,18 +288,23 @@ template BigMultModP_CRT_nocanon(n, k) {
     }
 
     // ── Step 2: Native field check (2 constraints) ──
+    // NOTE: We compute base_i via repeated multiplication instead of
+    // `1 << (n * i)` because circom's `<<` overflows at 256 bits —
+    // `1 << 256` wraps to 0 instead of reducing mod p_field.
     var A = 0;
     var B = 0;
     var Q = 0;
     var P = 0;
     var R = 0;
+    var base_i = 1;
+    var shift_n = 1 << n;
     for (var i = 0; i < k; i++) {
-        var base_i = 1 << (n * i);
         A += a[i] * base_i;
         B += b[i] * base_i;
         Q += quotient[i] * base_i;
         P += p[i] * base_i;
         R += out[i] * base_i;
+        base_i *= shift_n;
     }
 
     signal ab <== A * B;
